@@ -17,10 +17,10 @@
     </a>
     <nav class="nav">
       <a href="/">📊 Dashboard</a>
-      <a href="/tambah-pemilih">➕ Tambah</a>
+      <a href="/tambah-pemilih">➕ Tambah Pemilih</a>
       <a href="/import">📥 Import</a>
       <a href="/kader">🎖️ Kader</a>
-      <a href="/log-duplikat">🔍 Log</a>
+      <a href="/log-duplikat">🔍 Log Duplikat</a>
     </nav>
   </div>
 </header>
@@ -48,24 +48,24 @@
       <div id="alert-error" class="alert-error"></div>
 
       <div class="form-group">
-        <label>Nama Lengkap <span style="color:var(--danger);">*</span></label>
+        <label for="inp-nama">Nama Lengkap <span style="color:var(--danger);">*</span></label>
         <input type="text" id="inp-nama" placeholder="Nama lengkap…" autocomplete="off"/>
       </div>
 
       <div class="form-group">
-        <label>NIK (16 digit) <span style="color:var(--danger);">*</span></label>
+        <label for="inp-nik">NIK (16 digit) <span style="color:var(--danger);">*</span></label>
         <input type="text" id="inp-nik" placeholder="16 digit NIK" maxlength="16" oninput="onNIKInput()" autocomplete="off" style="font-family:'JetBrains Mono',monospace;letter-spacing:1px;"/>
         <div id="nik-status" class="nik-status"></div>
       </div>
 
       <div class="form-row">
         <div class="form-group" style="flex:1;">
-          <label>Tanggal Lahir <span class="auto-badge">AUTO</span></label>
-          <input type="date" id="inp-tgl-lahir" class="auto-filled"/>
+          <label for="inp-tgl-lahir">Tanggal Lahir <span class="auto-badge">AUTO</span></label>
+          <input type="date" id="inp-tgl-lahir" title="Tanggal Lahir (auto-filled dari NIK)" class="auto-filled"/>
         </div>
         <div class="form-group" style="flex:1;">
-          <label>Jenis Kelamin <span class="auto-badge">AUTO</span></label>
-          <select id="inp-jk" class="auto-filled">
+          <label for="inp-jk">Jenis Kelamin <span class="auto-badge">AUTO</span></label>
+          <select id="inp-jk" title="Pilih jenis kelamin" class="auto-filled">
             <option value="">— Otomatis —</option>
             <option value="L">Laki-laki</option>
             <option value="P">Perempuan</option>
@@ -78,8 +78,8 @@
       </div>
 
       <div class="form-group">
-        <label>Kader <span style="color:var(--danger);">*</span></label>
-        <select id="inp-kader"><option value="">— Pilih Kader —</option></select>
+        <label for="inp-kader">Kader <span style="color:var(--danger);">*</span></label>
+        <select id="inp-kader" title="Pilih kader"><option value="">— Pilih Kader —</option></select>
       </div>
 
       <div class="gap-12" style="margin-top:8px;">

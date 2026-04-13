@@ -11,13 +11,13 @@
 
 <header>
   <div class="container header-inner">
-    <a href="/" class="logo">
+    <a href="/" class="logo" aria-label="DataPilih - Kembali ke Dashboard">
       <div class="logo-icon">🗳️</div>
       <div class="logo-text">Data<span>Pilih</span></div>
     </a>
     <nav class="nav">
       <a href="/" class="active">📊 Dashboard</a>
-      <a href="/tambah-pemilih">➕ Tambah</a>
+      <a href="/tambah-pemilih">➕ Tambah Pemilih</a>
       <a href="/import">📥 Import</a>
       <a href="/kader">🎖️ Kader</a>
       <a href="/log-duplikat">🔍 Log Duplikat</a>
@@ -81,11 +81,11 @@
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
       <div class="search-wrap" style="flex:1;min-width:220px;">
         <span class="search-icon">🔍</span>
-        <input type="text" id="inp-search" placeholder="Cari nama atau NIK…" oninput="onSearch(this.value)"/>
+        <input type="text" id="inp-search" title="Cari data pemilih" placeholder="Cari nama atau NIK…" oninput="onSearch(this.value)"/>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <label for="sel-kader" style="font-size:13px;color:var(--text3);font-weight:600;">Filter Kader:</label>
-        <select id="sel-kader" style="padding:8px 10px;border-radius: var(--radius-sm);border:1px solid var(--border2);background:#fff;" onchange="onKaderFilterChange(this.value)">
+        <select id="sel-kader" title="Filter Kader" style="padding:8px 10px;border-radius: var(--radius-sm);border:1px solid var(--border2);background:#fff;" onchange="onKaderFilterChange(this.value)">
           <option value="">Semua Kader</option>
         </select>
       </div>
@@ -112,7 +112,7 @@
       <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
         <div class="per-page-wrap">
           Tampilkan:
-          <select id="sel-limit" onchange="onLimitChange(this.value)">
+          <select id="sel-limit" title="Jumlah data per halaman" aria-label="Jumlah data per halaman" onchange="onLimitChange(this.value)">
             <option value="25">25</option>
             <option value="50" selected>50</option>
             <option value="100">100</option>
@@ -207,8 +207,8 @@
           <td style="font-size:12px;color:var(--text3);">${formatDate(p.created_at)}</td>
           <td>
             <div class="gap-12">
-              <a href="/edit-pemilih?id=${p.id}" class="btn btn-outline btn-xs">✏️</a>
-              <button class="btn btn-danger btn-xs superadmin-only" onclick="konfirmasiHapusPemilih('${p.id}','${p.nama}')">🗑️</button>
+              <a href="/edit-pemilih?id=${p.id}" class="btn btn-outline btn-xs" aria-label="Edit data ${p.nama}">✏️</a>
+              <button class="btn btn-danger btn-xs superadmin-only" aria-label="Hapus data ${p.nama}" onclick="konfirmasiHapusPemilih('${p.id}','${p.nama}')">🗑️</button>
             </div>
           </td>
         </tr>`;
@@ -256,7 +256,10 @@
     const sel = document.getElementById('sel-kader');
     if (sel) {
       sel.innerHTML = '<option value="">Semua Kader</option>' +
-        kaders.map(k => `<option value="${k.id}">Kader ${k.nomor} — ${k.nama}</option>`).join('');
+        kaders.map(k => {
+          const wilayah = `${k.dusun || '-'} · ${k.kordus || '-'}`;
+          return `<option value="${k.id}">Kader ${k.nomor} — ${k.nama} (${wilayah})</option>`;
+        }).join('');
       sel.value = selectedKaderId;
     }
 
@@ -276,6 +279,7 @@
         const target = k.target_suara || 0;
         const pct = target > 0 ? Math.min(100, Math.round(k.jumlahPemilih / target * 100)) : 0;
         const barColor = pct >= 100 ? 'var(--success)' : pct >= 50 ? 'var(--accent)' : 'var(--warning)';
+        const wilayah = `${k.dusun || '-'} · Kordus ${k.kordus || '-'}${k.korlap ? ' · Korlap ' + k.korlap : ''}`;
         return `<div style="margin-bottom:16px;">
           <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
             <span style="font-size:13px;font-weight:600;color:var(--text);">Kader ${k.nomor} — ${k.nama}</span>
@@ -285,6 +289,7 @@
               ${target > 0 ? `<span style="margin-left:8px;font-weight:700;color:${barColor};">${pct}%</span>` : ''}
             </span>
           </div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">${wilayah}</div>
           ${target > 0 ? `
           <div class="progress-bar-track">
             <div class="progress-bar-fill" style="width:${pct}%;background:${barColor};"></div>

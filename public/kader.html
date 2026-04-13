@@ -17,10 +17,10 @@
     </a>
     <nav class="nav">
       <a href="/">📊 Dashboard</a>
-      <a href="/tambah-pemilih">➕ Tambah</a>
+      <a href="/tambah-pemilih">➕ Tambah Pemilih</a>
       <a href="/import">📥 Import</a>
       <a href="/kader" class="active">🎖️ Kader</a>
-      <a href="/log-duplikat">🔍 Log</a>
+      <a href="/log-duplikat">🔍 Log Duplikat</a>
     </nav>
   </div>
 </header>
@@ -43,6 +43,7 @@
           <tr>
             <th>Kader ke-</th>
             <th>Nama Kader</th>
+            <th>Wilayah</th>
             <th>Jumlah Orang</th>
             <th>Target Suara</th>
             <th>Progress</th>
@@ -51,7 +52,7 @@
           </tr>
         </thead>
         <tbody id="tbody-kader">
-          <tr><td colspan="7"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
+          <tr><td colspan="8"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
         </tbody>
       </table>
     </div>
@@ -77,7 +78,7 @@
     const tbody = document.getElementById('tbody-kader');
 
     if (data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7">
+      tbody.innerHTML = `<tr><td colspan="8">
         <div class="empty"><div class="empty-icon">🎖️</div>
         <p>Belum ada kader. <a href="/tambah-kader" style="color:var(--accent);">Tambah kader pertama</a></p></div>
       </td></tr>`;
@@ -88,10 +89,12 @@
       const target = k.target_suara || 0;
       const pct = target > 0 ? Math.min(100, Math.round(k.jumlahPemilih / target * 100)) : 0;
       const barColor = pct >= 100 ? 'var(--success)' : pct >= 50 ? 'var(--accent)' : 'var(--warning)';
+      const wilayah = `${k.dusun || '-'} · Kordus ${k.kordus || '-'}${k.korlap ? ' · Korlap ' + k.korlap : ''}`;
       return `
       <tr>
         <td><span class="badge badge-blue">Kader ${k.nomor}</span></td>
         <td style="font-weight:600;color:var(--text);">${k.nama}</td>
+        <td style="font-size:12px;color:var(--text3);max-width:200px;">${wilayah}</td>
         <td><span class="badge badge-green">${k.jumlahPemilih} orang</span></td>
         <td style="font-family:'JetBrains Mono',monospace;font-size:13px;">${target > 0 ? target : '<span style="color:var(--text3);">-</span>'}</td>
         <td style="min-width:120px;">
@@ -106,8 +109,8 @@
         <td style="font-size:12px;color:var(--text3);">${formatDate(k.created_at)}</td>
         <td>
           <div class="gap-12 superadmin-only">
-            <a href="/edit-kader?id=${k.id}" class="btn btn-outline btn-xs">✏️ Edit</a>
-            <button class="btn btn-danger btn-xs" onclick="konfirmasiHapusKader('${k.id}','${k.nama}',${k.nomor})">🗑️ Hapus</button>
+            <a href="/edit-kader?id=${k.id}" class="btn btn-outline btn-xs" aria-label="Edit Kader ${k.nomor} - ${k.nama}">✏️ Edit</a>
+            <button class="btn btn-danger btn-xs" aria-label="Hapus Kader ${k.nomor} - ${k.nama}" onclick="konfirmasiHapusKader('${k.id}','${k.nama}',${k.nomor})">🗑️ Hapus</button>
           </div>
         </td>
       </tr>

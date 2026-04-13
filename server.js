@@ -111,7 +111,7 @@ app.get('/api/auth/me', verifyToken, async (req, res) => {
   try {
     const users = await query(`
       SELECT u.id, u.username, u.role, u.id_kader,
-             CONCAT('Kader ', k.nomor, ' \u2014 ', k.nama) AS namaKader
+             CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader
       FROM users u LEFT JOIN kader k ON k.id = u.id_kader WHERE u.id = ?
     `, [req.user.id]);
     if (!users.length) return res.status(404).json({ error: 'User tidak ditemukan' });
@@ -144,7 +144,7 @@ app.get('/api/auth/users', verifyToken, isSuperadmin, async (req, res) => {
   try {
     const data = await query(`
       SELECT u.id, u.username, u.role, u.id_kader, u.created_at,
-             CONCAT('Kader ', k.nomor, ' \u2014 ', k.nama) AS namaKader
+             CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader
       FROM users u LEFT JOIN kader k ON k.id = u.id_kader ORDER BY u.created_at DESC
     `);
     res.json(data);
@@ -183,13 +183,13 @@ app.get('/api/kader/:id', verifyToken, async (req, res) => {
 
 app.post('/api/kader', verifyToken, isSuperadmin, async (req, res) => {
   try {
-    const { nama, nomor, targetSuara } = req.body;
-    if (!nama || !nomor) return res.status(400).json({ error: 'Nama dan nomor wajib diisi' });
+    const { nama, nomor, dusun, kordus, korlap, targetSuara } = req.body;
+    if (!nama || !nomor || !dusun || !kordus) return res.status(400).json({ error: 'Nama, nomor, dusun, dan kordus wajib diisi' });
     const dup = await query('SELECT id FROM kader WHERE nomor = ?', [parseInt(nomor)]);
     if (dup.length) return res.status(400).json({ error: `Kader ${nomor} sudah terdaftar` });
     const id = genId();
-    await query('INSERT INTO kader (id, nama, nomor, target_suara) VALUES (?, ?, ?, ?)',
-      [id, nama.trim(), parseInt(nomor), parseInt(targetSuara) || 0]);
+    await query('INSERT INTO kader (id, nama, nomor, dusun, kordus, korlap, target_suara) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [id, nama.trim(), parseInt(nomor), dusun.trim(), kordus.trim(), korlap ? korlap.trim() : null, parseInt(targetSuara) || 0]);
     const [kader] = await query('SELECT * FROM kader WHERE id = ?', [id]);
     res.status(201).json(kader);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -197,11 +197,12 @@ app.post('/api/kader', verifyToken, isSuperadmin, async (req, res) => {
 
 app.put('/api/kader/:id', verifyToken, isSuperadmin, async (req, res) => {
   try {
-    const { nama, nomor, targetSuara } = req.body;
+    const { nama, nomor, dusun, kordus, korlap, targetSuara } = req.body;
+    if (!nama || !nomor || !dusun || !kordus) return res.status(400).json({ error: 'Nama, nomor, dusun, dan kordus wajib diisi' });
     const dup = await query('SELECT id FROM kader WHERE nomor = ? AND id != ?', [parseInt(nomor), req.params.id]);
     if (dup.length) return res.status(400).json({ error: `Nomor kader ${nomor} sudah dipakai` });
-    await query('UPDATE kader SET nama = ?, nomor = ?, target_suara = ? WHERE id = ?',
-      [nama.trim(), parseInt(nomor), parseInt(targetSuara) || 0, req.params.id]);
+    await query('UPDATE kader SET nama = ?, nomor = ?, dusun = ?, kordus = ?, korlap = ?, target_suara = ? WHERE id = ?',
+      [nama.trim(), parseInt(nomor), dusun.trim(), kordus.trim(), korlap ? korlap.trim() : null, parseInt(targetSuara) || 0, req.params.id]);
     const [kader] = await query('SELECT * FROM kader WHERE id = ?', [req.params.id]);
     res.json(kader);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -239,7 +240,7 @@ app.get('/api/pemilih', verifyToken, async (req, res) => {
 
     // Data with pagination
     const data = await query(`
-      SELECT p.*, CONCAT('Kader ', k.nomor, ' — ', k.nama) AS namaKader,
+      SELECT u.*, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader
              TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS umur
       FROM pemilih p JOIN kader k ON k.id = p.kader_id
       ${where}
@@ -278,7 +279,7 @@ app.get('/api/pemilih/statistik', verifyToken, async (req, res) => {
 app.get('/api/pemilih/cek-nik/:nik', verifyToken, async (req, res) => {
   try {
     const rows = await query(`
-      SELECT p.nama, p.nik, CONCAT('Kader ', k.nomor, ' — ', k.nama) AS namaKader
+      SELECT p.nama, p.nik, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader
       FROM pemilih p JOIN kader k ON k.id = p.kader_id WHERE p.nik = ?
     `, [req.params.nik]);
     res.json({ exists: rows.length > 0, data: rows[0] || null });
@@ -288,7 +289,7 @@ app.get('/api/pemilih/cek-nik/:nik', verifyToken, async (req, res) => {
 app.get('/api/pemilih/:id', verifyToken, async (req, res) => {
   try {
     const rows = await query(`
-      SELECT p.*, CONCAT('Kader ', k.nomor, ' — ', k.nama) AS namaKader,
+      SELECT p.*, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader,
              TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS umur
       FROM pemilih p JOIN kader k ON k.id = p.kader_id WHERE p.id = ?
     `, [req.params.id]);
@@ -314,7 +315,7 @@ app.post('/api/pemilih', verifyToken, async (req, res) => {
 
     // ═══ CEK NIK DUPLIKAT — TOLAK KERAS ═══
     const nikDup = await query(`
-      SELECT p.id, p.nama, p.kader_id, CONCAT('Kader ', k.nomor, ' — ', k.nama) AS namaKader
+      SELECT p.id, p.nama, p.kader_id, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader
       FROM pemilih p JOIN kader k ON k.id = p.kader_id WHERE p.nik = ?
     `, [nik]);
 

@@ -17,10 +17,10 @@
     </a>
     <nav class="nav">
       <a href="/">📊 Dashboard</a>
-      <a href="/tambah-pemilih">➕ Tambah</a>
+      <a href="/tambah-pemilih">➕ Tambah Pemilih</a>
       <a href="/import">📥 Import</a>
       <a href="/kader" class="active">🎖️ Kader</a>
-      <a href="/log-duplikat">🔍 Log</a>
+      <a href="/log-duplikat">🔍 Log Duplikat</a>
     </nav>
   </div>
 </header>
@@ -48,17 +48,35 @@
       <div id="alert-error" class="alert-error"></div>
 
       <div class="form-group">
-        <label>Nama Kader <span style="color:var(--danger);">*</span></label>
+        <label for="kader-nama">Nama Kader <span style="color:var(--danger);">*</span></label>
         <input type="text" id="kader-nama" placeholder="Nama kader…" autocomplete="off"/>
       </div>
 
       <div class="form-group">
-        <label>Nomor Kader <span style="color:var(--danger);">*</span></label>
+        <label for="kader-nomor">Nomor Kader <span style="color:var(--danger);">*</span></label>
         <input type="number" id="kader-nomor" placeholder="Nomor urut kader" min="1"/>
       </div>
 
       <div class="form-group">
-        <label>Target Suara</label>
+        <label for="kader-dusun">Nama Dusun <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="kader-dusun" placeholder="Contoh: Dusun Krajan" autocomplete="off"/>
+        <div class="hint">Wilayah dusun tempat kader bertugas.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="kader-kordus">Koordinator Dusun / Kordus <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="kader-kordus" placeholder="Nama kordus" autocomplete="off"/>
+        <div class="hint">Satu dusun bisa memiliki beberapa kordus.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="kader-korlap">Korlap</label>
+        <input type="text" id="kader-korlap" placeholder="Nama korlap yang dibawahi kordus ini" autocomplete="off"/>
+        <div class="hint">Opsional. Gunakan bila satu kordus membawahi beberapa korlap.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="kader-target">Target Suara</label>
         <input type="number" id="kader-target" placeholder="Contoh: 500" min="0"/>
         <div class="hint">Target jumlah pemilih yang harus dikumpulkan kader ini.</div>
       </div>
@@ -97,6 +115,9 @@
     document.getElementById('edit-id').value      = data.id;
     document.getElementById('kader-nama').value   = data.nama;
     document.getElementById('kader-nomor').value  = data.nomor;
+    document.getElementById('kader-dusun').value  = data.dusun || '';
+    document.getElementById('kader-kordus').value = data.kordus || '';
+    document.getElementById('kader-korlap').value = data.korlap || '';
     document.getElementById('kader-target').value = data.target_suara || '';
     showPage('form');
   }
