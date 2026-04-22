@@ -183,13 +183,13 @@ app.get('/api/kader/:id', verifyToken, async (req, res) => {
 
 app.post('/api/kader', verifyToken, isSuperadmin, async (req, res) => {
   try {
-    const { nama, nomor, dusun, kordus, korlap, targetSuara } = req.body;
+    const { nama, nomor, dusun, kordus, targetSuara } = req.body;
     if (!nama || !nomor || !dusun || !kordus) return res.status(400).json({ error: 'Nama, nomor, dusun, dan kordus wajib diisi' });
     const dup = await query('SELECT id FROM kader WHERE nomor = ?', [parseInt(nomor)]);
     if (dup.length) return res.status(400).json({ error: `Kader ${nomor} sudah terdaftar` });
     const id = genId();
-    await query('INSERT INTO kader (id, nama, nomor, dusun, kordus, korlap, target_suara) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [id, nama.trim(), parseInt(nomor), dusun.trim(), kordus.trim(), korlap ? korlap.trim() : null, parseInt(targetSuara) || 0]);
+    await query('INSERT INTO kader (id, nama, nomor, dusun, kordus, target_suara) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, nama.trim(), parseInt(nomor), dusun.trim(), kordus.trim(), parseInt(targetSuara) || 0]);
     const [kader] = await query('SELECT * FROM kader WHERE id = ?', [id]);
     res.status(201).json(kader);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -197,12 +197,12 @@ app.post('/api/kader', verifyToken, isSuperadmin, async (req, res) => {
 
 app.put('/api/kader/:id', verifyToken, isSuperadmin, async (req, res) => {
   try {
-    const { nama, nomor, dusun, kordus, korlap, targetSuara } = req.body;
+    const { nama, nomor, dusun, kordus, targetSuara } = req.body;
     if (!nama || !nomor || !dusun || !kordus) return res.status(400).json({ error: 'Nama, nomor, dusun, dan kordus wajib diisi' });
     const dup = await query('SELECT id FROM kader WHERE nomor = ? AND id != ?', [parseInt(nomor), req.params.id]);
     if (dup.length) return res.status(400).json({ error: `Nomor kader ${nomor} sudah dipakai` });
-    await query('UPDATE kader SET nama = ?, nomor = ?, dusun = ?, kordus = ?, korlap = ?, target_suara = ? WHERE id = ?',
-      [nama.trim(), parseInt(nomor), dusun.trim(), kordus.trim(), korlap ? korlap.trim() : null, parseInt(targetSuara) || 0, req.params.id]);
+    await query('UPDATE kader SET nama = ?, nomor = ?, dusun = ?, kordus = ?, target_suara = ? WHERE id = ?',
+      [nama.trim(), parseInt(nomor), dusun.trim(), kordus.trim(), parseInt(targetSuara) || 0, req.params.id]);
     const [kader] = await query('SELECT * FROM kader WHERE id = ?', [req.params.id]);
     res.json(kader);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -240,7 +240,7 @@ app.get('/api/pemilih', verifyToken, async (req, res) => {
 
     // Data with pagination
     const data = await query(`
-      SELECT u.*, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader
+      SELECT p.*, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader,
              TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS umur
       FROM pemilih p JOIN kader k ON k.id = p.kader_id
       ${where}
@@ -261,6 +261,7 @@ app.get('/api/pemilih', verifyToken, async (req, res) => {
 app.get('/api/pemilih/statistik', verifyToken, async (req, res) => {
   try {
     const [total] = await query('SELECT COUNT(*) AS n FROM pemilih');
+    const [bermasalah] = await query('SELECT COUNT(*) AS n FROM pemilih WHERE status IS NOT NULL');
 
     // Be tolerant terhadap beberapa versi skema log_duplikat (dengan/ tanpa jumlah_percobaan)
     const [logRows] = await query('SELECT COUNT(*) AS n FROM log_duplikat');
@@ -271,7 +272,7 @@ app.get('/api/pemilih/statistik', verifyToken, async (req, res) => {
       percobaanDuplikat = logDup.n;
     }
 
-    res.json({ total: total.n, percobaanDuplikat, entryDuplikat: logRows.n });
+    res.json({ total: total.n, bermasalah: bermasalah.n, percobaanDuplikat, entryDuplikat: logRows.n });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -302,9 +303,8 @@ app.post('/api/pemilih', verifyToken, async (req, res) => {
   try {
     const { nama, nik, kaderId, tanggalLahir, jenisKelamin } = req.body;
     if (!nama || !nik || !kaderId) return res.status(400).json({ error: 'Nama, NIK, dan Kader wajib diisi' });
-    if (!/^\d{16}$/.test(nik)) return res.status(400).json({ error: 'NIK wajib 16 digit angka!' });
 
-    // Validasi tanggal lahir → umur minimal 17
+    // Validasi tanggal lahir → umur minimal 17 (jika tanggal lahir disediakan)
     if (tanggalLahir) {
       const umur = hitungUmur(tanggalLahir);
       if (umur !== null && umur < 17) return res.status(400).json({ error: 'Umur minimal 17 tahun (berdasarkan tanggal lahir)' });
@@ -312,6 +312,12 @@ app.post('/api/pemilih', verifyToken, async (req, res) => {
 
     const kaderAda = await query('SELECT id, nama, nomor FROM kader WHERE id = ?', [kaderId]);
     if (!kaderAda.length) return res.status(400).json({ error: 'Kader tidak ditemukan' });
+
+    // Tentukan status berdasarkan validitas NIK
+    let status = null;
+    if (!/^\d{16}$/.test(nik)) {
+      status = 'NIK_INVALID';
+    }
 
     // ═══ CEK NIK DUPLIKAT — TOLAK KERAS ═══
     const nikDup = await query(`
@@ -350,8 +356,8 @@ app.post('/api/pemilih', verifyToken, async (req, res) => {
     // ═══ INSERT DATA BARU ═══
     const id = genId();
     await query(
-      'INSERT INTO pemilih (id, nama, nik, tanggal_lahir, jenis_kelamin, kader_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, nama.trim(), nik, tanggalLahir || null, jenisKelamin || null, kaderId]
+      'INSERT INTO pemilih (id, nama, nik, tanggal_lahir, jenis_kelamin, kader_id, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [id, nama.trim(), nik, tanggalLahir || null, jenisKelamin || null, kaderId, status]
     );
 
     const [p] = await query(`
@@ -370,7 +376,12 @@ app.put('/api/pemilih/:id', verifyToken, async (req, res) => {
   try {
     const { nama, nik, kaderId, tanggalLahir, jenisKelamin } = req.body;
     if (!nama || !nik || !kaderId) return res.status(400).json({ error: 'Semua field wajib diisi' });
-    if (!/^\d{16}$/.test(nik)) return res.status(400).json({ error: 'NIK wajib 16 digit angka!' });
+
+    // Tentukan status berdasarkan validitas NIK
+    let status = null;
+    if (!/^\d{16}$/.test(nik)) {
+      status = 'NIK_INVALID';
+    }
 
     const nikDup = await query(`
       SELECT p.nama, CONCAT('Kader ', k.nomor, ' — ', k.nama) AS namaKader
@@ -379,8 +390,8 @@ app.put('/api/pemilih/:id', verifyToken, async (req, res) => {
     if (nikDup.length) return res.status(400).json({ error: `NIK sudah dipakai oleh ${nikDup[0].nama} (${nikDup[0].namaKader})` });
 
     await query(
-      'UPDATE pemilih SET nama = ?, nik = ?, kader_id = ?, tanggal_lahir = ?, jenis_kelamin = ? WHERE id = ?',
-      [nama.trim(), nik, kaderId, tanggalLahir || null, jenisKelamin || null, req.params.id]
+      'UPDATE pemilih SET nama = ?, nik = ?, kader_id = ?, tanggal_lahir = ?, jenis_kelamin = ?, status = ? WHERE id = ?',
+      [nama.trim(), nik, kaderId, tanggalLahir || null, jenisKelamin || null, status, req.params.id]
     );
     const [p] = await query(`
       SELECT p.*, CONCAT('Kader ', k.nomor, ' — ', k.nama) AS namaKader,
@@ -425,13 +436,17 @@ app.post('/api/pemilih/import', verifyToken, upload.single('file'), async (req, 
         hasil.detail.push({ baris: i + 2, nama, nik, status: 'gagal', alasan: 'Nama atau NIK kosong' });
         continue;
       }
+
+      let status = null;
+      let alasan = '';
+
+      // Cek panjang NIK
       if (nik.length !== 16) {
-        hasil.gagal++;
-        hasil.detail.push({ baris: i + 2, nama, nik, status: 'gagal', alasan: `NIK tidak 16 digit (${nik.length} digit)` });
-        continue;
+        status = 'NIK_INVALID';
+        alasan = `NIK tidak 16 digit (${nik.length} digit)`;
       }
 
-      // Parse NIK for tanggal lahir & jenis kelamin
+      // Parse NIK for tanggal lahir & jenis kelamin (tetap lakukan meski NIK invalid)
       const parsed = parseNIK(nik);
       const tanggalLahir  = parsed ? parsed.tanggalLahir : null;
       const jenisKelamin  = parsed ? parsed.jenisKelamin : null;
@@ -462,14 +477,20 @@ app.post('/api/pemilih/import', verifyToken, upload.single('file'), async (req, 
         continue;
       }
 
-      // Insert
+      // Insert (selalu berhasil, tapi mungkin dengan status bermasalah)
       const id = genId();
       await query(
-        'INSERT INTO pemilih (id, nama, nik, tanggal_lahir, jenis_kelamin, kader_id) VALUES (?, ?, ?, ?, ?, ?)',
-        [id, nama, nik, tanggalLahir, jenisKelamin, kaderId]
+        'INSERT INTO pemilih (id, nama, nik, tanggal_lahir, jenis_kelamin, kader_id, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [id, nama, nik, tanggalLahir, jenisKelamin, kaderId, status]
       );
-      hasil.berhasil++;
-      hasil.detail.push({ baris: i + 2, nama, nik, status: 'berhasil', alasan: '' });
+
+      if (status) {
+        hasil.gagal++; // Hitung sebagai gagal untuk statistik
+        hasil.detail.push({ baris: i + 2, nama, nik, status: 'bermasalah', alasan });
+      } else {
+        hasil.berhasil++;
+        hasil.detail.push({ baris: i + 2, nama, nik, status: 'berhasil', alasan: '' });
+      }
     }
 
     // Cleanup uploaded file

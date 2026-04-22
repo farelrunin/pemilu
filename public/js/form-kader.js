@@ -8,7 +8,6 @@ async function submitTambahKader() {
   const nomor = document.getElementById('kader-nomor').value;
   const dusun = document.getElementById('kader-dusun').value.trim();
   const kordus = document.getElementById('kader-kordus').value.trim();
-  const korlap = document.getElementById('kader-korlap').value.trim();
   const targetSuara = document.getElementById('kader-target')?.value || 0;
 
   hideKaderAlerts();
@@ -19,7 +18,7 @@ async function submitTambahKader() {
     showKaderError('Nomor kader harus lebih dari 0!'); return;
   }
 
-  const res = await KaderAPI.tambah({ nama, nomor, dusun, kordus, korlap, targetSuara });
+  const res = await KaderAPI.tambah({ nama, nomor, dusun, kordus, targetSuara });
   if (res.error) { showKaderError(res.error); return; }
 
   showKaderSuccess(`Kader ${nomor} — ${nama} berhasil ditambahkan!`);
@@ -27,7 +26,6 @@ async function submitTambahKader() {
   document.getElementById('kader-nomor').value = '';
   document.getElementById('kader-dusun').value = '';
   document.getElementById('kader-kordus').value = '';
-  document.getElementById('kader-korlap').value = '';
   if (document.getElementById('kader-target')) document.getElementById('kader-target').value = '';
   showToast(`✅ Kader ${nomor} berhasil disimpan!`);
   setTimeout(() => { window.location.href = '/kader'; }, 1500);
@@ -40,7 +38,6 @@ async function submitEditKader() {
   const nomor = document.getElementById('kader-nomor').value;
   const dusun = document.getElementById('kader-dusun').value.trim();
   const kordus = document.getElementById('kader-kordus').value.trim();
-  const korlap = document.getElementById('kader-korlap').value.trim();
   const targetSuara = document.getElementById('kader-target')?.value || 0;
 
   hideKaderAlerts();
@@ -48,7 +45,7 @@ async function submitEditKader() {
     showKaderError('Nama, nomor, dusun, dan kordus wajib diisi!'); return;
   }
 
-  const res = await KaderAPI.edit(id, { nama, nomor, dusun, kordus, korlap, targetSuara });
+  const res = await KaderAPI.edit(id, { nama, nomor, dusun, kordus, targetSuara });
   if (res.error) { showKaderError(res.error); return; }
 
   showKaderSuccess('Kader berhasil diperbarui!');

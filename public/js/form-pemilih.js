@@ -110,7 +110,15 @@ async function submitTambahPemilih() {
 
   hideAlerts();
   if (!nama || !nik || !kaderId) { showError('Nama, NIK, dan Kader wajib diisi!'); return; }
-  if (nik.length !== 16 || isNaN(nik)) { showError('NIK harus 16 digit angka!'); return; }
+
+  // Validasi NIK: harus angka, tapi boleh kurang dari 16 digit
+  if (isNaN(nik) || nik.length === 0) { showError('NIK harus berupa angka!'); return; }
+
+  // Warning untuk NIK tidak lengkap
+  if (nik.length !== 16) {
+    const confirmSave = confirm(`NIK hanya ${nik.length} digit (bukan 16). Data akan disimpan dengan status "bermasalah" dan bisa diedit nanti. Lanjutkan?`);
+    if (!confirmSave) return;
+  }
 
   // ═══ KUNCI TOMBOL ═══
   lockSubmitButton();
@@ -148,7 +156,9 @@ async function submitEditPemilih() {
 
   hideAlerts();
   if (!nama || !nik || !kaderId) { showError('Semua field wajib diisi!'); return; }
-  if (nik.length !== 16 || isNaN(nik)) { showError('NIK harus 16 digit angka!'); return; }
+
+  // Validasi NIK: harus angka, tapi boleh kurang dari 16 digit
+  if (isNaN(nik) || nik.length === 0) { showError('NIK harus berupa angka!'); return; }
 
   lockSubmitButton();
 

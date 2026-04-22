@@ -31,7 +31,7 @@
       <a href="/">Dashboard</a> › <span>Tambah Pemilih</span>
     </div>
     <h1>Tambah Pemilih Baru</h1>
-    <p>Ketik 16 digit NIK — tanggal lahir, jenis kelamin, dan umur akan terisi otomatis.</p>
+    <p>Ketik NIK lengkap untuk auto-fill data, atau masukkan NIK tidak lengkap untuk disimpan sebagai data bermasalah yang bisa diedit nanti.</p>
   </div>
 
   <div class="card">
@@ -48,9 +48,9 @@
 
     <div class="form-group">
       <label for="inp-nik">NIK (16 digit) <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="inp-nik" placeholder="Contoh: 3404010101900001" maxlength="16" oninput="onNIKInput()" autocomplete="off" style="font-family:'JetBrains Mono',monospace;letter-spacing:1px;"/>
+      <input type="text" id="inp-nik" placeholder="Contoh: 3404010101900001" oninput="onNIKInput()" autocomplete="off" style="font-family:'JetBrains Mono',monospace;letter-spacing:1px;"/>
       <div id="nik-status" class="nik-status"></div>
-      <div class="hint">Nomor Induk Kependudukan 16 digit. Tanggal lahir & jenis kelamin otomatis terisi.</div>
+      <div class="hint">Nomor Induk Kependudukan 16 digit. Tanggal lahir & jenis kelamin otomatis terisi. <strong>NIK tidak lengkap akan disimpan dengan status "bermasalah" dan bisa diedit nanti.</strong></div>
     </div>
 
     <div class="form-row">

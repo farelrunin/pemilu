@@ -120,6 +120,7 @@
         </table>
       </div>
       <p>⚠️ NIK yang sudah ada di database akan <strong>ditolak</strong> dan dicatat di <a href="/log-duplikat" style="color:var(--accent);">Log Duplikat</a>.</p>
+      <p>⚠️ NIK yang tidak 16 digit akan <strong>tetap disimpan</strong> tapi diberi tanda bermasalah (warna kuning) di dashboard.</p>
     </div>
   </div>
 </div>
@@ -207,7 +208,7 @@
 
       const tbody = document.getElementById('tbody-result');
       tbody.innerHTML = (result.detail || []).map(d => `
-        <tr class="${d.status === 'gagal' || d.status === 'duplikat' ? 'row-dup' : ''}">
+        <tr class="${d.status === 'gagal' || d.status === 'duplikat' || d.status === 'bermasalah' ? 'row-dup' : ''}">
           <td style="color:var(--text3);">${d.baris}</td>
           <td style="font-weight:600;">${d.nama || '-'}</td>
           <td><span class="nik">${d.nik || '-'}</span></td>
@@ -216,7 +217,9 @@
               ? '<span class="badge badge-green">✅ Berhasil</span>'
               : d.status === 'duplikat'
               ? '<span class="badge badge-red">⚠️ Duplikat</span>'
-              : '<span class="badge badge-orange">❌ Gagal</span>'}
+              : d.status === 'bermasalah'
+              ? '<span class="badge badge-orange">⚠️ Bermasalah</span>'
+              : '<span class="badge badge-red">❌ Gagal</span>'}
           </td>
           <td style="font-size:12px;color:var(--text3);">${d.alasan || '-'}</td>
         </tr>

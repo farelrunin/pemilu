@@ -68,8 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
     : userRole; // Jika null (Superadmin), tampilkan role
 
   const headerStats = document.querySelector('.header-stats');
+  const headerUserSlot = document.querySelector('.header-user-slot');
   const headerNav = document.querySelector('.nav');
-  if (headerStats || headerNav) {
+  if (headerUserSlot || headerStats || headerNav) {
     const userHtml = `
       <div class="user-profile">
         <div>
@@ -80,7 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    if (headerStats) {
+    if (headerUserSlot) {
+      headerUserSlot.insertAdjacentHTML('beforeend', userHtml);
+    } else if (headerStats) {
       headerStats.insertAdjacentHTML('beforeend', userHtml);
     } else {
       headerNav.insertAdjacentHTML('beforeend', userHtml);
