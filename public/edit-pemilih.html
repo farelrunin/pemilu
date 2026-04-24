@@ -3,95 +3,128 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Edit Pemilih — Pendataan</title>
+  <title>Edit Pemilih - Pendataan</title>
   <link rel="stylesheet" href="/css/style.css"/>
   <script src="/js/auth.js"></script>
 </head>
-<body>
+<body class="app-shell-page">
 
-<header>
-  <div class="container header-inner">
-    <a href="/" class="logo">
-      <div class="logo-icon">🗳️</div>
-      <div class="logo-text">Data<span>Pilih</span></div>
-    </a>
-    <nav class="nav">
-      <a href="/">📊 Dashboard</a>
-      <a href="/tambah-pemilih">➕ Tambah Pemilih</a>
-      <a href="/import">📥 Import</a>
-      <a href="/kader">🎖️ Kader</a>
-      <a href="/log-duplikat">🔍 Log Duplikat</a>
-    </nav>
-  </div>
-</header>
-
-<div class="container-sm">
-  <div class="page-header">
-    <div class="breadcrumb">
-      <a href="/">Dashboard</a> › <span>Edit Pemilih</span>
-    </div>
-    <h1>Edit Data Pemilih</h1>
-    <p>Perbarui informasi data pemilih yang sudah terdaftar.</p>
-  </div>
-
-  <div id="loading-wrap" class="card" style="text-align:center;padding:50px;">
-    <div class="loading"><span class="spinner"></span> Memuat data…</div>
-  </div>
-
-  <div id="form-wrap" style="display:none;">
-    <div class="card">
-      <div class="card-title"><div class="card-icon ci-orange">✏️</div> Form Edit Pemilih</div>
-
-      <input type="hidden" id="edit-id"/>
-
-      <div id="alert-success" class="alert-success"></div>
-      <div id="alert-error" class="alert-error"></div>
-
-      <div class="form-group">
-        <label for="inp-nama">Nama Lengkap <span style="color:var(--danger);">*</span></label>
-        <input type="text" id="inp-nama" placeholder="Nama lengkap…" autocomplete="off"/>
-      </div>
-
-      <div class="form-group">
-        <label for="inp-nik">NIK (16 digit) <span style="color:var(--danger);">*</span></label>
-        <input type="text" id="inp-nik" placeholder="16 digit NIK" oninput="onNIKInput()" autocomplete="off" style="font-family:'JetBrains Mono',monospace;letter-spacing:1px;"/>
-        <div id="nik-status" class="nik-status"></div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group" style="flex:1;">
-          <label for="inp-tgl-lahir">Tanggal Lahir <span class="auto-badge">AUTO</span></label>
-          <input type="date" id="inp-tgl-lahir" title="Tanggal Lahir (auto-filled dari NIK)" class="auto-filled"/>
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">DP</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
         </div>
-        <div class="form-group" style="flex:1;">
-          <label for="inp-jk">Jenis Kelamin <span class="auto-badge">AUTO</span></label>
-          <select id="inp-jk" title="Pilih jenis kelamin" class="auto-filled">
-            <option value="">— Otomatis —</option>
-            <option value="L">Laki-laki</option>
-            <option value="P">Perempuan</option>
-          </select>
-        </div>
-        <div class="form-group" style="flex:0.6;">
-          <label>Umur</label>
-          <div id="display-umur" class="umur-display">-</div>
-        </div>
-      </div>
+      </a>
 
-      <div class="form-group">
-        <label for="inp-kader">Kader <span style="color:var(--danger);">*</span></label>
-        <select id="inp-kader" title="Pilih kader"><option value="">— Pilih Kader —</option></select>
-      </div>
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih" class="active"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
 
-      <div class="gap-12" style="margin-top:8px;">
-        <a href="/" class="btn btn-outline" style="flex:1;justify-content:center;">← Batal</a>
-        <button class="btn btn-primary" style="flex:2;" onclick="submitEditPemilih()">💾 Simpan Perubahan</button>
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Perbaikan data</strong>
+          <span>Edit identitas pemilih, NIK, dan kader tujuan dari layout yang sama dengan halaman input.</span>
+        </div>
       </div>
     </div>
-  </div>
+  </aside>
 
-  <div id="notfound-wrap" style="display:none;" class="card">
-    <div class="empty"><div class="empty-icon">❌</div><p>Data tidak ditemukan. <a href="/" style="color:var(--accent);">Kembali</a></p></div>
-  </div>
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Edit Pemilih</div>
+        <div class="app-topbar-title">Perbarui Data Pemilih</div>
+        <div class="app-topbar-subtitle">Halaman ini dipakai untuk memperbarui data pemilih yang sudah tercatat.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container-sm">
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › <span>Edit Pemilih</span>
+          </div>
+          <h1>Edit Data Pemilih</h1>
+          <p>Perbarui informasi data pemilih yang sudah terdaftar, termasuk data dengan NIK kosong atau belum lengkap.</p>
+        </div>
+
+        <div id="loading-wrap" class="card loading-card">
+          <div class="loading"><span class="spinner"></span> Memuat data...</div>
+        </div>
+
+        <div id="form-wrap" class="form-hidden">
+          <div class="card">
+            <div class="card-title"><div class="card-icon ci-orange">ED</div> Form Edit Pemilih</div>
+
+            <input type="hidden" id="edit-id"/>
+
+            <div id="alert-success" class="alert-success"></div>
+            <div id="alert-error" class="alert-error"></div>
+
+            <div class="form-group">
+              <label for="inp-nama">Nama Lengkap <span class="required-marker">*</span></label>
+              <input type="text" id="inp-nama" placeholder="Nama lengkap..." autocomplete="off"/>
+            </div>
+
+            <div class="form-group">
+              <label for="inp-nik">NIK (opsional, 16 digit bila tersedia)</label>
+              <input type="text" id="inp-nik" placeholder="16 digit NIK" oninput="onNIKInput()" autocomplete="off" class="input-nik-mono"/>
+              <div id="nik-status" class="nik-status"></div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group form-group-flex-1">
+                <label for="inp-tgl-lahir">Tanggal Lahir <span class="auto-badge">AUTO</span></label>
+                <input type="date" id="inp-tgl-lahir" title="Tanggal Lahir (auto-filled dari NIK)" class="auto-filled"/>
+              </div>
+              <div class="form-group form-group-flex-1">
+                <label for="inp-jk">Jenis Kelamin <span class="auto-badge">AUTO</span></label>
+                <select id="inp-jk" title="Pilih jenis kelamin" class="auto-filled">
+                  <option value="">- Otomatis -</option>
+                  <option value="L">Laki-laki</option>
+                  <option value="P">Perempuan</option>
+                </select>
+              </div>
+              <div class="form-group form-group-flex-06">
+                <label>Umur</label>
+                <div id="display-umur" class="umur-display">-</div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="inp-kader">Kader <span class="required-marker">*</span></label>
+              <select id="inp-kader" title="Pilih kader"><option value="">- Pilih Kader -</option></select>
+            </div>
+
+            <div class="gap-12 gap-margin-top-8">
+              <a href="/" class="btn btn-outline btn-flex-fill-center">Kembali</a>
+              <button class="btn btn-primary btn-flex-2" onclick="submitEditPemilih()">Simpan Perubahan</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="notfound-wrap" class="card form-hidden">
+          <div class="empty"><div class="empty-icon">XX</div><p>Data tidak ditemukan. <a href="/" class="link-accent-color">Kembali</a></p></div>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>
 
 <div id="toast"></div>
@@ -100,7 +133,7 @@
 <script src="/js/pemilih.js"></script>
 <script src="/js/form-pemilih.js"></script>
 <script>
-  function showToast(msg, emoji='✅') {
+  function showToast(msg, emoji='OK') {
     const t = document.getElementById('toast');
     t.innerHTML = `${emoji} ${msg}`;
     t.classList.add('show');

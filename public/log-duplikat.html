@@ -7,107 +7,136 @@
   <link rel="stylesheet" href="/css/style.css"/>
   <script src="/js/auth.js"></script>
 </head>
-<body>
+<body class="app-shell-page">
 
-<header>
-  <div class="container header-inner">
-    <a href="/" class="logo">
-      <div class="logo-icon">🗳️</div>
-      <div class="logo-text">Data<span>Pilih</span></div>
-    </a>
-    <nav class="nav">
-      <a href="/">📊 Dashboard</a>
-      <a href="/tambah-pemilih">➕ Tambah Pemilih</a>
-      <a href="/import">📥 Import</a>
-      <a href="/kader">🎖️ Kader</a>
-      <a href="/log-duplikat" class="active">🔍 Log Duplikat</a>
-    </nav>
-  </div>
-</header>
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">DP</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
 
-<div class="container">
-  <div class="page-header">
-    <div class="breadcrumb"><a href="/">Dashboard</a> › <span>Log Duplikat</span></div>
-    <h1>🔍 Laporan Intelijen Duplikat</h1>
-    <p>Analisis percobaan kecurangan: siapa yang mencoba, berapa kali, dan NIK mana yang jadi target.</p>
-  </div>
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/log-duplikat" class="active"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
 
-  <!-- ═══ Statistik Ringkasan ═══ -->
-  <div class="grid-3" style="margin-bottom:20px;">
-    <div class="stat-card dup-card">
-      <div class="sc-label">⚠️ Total Spam Sistem</div>
-      <div class="sc-value" style="color:var(--danger);" id="stat-total-spam">…</div>
-      <div class="sc-sub">klik duplikat tercatat</div>
-    </div>
-    <div class="stat-card">
-      <div class="sc-label">🎯 NIK yang Jadi Target</div>
-      <div class="sc-value sc-orange" id="stat-total-nik">…</div>
-      <div class="sc-sub">NIK unik direbut</div>
-    </div>
-    <div class="stat-card">
-      <div class="sc-label">🎖️ Kader Terlibat</div>
-      <div class="sc-value sc-blue" id="stat-kader-count">…</div>
-      <div class="sc-sub">kader berbeda</div>
-    </div>
-  </div>
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
 
-  <!-- ═══ LEADERBOARD: Ranking Kader Terkotor ═══ -->
-  <div class="card" style="margin-bottom:20px;">
-    <div class="card-title"><div class="card-icon ci-red">🏆</div> Leaderboard Kecurangan (Ranking Kader)</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Peringkat</th>
-            <th>Nama Kader</th>
-            <th>NIK Direbut</th>
-            <th>Total Spam</th>
-            <th>Tingkat Ancaman</th>
-          </tr>
-        </thead>
-        <tbody id="tbody-leaderboard">
-          <tr><td colspan="5"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ═══ Detail Log (Smart — 1 baris per NIK+Kader) ═══ -->
-  <div class="card" style="margin-bottom:32px;">
-    <div class="card-title" style="justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div class="card-icon ci-orange">📋</div> Detail Log Duplikat
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Audit data</strong>
+          <span>Pantau percobaan duplikat, sumber input, dan tingkat ancaman antar kader.</span>
+        </div>
       </div>
-      <button class="btn btn-outline btn-sm superadmin-only" style="width:auto;" onclick="exportCSV()">📥 Export CSV</button>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Audit Sistem</div>
+        <div class="app-topbar-title">Laporan Log Duplikat</div>
+        <div class="app-topbar-subtitle">Analisis percobaan duplikat, frekuensi spam, dan relasi antar kader dari satu tampilan.</div>
+      </div>
+      <div class="header-user-slot"></div>
     </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>NIK Target</th>
-            <th>Nama Diinput</th>
-            <th>Kader Pelaku</th>
-            <th>Pemilik NIK Asli</th>
-            <th>Kader Pemilik</th>
-            <th>Percobaan</th>
-            <th>Pertama</th>
-            <th>Terakhir</th>
-          </tr>
-        </thead>
-        <tbody id="tbody-log">
-          <tr><td colspan="9"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
-        </tbody>
-      </table>
-    </div>
+    <div class="app-main-body">
+      <div class="container">
+        <div class="page-header page-header-card">
+          <div class="breadcrumb"><a href="/">Dashboard</a> › <span>Log Duplikat</span></div>
+          <h1>Laporan Intelijen Duplikat</h1>
+          <p>Analisis percobaan kecurangan: siapa yang mencoba, berapa kali, dan NIK mana yang jadi target.</p>
+        </div>
 
-    <!-- Pagination -->
-    <div class="pagination">
-      <div class="page-info" id="page-info">Memuat…</div>
-      <div class="page-btns" id="page-btns"></div>
+        <div class="grid-3 card-spacing-bottom-20">
+          <div class="stat-card dup-card">
+            <div class="sc-label">Total Spam Sistem</div>
+            <div class="sc-value sc-value-danger" id="stat-total-spam">…</div>
+            <div class="sc-sub">klik duplikat tercatat</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-label">NIK yang Jadi Target</div>
+            <div class="sc-value sc-orange" id="stat-total-nik">…</div>
+            <div class="sc-sub">NIK unik direbut</div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-label">Kader Terlibat</div>
+            <div class="sc-value sc-blue" id="stat-kader-count">…</div>
+            <div class="sc-sub">kader berbeda</div>
+          </div>
+        </div>
+
+        <div class="card card-spacing-bottom-20">
+          <div class="card-title"><div class="card-icon ci-red">LB</div> Leaderboard Kecurangan</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Peringkat</th>
+                  <th>Nama Kader</th>
+                  <th>NIK Direbut</th>
+                  <th>Total Spam</th>
+                  <th>Tingkat Ancaman</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-leaderboard">
+                <tr><td colspan="5"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card card-spacing-bottom-32">
+          <div class="card-title card-title-spaced">
+            <div class="flex-center-gap-8">
+              <div class="card-icon ci-orange">DT</div> Detail Log Duplikat
+            </div>
+            <button class="btn btn-outline btn-sm superadmin-only btn-auto-width" onclick="exportCSV()">Export CSV</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>NIK Target</th>
+                  <th>Nama Diinput</th>
+                  <th>Kader Pelaku</th>
+                  <th>Pemilik NIK Asli</th>
+                  <th>Kader Pemilik</th>
+                  <th>Percobaan</th>
+                  <th>Pertama</th>
+                  <th>Terakhir</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-log">
+                <tr><td colspan="9"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination">
+            <div class="page-info" id="page-info">Memuat…</div>
+            <div class="page-btns" id="page-btns"></div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+  </main>
 </div>
 
 <div id="toast"></div>

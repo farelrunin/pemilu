@@ -7,72 +7,105 @@
   <link rel="stylesheet" href="/css/style.css"/>
   <script src="/js/auth.js"></script>
 </head>
-<body>
+<body class="app-shell-page">
 
-<header>
-  <div class="container header-inner">
-    <a href="/" class="logo">
-      <div class="logo-icon">🗳️</div>
-      <div class="logo-text">Data<span>Pilih</span></div>
-    </a>
-    <nav class="nav">
-      <a href="/">📊 Dashboard</a>
-      <a href="/tambah-pemilih">➕ Tambah Pemilih</a>
-      <a href="/import">📥 Import</a>
-      <a href="/kader" class="active">🎖️ Kader</a>
-      <a href="/log-duplikat">🔍 Log Duplikat</a>
-    </nav>
-  </div>
-</header>
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
 
-<div class="container-sm">
-  <div class="page-header">
-    <div class="breadcrumb">
-      <a href="/">Dashboard</a> › <a href="/kader">Kader</a> › <span>Tambah Kader</span>
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader" class="active"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Form kader</strong>
+          <span>Gunakan halaman ini untuk menambahkan kader baru lengkap dengan wilayah dan target suara.</span>
+        </div>
+      </div>
     </div>
-    <h1>Tambah Kader Baru</h1>
-    <p>Daftarkan kader baru yang akan bertugas mendata pemilih.</p>
-  </div>
+  </aside>
 
-  <div class="card">
-    <div class="card-title"><div class="card-icon ci-green">🎖️</div> Form Data Kader</div>
-
-    <div id="alert-success" class="alert-success"></div>
-    <div id="alert-error" class="alert-error"></div>
-
-    <div class="form-group">
-      <label for="kader-kordus">Koordinator <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="kader-kordus" placeholder="Nama koordinator" autocomplete="off"/>
-    </div>
-
-    <div class="form-group">
-      <label for="kader-nama">Nama Kader <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="kader-nama" placeholder="Nama lengkap kader…" autocomplete="off"/>
-    </div>
-
-    <div class="form-group">
-      <label for="kader-nomor">Nomor Kader <span style="color:var(--danger);">*</span></label>
-      <input type="number" id="kader-nomor" placeholder="Contoh: 1, 2, 3…" min="1"/>
-      <div class="hint">Nomor urut unik untuk membedakan antar kader.</div>
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Form Kader</div>
+        <div class="app-topbar-title">Tambah Kader Baru</div>
+        <div class="app-topbar-subtitle">Daftarkan kader baru yang akan bertugas mendata pemilih.</div>
+      </div>
+      <div class="header-user-slot"></div>
     </div>
 
-    <div class="form-group">
-      <label for="kader-dusun">Nama Dusun <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="kader-dusun" placeholder="Contoh: Dusun Krajan" autocomplete="off"/>
-      <div class="hint">Wilayah dusun tempat kader bertugas.</div>
-    </div>
+    <div class="app-main-body">
+      <div class="container-sm">
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › <a href="/kader">Kader</a> › <span>Tambah Kader</span>
+          </div>
+          <h1>Tambah Kader Baru</h1>
+          <p>Lengkapi identitas kader, wilayah kerja, dan target suara jika sudah tersedia.</p>
+        </div>
 
-    <div class="form-group">
-      <label for="kader-target">Target Suara</label>
-      <input type="number" id="kader-target" placeholder="Contoh: 500" min="0"/>
-      <div class="hint">Target jumlah pemilih yang harus dikumpulkan kader ini. Kosongkan jika belum ada target.</div>
-    </div>
+        <div class="card">
+          <div class="card-title"><div class="card-icon ci-green">🎖️</div> Form Data Kader</div>
 
-    <div class="gap-12" style="margin-top:8px;">
-      <a href="/kader" class="btn btn-outline" style="flex:1;justify-content:center;">← Batal</a>
-      <button class="btn btn-green" style="flex:2;" onclick="submitTambahKader()">💾 Simpan Kader</button>
+          <div id="alert-success" class="alert-success"></div>
+          <div id="alert-error" class="alert-error"></div>
+
+          <div class="form-group">
+            <label for="kader-kordus">Koordinator <span class="required-marker">*</span></label>
+            <input type="text" id="kader-kordus" placeholder="Nama koordinator" autocomplete="off"/>
+          </div>
+
+          <div class="form-group">
+            <label for="kader-nama">Nama Kader <span class="required-marker">*</span></label>
+            <input type="text" id="kader-nama" placeholder="Nama lengkap kader…" autocomplete="off"/>
+          </div>
+
+          <div class="form-group">
+            <label for="kader-nomor">Nomor Kader <span class="required-marker">*</span></label>
+            <input type="number" id="kader-nomor" placeholder="Memuat nomor berikutnya..." min="1" readonly/>
+            <div class="hint">Nomor kader diisi otomatis sesuai urutan data yang sudah ada.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="kader-dusun">Nama Dusun <span class="required-marker">*</span></label>
+            <input type="text" id="kader-dusun" placeholder="Contoh: Dusun Krajan" autocomplete="off"/>
+            <div class="hint">Wilayah dusun tempat kader bertugas.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="kader-target">Target Suara</label>
+            <input type="number" id="kader-target" placeholder="Contoh: 500" min="0"/>
+            <div class="hint">Target jumlah pemilih yang harus dikumpulkan kader ini. Kosongkan jika belum ada target.</div>
+          </div>
+
+          <div class="gap-12 gap-margin-top-8">
+            <a href="/kader" class="btn btn-outline btn-flex-fill-center">Kembali</a>
+            <button class="btn btn-green btn-flex-2" onclick="submitTambahKader()">Simpan Kader</button>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+  </main>
 </div>
 
 <div id="toast"></div>

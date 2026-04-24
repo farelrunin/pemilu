@@ -36,6 +36,13 @@ function parseNIK(nik) {
   return { tanggalLahir: tgl, jenisKelamin, umur };
 }
 
+function getNikIssueMessage(nik) {
+  if (!nik) return 'NIK kosong. Data akan disimpan sebagai bermasalah.';
+  if (!/^\d+$/.test(nik)) return 'NIK harus berupa angka.';
+  if (nik.length !== 16) return `NIK ${nik.length} digit. Data akan disimpan sebagai bermasalah.`;
+  return '';
+}
+
 // ── Event: NIK berubah → auto-fill & cek duplikat ────
 function onNIKInput() {
   const nik = document.getElementById('inp-nik').value.trim();
@@ -50,7 +57,16 @@ function onNIKInput() {
   if (umurEl) umurEl.textContent = '';
   if (nikStatus) { nikStatus.className = 'nik-status'; nikStatus.textContent = ''; }
 
-  if (nik.length < 16) return;
+  if (!nik.length) return;
+
+  const nikIssue = getNikIssueMessage(nik);
+  if (nikIssue) {
+    if (nikStatus) {
+      nikStatus.className = 'nik-status nik-danger';
+      nikStatus.textContent = nikIssue;
+    }
+    return;
+  }
 
   // Auto-fill dari NIK
   const parsed = parseNIK(nik);
@@ -109,14 +125,16 @@ async function submitTambahPemilih() {
   const jenisKelamin = document.getElementById('inp-jk').value;
 
   hideAlerts();
-  if (!nama || !nik || !kaderId) { showError('Nama, NIK, dan Kader wajib diisi!'); return; }
+  if (!nama || !kaderId) { showError('Nama dan Kader wajib diisi!'); return; }
 
-  // Validasi NIK: harus angka, tapi boleh kurang dari 16 digit
-  if (isNaN(nik) || nik.length === 0) { showError('NIK harus berupa angka!'); return; }
+  if (nik && !/^\d+$/.test(nik)) { showError('NIK harus berupa angka!'); return; }
 
-  // Warning untuk NIK tidak lengkap
-  if (nik.length !== 16) {
-    const confirmSave = confirm(`NIK hanya ${nik.length} digit (bukan 16). Data akan disimpan dengan status "bermasalah" dan bisa diedit nanti. Lanjutkan?`);
+  if (!nik) {
+    const confirmSave = confirm('Data tanpa NIK akan disimpan dengan status "bermasalah" dan bisa dilengkapi nanti. Lanjutkan?');
+    if (!confirmSave) return;
+  } else if (nik.length !== 16) {
+    const kondisiDigit = nik.length < 16 ? 'kurang' : 'lebih';
+    const confirmSave = confirm(`NIK ${kondisiDigit} dari 16 digit (${nik.length} digit). Data akan disimpan dengan status "bermasalah" dan bisa diedit nanti. Lanjutkan?`);
     if (!confirmSave) return;
   }
 
@@ -155,10 +173,18 @@ async function submitEditPemilih() {
   const jenisKelamin = document.getElementById('inp-jk').value;
 
   hideAlerts();
-  if (!nama || !nik || !kaderId) { showError('Semua field wajib diisi!'); return; }
+  if (!nama || !kaderId) { showError('Nama dan Kader wajib diisi!'); return; }
 
-  // Validasi NIK: harus angka, tapi boleh kurang dari 16 digit
-  if (isNaN(nik) || nik.length === 0) { showError('NIK harus berupa angka!'); return; }
+  if (nik && !/^\d+$/.test(nik)) { showError('NIK harus berupa angka!'); return; }
+
+  if (!nik) {
+    const confirmSave = confirm('Data tanpa NIK akan tetap disimpan sebagai "bermasalah". Lanjutkan perubahan?');
+    if (!confirmSave) return;
+  } else if (nik.length !== 16) {
+    const kondisiDigit = nik.length < 16 ? 'kurang' : 'lebih';
+    const confirmSave = confirm(`NIK ${kondisiDigit} dari 16 digit (${nik.length} digit). Data akan tetap disimpan sebagai "bermasalah". Lanjutkan perubahan?`);
+    if (!confirmSave) return;
+  }
 
   lockSubmitButton();
 

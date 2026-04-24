@@ -3,109 +3,140 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tambah Pemilih — Pendataan</title>
+  <title>Tambah Pemilih - Pendataan</title>
   <link rel="stylesheet" href="/css/style.css"/>
   <script src="/js/auth.js"></script>
 </head>
-<body>
+<body class="app-shell-page">
 
-<header>
-  <div class="container header-inner">
-    <a href="/" class="logo">
-      <div class="logo-icon">🗳️</div>
-      <div class="logo-text">Data<span>Pilih</span></div>
-    </a>
-    <nav class="nav">
-      <a href="/">📊 Dashboard</a>
-      <a href="/tambah-pemilih" class="active">➕ Tambah Pemilih</a>
-      <a href="/import">📥 Import</a>
-      <a href="/kader">🎖️ Kader</a>
-      <a href="/log-duplikat">🔍 Log Duplikat</a>
-    </nav>
-  </div>
-</header>
-
-<div class="container-sm">
-  <div class="page-header">
-    <div class="breadcrumb">
-      <a href="/">Dashboard</a> › <span>Tambah Pemilih</span>
-    </div>
-    <h1>Tambah Pemilih Baru</h1>
-    <p>Ketik NIK lengkap untuk auto-fill data, atau masukkan NIK tidak lengkap untuk disimpan sebagai data bermasalah yang bisa diedit nanti.</p>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><div class="card-icon ci-green">✍️</div> Form Data Pemilih</div>
-
-    <!-- Alerts -->
-    <div id="alert-success" class="alert-success"></div>
-    <div id="alert-error" class="alert-error"></div>
-
-    <div class="form-group">
-      <label for="inp-nama">Nama Lengkap <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="inp-nama" placeholder="Masukkan nama lengkap…" autocomplete="off"/>
-    </div>
-
-    <div class="form-group">
-      <label for="inp-nik">NIK (16 digit) <span style="color:var(--danger);">*</span></label>
-      <input type="text" id="inp-nik" placeholder="Contoh: 3404010101900001" oninput="onNIKInput()" autocomplete="off" style="font-family:'JetBrains Mono',monospace;letter-spacing:1px;"/>
-      <div id="nik-status" class="nik-status"></div>
-      <div class="hint">Nomor Induk Kependudukan 16 digit. Tanggal lahir & jenis kelamin otomatis terisi. <strong>NIK tidak lengkap akan disimpan dengan status "bermasalah" dan bisa diedit nanti.</strong></div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group" style="flex:1;">
-        <label for="inp-tgl-lahir">Tanggal Lahir <span class="auto-badge">AUTO</span></label>
-        <input type="date" id="inp-tgl-lahir" title="Tanggal Lahir (auto-filled dari NIK)" class="auto-filled"/>
-      </div>
-      <div class="form-group" style="flex:1;">
-        <label for="inp-jk">Jenis Kelamin <span class="auto-badge">AUTO</span></label>
-        <select id="inp-jk" title="Pilih jenis kelamin" class="auto-filled">
-          <option value="">— Otomatis —</option>
-          <option value="L">Laki-laki</option>
-          <option value="P">Perempuan</option>
-        </select>
-      </div>
-      <div class="form-group" style="flex:0.6;">
-        <label>Umur</label>
-        <div id="display-umur" class="umur-display">-</div>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label for="inp-kader">Kader yang Mendatakan <span style="color:var(--danger);">*</span></label>
-      <select id="inp-kader" title="Pilih kader">
-        <option value="">— Pilih Kader —</option>
-      </select>
-    </div>
-
-    <div class="gap-12" style="margin-top:8px;">
-      <a href="/" class="btn btn-outline" style="flex:1;justify-content:center;">← Batal</a>
-      <button class="btn btn-primary" style="flex:2;" onclick="submitTambahPemilih()">💾 Simpan Pemilih</button>
-    </div>
-  </div>
-
-  <!-- Info NIK -->
-  <div class="card mt-24">
-    <div class="card-title"><div class="card-icon ci-orange">ℹ️</div> Cara Kerja Auto-Fill NIK</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.9;">
-      <p style="margin-bottom:10px;">Saat Anda mengetik 16 digit NIK, sistem otomatis:</p>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <div style="display:flex;gap:10px;align-items:flex-start;">
-          <span>📅</span>
-          <div><strong style="color:var(--text);">Tanggal Lahir</strong> — diambil dari digit ke-7 sampai ke-12 NIK.</div>
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">DP</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
         </div>
-        <div style="display:flex;gap:10px;align-items:flex-start;">
-          <span>👤</span>
-          <div><strong style="color:var(--text);">Jenis Kelamin</strong> — jika digit tanggal > 40, berarti Perempuan.</div>
-        </div>
-        <div style="display:flex;gap:10px;align-items:flex-start;">
-          <span>🔴</span>
-          <div><strong style="color:var(--text);">Cek Duplikat</strong> — jika NIK sudah ada di database, data <strong>tidak bisa disimpan</strong>.</div>
+      </a>
+
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih" class="active"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Input cepat</strong>
+          <span>Tambah pemilih baru dengan validasi NIK otomatis dan pemilihan kader pada satu form.</span>
         </div>
       </div>
     </div>
-  </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Input Pemilih</div>
+        <div class="app-topbar-title">Tambah Pemilih Baru</div>
+        <div class="app-topbar-subtitle">Gunakan halaman ini untuk input manual pemilih dan validasi NIK secara langsung.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container-sm">
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › <span>Tambah Pemilih</span>
+          </div>
+          <h1>Tambah Pemilih Baru</h1>
+          <p>Ketik NIK lengkap untuk auto-fill data, atau simpan NIK kosong/tidak lengkap sebagai data bermasalah yang bisa diedit nanti.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><div class="card-icon ci-green">FM</div> Form Data Pemilih</div>
+
+          <div id="alert-success" class="alert-success"></div>
+          <div id="alert-error" class="alert-error"></div>
+
+          <div class="form-group">
+            <label for="inp-nama">Nama Lengkap <span class="text-danger">*</span></label>
+            <input type="text" id="inp-nama" placeholder="Masukkan nama lengkap..." autocomplete="off"/>
+          </div>
+
+          <div class="form-group">
+            <label for="inp-nik">NIK (opsional, 16 digit bila tersedia)</label>
+            <input type="text" id="inp-nik" class="input-mono-spaced" placeholder="Contoh: 3404010101900001" oninput="onNIKInput()" autocomplete="off"/>
+            <div id="nik-status" class="nik-status"></div>
+            <div class="hint">Nomor Induk Kependudukan 16 digit jika tersedia. Tanggal lahir dan jenis kelamin otomatis terisi. <strong>NIK kosong atau tidak lengkap akan disimpan dengan status bermasalah dan bisa diedit nanti.</strong></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group form-group-flex">
+              <label for="inp-tgl-lahir">Tanggal Lahir <span class="auto-badge">AUTO</span></label>
+              <input type="date" id="inp-tgl-lahir" title="Tanggal Lahir (auto-filled dari NIK)" class="auto-filled"/>
+            </div>
+            <div class="form-group form-group-flex">
+              <label for="inp-jk">Jenis Kelamin <span class="auto-badge">AUTO</span></label>
+              <select id="inp-jk" title="Pilih jenis kelamin" class="auto-filled">
+                <option value="">- Otomatis -</option>
+                <option value="L">Laki-laki</option>
+                <option value="P">Perempuan</option>
+              </select>
+            </div>
+            <div class="form-group form-group-narrow">
+              <label>Umur</label>
+              <div id="display-umur" class="umur-display">-</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="inp-kader">Kader yang Mendatakan <span class="text-danger">*</span></label>
+            <select id="inp-kader" title="Pilih kader">
+              <option value="">- Pilih Kader -</option>
+            </select>
+          </div>
+
+          <div class="gap-12 section-actions-8">
+            <a href="/" class="btn btn-outline btn-flex-fill-center">Kembali</a>
+            <button class="btn btn-primary btn-flex-2" onclick="submitTambahPemilih()">Simpan Pemilih</button>
+          </div>
+        </div>
+
+        <div class="card mt-24">
+          <div class="card-title"><div class="card-icon ci-orange">IN</div> Cara Kerja Auto-Fill NIK</div>
+          <div class="info-note-block">
+            <p class="info-note-paragraph">Saat Anda mengetik 16 digit NIK, sistem otomatis:</p>
+            <div class="info-note-list">
+              <div class="info-note-item">
+                <span>01</span>
+                <div><strong class="text-default">Tanggal Lahir</strong> diambil dari digit ke-7 sampai ke-12 NIK.</div>
+              </div>
+              <div class="info-note-item">
+                <span>02</span>
+                <div><strong class="text-default">Jenis Kelamin</strong> dibaca dari format tanggal dalam NIK.</div>
+              </div>
+              <div class="info-note-item">
+                <span>03</span>
+                <div><strong class="text-default">Cek Duplikat</strong> memastikan NIK yang sudah ada tidak bisa disimpan ulang.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>
 
 <div id="toast"></div>
@@ -114,7 +145,7 @@
 <script src="/js/pemilih.js"></script>
 <script src="/js/form-pemilih.js"></script>
 <script>
-  function showToast(msg, emoji='✅') {
+  function showToast(msg, emoji='OK') {
     const t = document.getElementById('toast');
     t.innerHTML = `${emoji} ${msg}`;
     t.classList.add('show');

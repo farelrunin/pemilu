@@ -7,100 +7,188 @@
   <link rel="stylesheet" href="/css/style.css"/>
   <script src="/js/auth.js"></script>
 </head>
-<body>
+<body class="dashboard-page app-shell-page">
 
-<header>
-  <div class="container header-inner header-inner-dashboard">
-    <div class="header-main-row">
-    <a href="/" class="logo" aria-label="DataPilih - Kembali ke Dashboard">
-      <div class="logo-icon">🗳️</div>
-      <div class="logo-text">Data<span>Pilih</span></div>
-    </a>
-    <nav class="nav">
-      <a href="/" class="active">📊 Dashboard</a>
-      <a href="/tambah-pemilih">➕ Tambah Pemilih</a>
-      <a href="/import">📥 Import</a>
-      <a href="/kader">🎖️ Kader</a>
-      <a href="/log-duplikat">🔍 Log Duplikat</a>
-    </nav>
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand" aria-label="DataPilih - Kembali ke Dashboard">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/" class="active"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Ringkasan cepat</strong>
+          <span>Dashboard utama dipakai untuk pantau progres input, kualitas data, dan performa kader.</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Overview Sistem</div>
+        <div class="app-topbar-title">Dashboard Pendataan</div>
+        <div class="app-topbar-subtitle">Ringkasan data pemilih, kondisi kader, dan indikator kualitas input dalam satu tampilan.</div>
+      </div>
+      <div class="header-stats">
+        <div class="stat-pill"><div class="dot dot-blue"></div>Kader: <strong id="hdr-kader">…</strong></div>
+        <div class="stat-pill"><div class="dot dot-green"></div>Data Clear: <strong id="hdr-pemilih">…</strong></div>
+        <div class="stat-pill stat-pill-warning">
+          <div class="dot dot-warning"></div>
+          Bermasalah: <strong id="hdr-bermasalah" class="text-warning">…</strong>
+        </div>
+        <div class="stat-pill stat-pill-danger">
+          <div class="dot dot-danger"></div>
+          Log Duplikat: <strong id="hdr-dup" class="text-danger">…</strong>
+        </div>
+        <div class="stat-pill"><div class="pulse-dot"></div><span class="live-label">Live</span></div>
+      </div>
       <div class="header-user-slot"></div>
     </div>
-    <div class="header-stats">
-      <div class="stat-pill"><div class="dot dot-blue"></div>Kader: <strong id="hdr-kader">…</strong></div>
-      <div class="stat-pill"><div class="dot dot-green"></div>Pemilih: <strong id="hdr-pemilih">…</strong></div>
-      <div class="stat-pill" style="border-color:rgba(255,193,7,.2);">
-        <div class="dot" style="background:#ffc107;box-shadow:0 0 5px rgba(255,193,7,.4);"></div>
-        Bermasalah: <strong id="hdr-bermasalah" style="color:#ffc107;">…</strong>
+
+    <div class="app-main-body">
+      <div class="container">
+
+  <div class="dashboard-hero">
+    <div class="hero-card hero-main-card">
+      <div class="hero-main-copy">
+        <div class="hero-kicker">Ringkasan Operasional</div>
+        <h2>Pergerakan input dan performa kader terlihat lebih cepat dari satu layar.</h2>
+        <p>Panel ini merangkum data clear, beban verifikasi, dan distribusi performa antar kader untuk bahan presentasi.</p>
+        <div class="hero-stat-row">
+          <div class="hero-stat-chip">
+            <span class="chip-label">Data Clear</span>
+            <strong id="hero-total">…</strong>
+          </div>
+          <div class="hero-stat-chip">
+            <span class="chip-label">Kader Aktif</span>
+            <strong id="hero-kader">…</strong>
+          </div>
+          <div class="hero-stat-chip">
+            <span class="chip-label">Butuh Cek</span>
+            <strong id="hero-bermasalah">…</strong>
+          </div>
+        </div>
       </div>
-      <div class="stat-pill" style="border-color:rgba(220,38,38,.2);">
-        <div class="dot" style="background:var(--danger);box-shadow:0 0 5px rgba(220,38,38,.4);"></div>
-        Log Duplikat: <strong id="hdr-dup" style="color:var(--danger);">…</strong>
+      <div class="hero-chart-panel">
+        <div class="hero-chart-head">
+          <div>
+            <div class="hero-chart-title">Distribusi Pemilih per Kader</div>
+            <div class="hero-chart-sub">6 kader teratas berdasarkan jumlah pemilih saat ini</div>
+          </div>
+          <div class="hero-chart-legend">
+            <span><i class="legend-dot legend-blue"></i>Pemilih</span>
+            <span><i class="legend-dot legend-green"></i>Target</span>
+          </div>
+        </div>
+        <div class="hero-chart-wrap">
+          <svg id="overview-chart" viewBox="0 0 560 230" class="overview-chart" aria-label="Diagram distribusi pemilih per kader"></svg>
+        </div>
       </div>
-      <div class="stat-pill"><div class="pulse-dot"></div><span style="color:var(--success);font-weight:600;font-size:12px;">Live</span></div>
+    </div>
+
+    <div class="hero-card hero-side-card">
+      <div class="hero-chart-title">Ringkasan Aktivitas</div>
+      <div class="hero-chart-sub">Total ini menjumlahkan data clear, butuh cek, dan percobaan duplikat agar pembacaan dashboard lebih utuh.</div>
+      <div class="donut-wrap">
+        <svg id="quality-donut" viewBox="0 0 220 220" class="quality-donut" aria-label="Diagram ringkasan aktivitas data"></svg>
+      </div>
+      <div class="donut-legend" id="quality-legend"></div>
     </div>
   </div>
-</header>
 
-<div class="container">
-  <div class="page-header">
-    <h1>Dashboard Pendataan</h1>
-    <p>Ringkasan data pemilih yang telah terdaftar di seluruh kader.</p>
-  </div>
-
-  <!-- Stat Cards -->
-  <div class="grid-4" style="margin-bottom:20px;">
-    <div class="stat-card">
-      <div class="sc-label">Total Pemilih</div>
+  <div class="grid-4 dashboard-stat-grid">
+    <a href="/?view=clear#data-pemilih" class="stat-card stat-card-link stat-card-total">
+      <div class="sc-label">Total Pemilih Clear</div>
       <div class="sc-value sc-blue" id="stat-total">…</div>
-      <div class="sc-sub">orang terdaftar</div>
-    </div>
-    <div class="stat-card">
+      <div class="sc-sub">siap dijumlahkan</div>
+    </a>
+    <a href="/kader" class="stat-card stat-card-link stat-card-kader">
       <div class="sc-label">Jumlah Kader</div>
       <div class="sc-value sc-green" id="stat-kader">…</div>
       <div class="sc-sub">kader aktif</div>
-    </div>
-    <div class="stat-card">
+    </a>
+    <a href="/?view=bermasalah#data-pemilih" class="stat-card stat-card-link stat-card-warning">
       <div class="sc-label">⚠️ Data Bermasalah</div>
-      <div class="sc-value" style="color:#ffc107;" id="stat-bermasalah">…</div>
+      <div class="sc-value sc-value-warning" id="stat-bermasalah">…</div>
       <div class="sc-sub">NIK tidak valid</div>
-    </div>
-    <div class="stat-card dup-card">
+    </a>
+    <a href="/log-duplikat" class="stat-card dup-card stat-card-link stat-card-danger">
       <div class="sc-label">Percobaan Duplikat</div>
-      <div class="sc-value" style="color:var(--danger);" id="stat-dup">…</div>
+      <div class="sc-value sc-value-danger" id="stat-dup">…</div>
       <div class="sc-sub">tercatat di log</div>
-    </div>
+    </a>
   </div>
 
-  <!-- Per kader -->
-  <div class="card" style="margin-bottom:20px;">
-    <div class="card-title"><div class="card-icon ci-blue">📋</div> Progress Kader vs Target</div>
+  <div class="dashboard-lower-grid">
+    <div class="card card-mb-20">
+      <div class="card-title"><div class="card-icon ci-orange">📌</div> Highlight Presentasi</div>
+      <div id="presentasi-highlight" class="highlight-list">
+        <div class="loading"><span class="spinner"></span>Memuat…</div>
+      </div>
+    </div>
+
+    <!-- Per kader -->
+    <div class="card card-mb-20">
+    <div class="dashboard-section-head">
+      <div class="card-title card-title-tight"><div class="card-icon ci-blue">📋</div> Progress Kader vs Target</div>
+      <a href="/kader" class="btn btn-outline btn-xs btn-auto">Lihat Semua Kader</a>
+    </div>
+    <div class="dashboard-section-sub">Dashboard hanya menampilkan ringkasan kader paling dekat ke target. Daftar lengkap tetap ada di halaman Data Kader.</div>
     <div id="kader-breakdown"><div class="loading"><span class="spinner"></span>Memuat…</div></div>
+    </div>
   </div>
 
   <!-- Tabel Pemilih -->
-  <div class="card" style="margin-bottom:32px;">
-    <div class="card-title" style="justify-content:space-between;">
-      <div style="display:flex;align-items:center;gap:8px;">
+  <div class="card card-mb-32" id="data-pemilih">
+    <div class="card-title card-title-between">
+      <div class="title-with-icon">
         <div class="card-icon ci-green">👥</div> Data Pemilih
       </div>
-      <div style="display:flex;gap:8px;">
-        <a href="/import" class="btn btn-outline btn-sm" style="width:auto;">📥 Import Excel</a>
-        <a href="/tambah-pemilih" class="btn btn-primary btn-sm" style="width:auto;">➕ Tambah</a>
+      <div class="title-actions">
+        <a href="/import" class="btn btn-outline btn-sm btn-auto">📥 Import Excel</a>
+        <a href="/tambah-pemilih" class="btn btn-primary btn-sm btn-auto">➕ Tambah</a>
       </div>
     </div>
 
     <!-- Search + Filter -->
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
-      <div class="search-wrap" style="flex:1;min-width:220px;">
+    <div class="toolbar-filters">
+      <div class="search-wrap search-wrap-wide">
         <span class="search-icon">🔍</span>
         <input type="text" id="inp-search" title="Cari data pemilih" placeholder="Cari nama atau NIK…" oninput="onSearch(this.value)"/>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <label for="sel-kader" style="font-size:13px;color:var(--text3);font-weight:600;">Filter Kader:</label>
-        <select id="sel-kader" title="Filter Kader" style="padding:8px 10px;border-radius: var(--radius-sm);border:1px solid var(--border2);background:#fff;" onchange="onKaderFilterChange(this.value)">
+      <div class="filter-kader-wrap">
+        <label for="sel-kader" class="filter-kader-label">Filter Kader:</label>
+        <select id="sel-kader" title="Filter Kader" class="filter-kader-select" onchange="onKaderFilterChange(this.value)">
           <option value="">Semua Kader</option>
         </select>
       </div>
+    </div>
+
+    <div id="active-filter-note" class="active-filter-note active-filter-note-dashboard">
+      <span id="active-filter-text"></span>
+      <button class="btn btn-outline btn-xs" onclick="clearStatusFilter()">Tampilkan Semua</button>
     </div>
 
     <!-- Tabel -->
@@ -121,7 +209,7 @@
     <!-- Pagination -->
     <div class="pagination">
       <div class="page-info" id="page-info">Memuat…</div>
-      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+      <div class="pagination-controls">
         <div class="per-page-wrap">
           Tampilkan:
           <select id="sel-limit" title="Jumlah data per halaman" aria-label="Jumlah data per halaman" onchange="onLimitChange(this.value)">
@@ -134,7 +222,9 @@
         <div class="page-btns" id="page-btns"></div>
       </div>
     </div>
-  </div>
+      </div>
+    </div>
+  </main>
 </div>
 
 <div id="toast"></div>
@@ -152,6 +242,9 @@
     if (!d) return '-';
     return new Date(d).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
   }
+  function formatNum(n) {
+    return new Intl.NumberFormat('id-ID').format(Number(n) || 0);
+  }
   function showToast(msg, emoji='✅') {
     const t = document.getElementById('toast');
     t.innerHTML = `${emoji} ${msg}`;
@@ -159,8 +252,250 @@
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
+  function buildLinePath(points) {
+    return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+  }
+
+  function buildAreaPath(points, baseY) {
+    if (!points.length) return '';
+    return `${buildLinePath(points)} L ${points[points.length - 1].x} ${baseY} L ${points[0].x} ${baseY} Z`;
+  }
+
+  function renderOverviewChart(kaders) {
+    const svg = document.getElementById('overview-chart');
+    if (!svg) return;
+
+    const topKaders = [...kaders]
+      .sort((a, b) => (b.jumlahPemilih || 0) - (a.jumlahPemilih || 0))
+      .slice(0, 6);
+
+    if (!topKaders.length) {
+      svg.innerHTML = '<text x="280" y="115" text-anchor="middle" fill="var(--text3)" font-size="14">Belum ada data kader</text>';
+      return;
+    }
+
+    const width = 560;
+    const height = 230;
+    const left = 36;
+    const right = 18;
+    const top = 18;
+    const bottom = 44;
+    const chartWidth = width - left - right;
+    const chartHeight = height - top - bottom;
+    const maxValue = Math.max(
+      ...topKaders.map(k => Math.max(k.jumlahPemilih || 0, k.target_suara || 0)),
+      1
+    );
+
+    const xStep = topKaders.length > 1 ? chartWidth / (topKaders.length - 1) : chartWidth / 2;
+    const toY = value => top + chartHeight - ((value || 0) / maxValue) * chartHeight;
+
+    const pemilihPoints = topKaders.map((k, index) => ({
+      x: left + xStep * index,
+      y: toY(k.jumlahPemilih || 0)
+    }));
+    const targetPoints = topKaders.map((k, index) => ({
+      x: left + xStep * index,
+      y: toY(k.target_suara || 0)
+    }));
+
+    const gridLines = Array.from({ length: 5 }, (_, idx) => {
+      const y = top + (chartHeight / 4) * idx;
+      const value = Math.round(maxValue - (maxValue / 4) * idx);
+      return `
+        <line x1="${left}" y1="${y}" x2="${width - right}" y2="${y}" stroke="rgba(71,97,124,0.12)" stroke-dasharray="4 5"/>
+        <text x="${left - 10}" y="${y + 4}" text-anchor="end" fill="var(--text3)" font-size="11">${formatNum(value)}</text>
+      `;
+    }).join('');
+
+    const labels = topKaders.map((k, index) => `
+      <text x="${left + xStep * index}" y="${height - 14}" text-anchor="middle" fill="var(--text3)" font-size="11">K${k.nomor}</text>
+    `).join('');
+
+    svg.innerHTML = `
+      <defs>
+        <linearGradient id="overviewArea" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="rgba(63,111,166,0.34)"/>
+          <stop offset="100%" stop-color="rgba(63,111,166,0.04)"/>
+        </linearGradient>
+      </defs>
+      ${gridLines}
+      <path d="${buildAreaPath(pemilihPoints, top + chartHeight)}" fill="url(#overviewArea)"></path>
+      <path d="${buildLinePath(targetPoints)}" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 7"></path>
+      <path d="${buildLinePath(pemilihPoints)}" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+      ${pemilihPoints.map(point => `<circle cx="${point.x}" cy="${point.y}" r="4.5" fill="var(--accent)" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>`).join('')}
+      ${targetPoints.map(point => `<circle cx="${point.x}" cy="${point.y}" r="3.5" fill="var(--success)" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>`).join('')}
+      ${labels}
+    `;
+  }
+
+  function renderQualityDonut(statRes) {
+    const svg = document.getElementById('quality-donut');
+    const legend = document.getElementById('quality-legend');
+    if (!svg || !legend) return;
+
+    const valid = Number(statRes.clear ?? statRes.total ?? 0) || 0;
+    const masalah = Number(statRes.bermasalah ?? 0) || 0;
+    const duplikat = Number(statRes.percobaanDuplikat ?? 0) || 0;
+    const totalAktivitas = valid + masalah + duplikat;
+    const totalKategori = Math.max(totalAktivitas, 1);
+    const radius = 72;
+    const circumference = 2 * Math.PI * radius;
+    const segments = [
+      { label: 'Data Clear', value: valid, color: 'var(--accent)', swatchClass: 'donut-swatch-accent' },
+      { label: 'Butuh Cek', value: masalah, color: 'var(--warning)', swatchClass: 'donut-swatch-warning' },
+      { label: 'Percobaan Duplikat', value: duplikat, color: 'var(--danger)', swatchClass: 'donut-swatch-danger' }
+    ];
+
+    let offset = 0;
+    const arcs = segments.map(segment => {
+      const dash = (segment.value / totalKategori) * circumference;
+      const circle = `
+        <circle
+          cx="110" cy="110" r="${radius}"
+          fill="none"
+          stroke="${segment.color}"
+          stroke-width="20"
+          stroke-linecap="round"
+          stroke-dasharray="${dash} ${circumference - dash}"
+          stroke-dashoffset="${-offset}"
+          transform="rotate(-90 110 110)"
+        />`;
+      offset += dash;
+      return circle;
+    }).join('');
+
+    svg.innerHTML = `
+      <circle cx="110" cy="110" r="${radius}" fill="none" stroke="rgba(71,97,124,0.10)" stroke-width="20"></circle>
+      ${arcs}
+      <circle cx="110" cy="110" r="50" fill="rgba(244,248,251,0.92)"></circle>
+      <text x="110" y="96" text-anchor="middle" fill="var(--text3)" font-size="12">Total Aktivitas</text>
+      <text x="110" y="120" text-anchor="middle" fill="var(--text)" font-size="28" font-weight="700">${formatNum(totalAktivitas)}</text>
+      <text x="110" y="140" text-anchor="middle" fill="var(--text3)" font-size="10">clear + cek + duplikat</text>
+    `;
+
+    legend.innerHTML = segments.map(segment => `
+      <div class="donut-legend-item">
+        <span class="donut-swatch ${segment.swatchClass}"></span>
+        <div>
+          <strong>${formatNum(segment.value)}</strong>
+          <span>${segment.label}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderHighlights(kaders, statRes) {
+    const wrap = document.getElementById('presentasi-highlight');
+    if (!wrap) return;
+    if (!kaders.length) {
+      wrap.innerHTML = '<div class="empty"><div class="empty-icon">📌</div><p>Belum ada data highlight.</p></div>';
+      return;
+    }
+
+    const totalTarget = kaders.reduce((sum, kader) => sum + (kader.target_suara || 0), 0);
+    const topKader = [...kaders].sort((a, b) => (b.jumlahPemilih || 0) - (a.jumlahPemilih || 0))[0];
+    const topProgress = [...kaders]
+      .filter(k => (k.target_suara || 0) > 0)
+      .sort((a, b) => ((b.jumlahPemilih || 0) / (b.target_suara || 1)) - ((a.jumlahPemilih || 0) / (a.target_suara || 1)))[0];
+    const totalClear = statRes.clear || statRes.total || 0;
+    const coverage = totalTarget > 0 ? Math.round((totalClear / totalTarget) * 100) : 0;
+
+    const items = [
+      {
+        title: 'Kader Terkencang',
+        value: topKader ? `Kader ${topKader.nomor} — ${topKader.nama}` : '-',
+        meta: topKader ? `${formatNum(topKader.jumlahPemilih || 0)} pemilih terdaftar` : 'Belum ada data'
+      },
+      {
+        title: 'Capaian Terbaik',
+        value: topProgress ? `${Math.round(((topProgress.jumlahPemilih || 0) / (topProgress.target_suara || 1)) * 100)}% target` : 'Belum ada target',
+        meta: topProgress ? `Kader ${topProgress.nomor} dengan target ${formatNum(topProgress.target_suara || 0)}` : 'Tambahkan target untuk analisis'
+      },
+      {
+        title: 'Coverage Saat Ini',
+        value: totalTarget > 0 ? `${coverage}% dari total target` : 'Tanpa target global',
+        meta: totalTarget > 0 ? `${formatNum(totalClear)} data clear dari ${formatNum(totalTarget)} target suara` : 'Tetapkan target per kader'
+      },
+      {
+        title: 'Perlu Validasi',
+        value: `${formatNum(statRes.bermasalah || 0)} data`,
+        meta: `${formatNum(statRes.percobaanDuplikat || 0)} percobaan duplikat tercatat`
+      }
+    ];
+
+    wrap.innerHTML = items.map(item => `
+      <div class="highlight-item">
+        <div class="highlight-title">${item.title}</div>
+        <div class="highlight-value">${item.value}</div>
+        <div class="highlight-meta">${item.meta}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderKaderBreakdown(kaders) {
+    const kb = document.getElementById('kader-breakdown');
+    if (!kb) return;
+
+    if (!kaders.length) {
+      kb.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>Belum ada kader.</p></div>';
+      return;
+    }
+
+    const DASHBOARD_KADER_LIMIT = 8;
+    const ranked = [...kaders].sort((a, b) => {
+      const aTarget = Number(a.target_suara || 0);
+      const bTarget = Number(b.target_suara || 0);
+      const aJumlah = Number(a.jumlahPemilih || 0);
+      const bJumlah = Number(b.jumlahPemilih || 0);
+      const aPct = aTarget > 0 ? aJumlah / aTarget : -1;
+      const bPct = bTarget > 0 ? bJumlah / bTarget : -1;
+      if (bPct !== aPct) return bPct - aPct;
+      if (bJumlah !== aJumlah) return bJumlah - aJumlah;
+      return (a.nomor || 0) - (b.nomor || 0);
+    });
+
+    const visibleKaders = ranked.slice(0, DASHBOARD_KADER_LIMIT);
+    const remaining = Math.max(ranked.length - visibleKaders.length, 0);
+
+    kb.innerHTML = `
+      <div class="compact-progress-list">
+        ${visibleKaders.map(k => {
+          const target = Number(k.target_suara || 0);
+          const jumlahPemilih = Number(k.jumlahPemilih || 0);
+          const pct = target > 0 ? Math.min(100, Math.round((jumlahPemilih / target) * 100)) : 0;
+          const levelClass = pct >= 100 ? 'progress-level-success' : pct >= 50 ? 'progress-level-accent' : 'progress-level-warning';
+          const wilayah = `${k.dusun || '-'} · Kordus ${k.kordus || '-'}${k.korlap ? ' · Korlap ' + k.korlap : ''}`;
+
+          return `<div class="compact-progress-item">
+            <div class="compact-progress-head">
+              <span class="compact-progress-name">Kader ${k.nomor} — ${k.nama}</span>
+              <span class="compact-progress-value">
+                <span class="compact-progress-strong ${levelClass}">${formatNum(jumlahPemilih)}</span>
+                ${target > 0 ? `<span class="compact-progress-target"> / ${formatNum(target)} target</span>` : '<span class="compact-progress-target"> (tanpa target)</span>'}
+                ${target > 0 ? `<span class="compact-progress-pct ${levelClass}">${pct}%</span>` : ''}
+              </span>
+            </div>
+            <div class="compact-progress-meta">${wilayah}</div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill ${levelClass}" data-progress-width="${pct}"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${remaining > 0 ? `<div class="dashboard-section-foot">Masih ada ${formatNum(remaining)} kader lain. Lihat daftar lengkap di <a href="/kader">halaman Data Kader</a>.</div>` : ''}
+    `;
+    kb.querySelectorAll('.progress-bar-fill[data-progress-width]').forEach(el => {
+      el.style.width = `${el.dataset.progressWidth || 0}%`;
+    });
+  }
+
   let searchQuery     = '';
   let selectedKaderId = '';
+  let selectedStatusFilter = (() => {
+    const view = new URLSearchParams(window.location.search).get('view');
+    return view === 'bermasalah' || view === 'clear' ? view : '';
+  })();
   let currentPage     = 1;
   let currentLimit    = 50;
   let totalPages      = 1;
@@ -179,6 +514,39 @@
     loadTabel();
   }
 
+  function updateUrlView(view) {
+    const url = new URL(window.location.href);
+    if (!view || view === 'all') {
+      url.searchParams.delete('view');
+    } else {
+      url.searchParams.set('view', view);
+    }
+    history.replaceState({}, '', url);
+  }
+
+  function renderActiveFilterInfo() {
+    const note = document.getElementById('active-filter-note');
+    const text = document.getElementById('active-filter-text');
+    if (selectedStatusFilter === 'bermasalah') {
+      text.textContent = 'Sedang menampilkan hanya data bermasalah.';
+      note.style.display = 'flex';
+    } else if (selectedStatusFilter === 'clear') {
+      text.textContent = 'Sedang menampilkan hanya data clear.';
+      note.style.display = 'flex';
+    } else {
+      note.style.display = 'none';
+      text.textContent = '';
+    }
+  }
+
+  function clearStatusFilter() {
+    selectedStatusFilter = '';
+    currentPage = 1;
+    updateUrlView('all');
+    renderActiveFilterInfo();
+    loadTabel();
+  }
+
   function onLimitChange(v) { currentLimit = parseInt(v); currentPage = 1; loadTabel(); }
 
   function goToPage(p) {
@@ -193,7 +561,9 @@
     document.getElementById('tbody-pemilih').innerHTML =
       `<tr><td colspan="9"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>`;
 
-    const result = await PemilihAPI.getAll(searchQuery, selectedKaderId, currentPage, currentLimit);
+    renderActiveFilterInfo();
+
+    const result = await PemilihAPI.getAll(searchQuery, selectedKaderId, currentPage, currentLimit, selectedStatusFilter);
     const data   = result.data || [];
     totalPages   = result.totalPages || 1;
     totalData    = result.total || 0;
@@ -209,16 +579,21 @@
     } else {
       tbody.innerHTML = data.map((p, i) => {
         const statusIcon = p.status === 'NIK_INVALID' ? '⚠️' : '';
-        const statusClass = p.status === 'NIK_INVALID' ? 'style="background:rgba(255,193,7,.1);border-left:3px solid #ffc107;"' : '';
-        return `<tr ${statusClass}>
-          <td style="color:var(--text3);font-size:12px;">${startNo+i+1}${statusIcon}</td>
-          <td style="font-weight:700;color:var(--text);">${p.nama}</td>
-          <td><span class="nik">${p.nik}</span></td>
+        const statusClass = p.status === 'NIK_INVALID' ? 'row-invalid' : '';
+        const jenisKelamin = p.jenis_kelamin === 'P'
+          ? '<span class="badge badge-pink">Perempuan</span>'
+          : p.jenis_kelamin === 'L'
+            ? '<span class="badge badge-blue">Laki-laki</span>'
+            : '<span class="text-muted">-</span>';
+        return `<tr class="${statusClass}">
+          <td class="table-cell-muted">${startNo+i+1}${statusIcon}</td>
+          <td class="table-cell-strong">${p.nama}</td>
+          <td><span class="nik">${p.nik || '-'}</span></td>
           <td><span class="badge badge-blue">${p.namaKader||'-'}</span></td>
-          <td style="font-size:12px;">${formatTgl(p.tanggal_lahir)}</td>
-          <td><span class="badge ${p.jenis_kelamin==='P'?'badge-pink':'badge-blue'}">${p.jenis_kelamin==='P'?'Perempuan':'Laki-laki'}</span></td>
+          <td class="table-cell-small">${formatTgl(p.tanggal_lahir)}</td>
+          <td>${jenisKelamin}</td>
           <td>${p.umur != null ? p.umur + ' thn' : '-'}</td>
-          <td style="font-size:12px;color:var(--text3);">${formatDate(p.created_at)}</td>
+          <td class="table-cell-muted">${formatDate(p.created_at)}</td>
           <td>
             <div class="gap-12">
               <a href="/edit-pemilih?id=${p.id}" class="btn btn-outline btn-xs" aria-label="Edit data ${p.nama}">✏️</a>
@@ -247,12 +622,12 @@
     let ep = Math.min(totalPages, currentPage+range);
     if (sp > 1) {
       btns += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
-      if (sp > 2) btns += `<span style="color:var(--text3);padding:0 2px;">…</span>`;
+      if (sp > 2) btns += `<span class="page-ellipsis">…</span>`;
     }
     for (let p=sp; p<=ep; p++)
       btns += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goToPage(${p})">${p}</button>`;
     if (ep < totalPages) {
-      if (ep < totalPages-1) btns += `<span style="color:var(--text3);padding:0 2px;">…</span>`;
+      if (ep < totalPages-1) btns += `<span class="page-ellipsis">…</span>`;
       btns += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
     }
     btns += `<button class="page-btn" onclick="goToPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>→</button>`;
@@ -277,45 +652,24 @@
       sel.value = selectedKaderId;
     }
 
+    const totalClear = statRes.clear || statRes.total || 0;
     document.getElementById('hdr-kader').textContent   = kaders.length;
-    document.getElementById('hdr-pemilih').textContent  = statRes.total || 0;
+    document.getElementById('hdr-pemilih').textContent  = totalClear;
     document.getElementById('hdr-bermasalah').textContent = statRes.bermasalah || 0;
     document.getElementById('hdr-dup').textContent      = statRes.percobaanDuplikat || 0;
-    document.getElementById('stat-total').textContent   = statRes.total || 0;
+    document.getElementById('stat-total').textContent   = totalClear;
     document.getElementById('stat-kader').textContent   = kaders.length;
     document.getElementById('stat-bermasalah').textContent = statRes.bermasalah || 0;
     document.getElementById('stat-dup').textContent     = statRes.percobaanDuplikat || 0;
+    document.getElementById('hero-total').textContent   = formatNum(totalClear);
+    document.getElementById('hero-kader').textContent   = formatNum(kaders.length);
+    document.getElementById('hero-bermasalah').textContent = formatNum(statRes.bermasalah || 0);
 
-    // Per kader — progress vs target
-    const kb = document.getElementById('kader-breakdown');
-    if (!kaders.length) {
-      kb.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>Belum ada kader.</p></div>';
-    } else {
-      kb.innerHTML = kaders.map(k => {
-        const target = k.target_suara || 0;
-        const pct = target > 0 ? Math.min(100, Math.round(k.jumlahPemilih / target * 100)) : 0;
-        const barColor = pct >= 100 ? 'var(--success)' : pct >= 50 ? 'var(--accent)' : 'var(--warning)';
-        const wilayah = `${k.dusun || '-'} · Kordus ${k.kordus || '-'}${k.korlap ? ' · Korlap ' + k.korlap : ''}`;
-        return `<div style="margin-bottom:16px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-            <span style="font-size:13px;font-weight:600;color:var(--text);">Kader ${k.nomor} — ${k.nama}</span>
-            <span style="font-size:13px;font-family:'JetBrains Mono',monospace;">
-              <span style="color:${barColor};font-weight:700;">${k.jumlahPemilih}</span>
-              ${target > 0 ? `<span style="color:var(--text3);"> / ${target} target</span>` : '<span style="color:var(--text3);"> (tanpa target)</span>'}
-              ${target > 0 ? `<span style="margin-left:8px;font-weight:700;color:${barColor};">${pct}%</span>` : ''}
-            </span>
-          </div>
-          <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">${wilayah}</div>
-          ${target > 0 ? `
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" style="width:${pct}%;background:${barColor};"></div>
-          </div>` : `
-          <div class="progress-bar-track">
-            <div class="progress-bar-fill" style="width:0%;"></div>
-          </div>`}
-        </div>`;
-      }).join('');
-    }
+    renderOverviewChart(kaders);
+    renderQualityDonut(statRes);
+    renderHighlights(kaders, statRes);
+
+    renderKaderBreakdown(kaders);
 
     loadTabel();
   }

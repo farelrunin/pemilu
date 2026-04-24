@@ -4,10 +4,11 @@
 
 const PemilihAPI = {
 
-  async getAll(query = '', kaderId = '', page = 1, limit = 50) {
+  async getAll(query = '', kaderId = '', page = 1, limit = 50, statusFilter = '') {
     const params = new URLSearchParams();
     if (query)   params.set('q', query);
     if (kaderId) params.set('kaderId', kaderId);
+    if (statusFilter) params.set('statusFilter', statusFilter);
     params.set('page', page);
     params.set('limit', limit);
     const res = await fetchWithAuth(`/api/pemilih?${params}`);
@@ -49,6 +50,14 @@ const PemilihAPI = {
 
   async importExcel(formData) {
     const res = await fetchWithAuth('/api/pemilih/import', {
+      method: 'POST',
+      body: formData
+    });
+    return res.json();
+  },
+
+  async previewImport(formData) {
+    const res = await fetchWithAuth('/api/pemilih/import/preview', {
       method: 'POST',
       body: formData
     });

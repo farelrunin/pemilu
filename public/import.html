@@ -7,35 +7,65 @@
   <link rel="stylesheet" href="/css/style.css"/>
   <script src="/js/auth.js"></script>
 </head>
-<body>
+<body class="app-shell-page">
 
-<header>
-  <div class="container header-inner">
-    <a href="/" class="logo">
-      <div class="logo-icon">🗳️</div>
-      <div class="logo-text">Data<span>Pilih</span></div>
-    </a>
-    <nav class="nav">
-      <a href="/">📊 Dashboard</a>
-      <a href="/tambah-pemilih">➕ Tambah Pemilih</a>
-      <a href="/import" class="active">📥 Import</a>
-      <a href="/kader">🎖️ Kader</a>
-      <a href="/log-duplikat">🔍 Log Duplikat</a>
-    </nav>
-  </div>
-</header>
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">DP</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
 
-<div class="container-sm">
-  <div class="page-header">
-    <div class="breadcrumb">
-      <a href="/">Dashboard</a> › <span>Import Excel</span>
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import" class="active"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Import massal</strong>
+          <span>Upload file Excel, lakukan cross-check, lalu lanjutkan import ke kader yang dipilih.</span>
+        </div>
+      </div>
     </div>
-    <h1>Import Data dari Excel</h1>
-    <p>Upload file Excel (.xlsx/.xls) untuk memasukkan data pemilih secara massal.</p>
-  </div>
+  </aside>
 
-  <div class="card">
-    <div class="card-title"><div class="card-icon ci-cyan">📥</div> Upload File Excel</div>
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Import Excel</div>
+        <div class="app-topbar-title">Masukkan Data Secara Massal</div>
+        <div class="app-topbar-subtitle">Upload file, cek hasil pembacaan, lalu tentukan data mana yang boleh masuk ke sistem.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container-sm">
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › <span>Import Excel</span>
+          </div>
+          <h1>Import Data dari Excel</h1>
+          <p>Upload file Excel (.xlsx/.xls) untuk memasukkan data pemilih secara massal.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><div class="card-icon ci-cyan">IM</div> Upload File Excel</div>
 
     <div id="alert-success" class="alert-success"></div>
     <div id="alert-error" class="alert-error"></div>
@@ -67,26 +97,47 @@
       <div class="hint">Semua data dari Excel akan didaftarkan ke kader ini.</div>
     </div>
 
-    <button class="btn btn-primary" onclick="submitImport()" id="btn-import" disabled>
-      📥 Mulai Import
+    <button class="btn btn-primary" onclick="previewImport()" id="btn-import" disabled>
+      Cek Dulu
     </button>
-  </div>
+    <div id="preview-actions" style="display:none;margin-top:16px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);">
+      <div id="preview-message" style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <button class="btn btn-danger btn-xs" onclick="excludeAllBermasalah()">
+          Jangan Masukkan Semua Bermasalah
+        </button>
+        <button class="btn btn-outline btn-xs" onclick="excludeAllImportable()">
+          Jangan Masukkan Semua
+        </button>
+        <button class="btn btn-outline btn-xs" onclick="includeAllRows()">
+          Masukkan Semua Lagi
+        </button>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="confirmImport()" id="btn-confirm-import">
+          Lanjutkan Import
+        </button>
+        <button class="btn btn-outline" onclick="resetPreviewState()">
+          Cek Ulang
+        </button>
+      </div>
+    </div>
+        </div>
 
-  <!-- Hasil import -->
-  <div id="result-wrap" style="display:none;" class="card mt-24">
-    <div class="card-title"><div class="card-icon ci-green">📋</div> Hasil Import</div>
+        <div id="result-wrap" style="display:none;" class="card mt-24">
+          <div class="card-title"><div class="card-icon ci-green">RS</div> <span id="result-title">Hasil Import</span></div>
 
     <div class="grid-3" style="margin-bottom:16px;">
       <div class="stat-card" style="padding:14px;">
-        <div class="sc-label" style="font-size:10px;">Berhasil</div>
+        <div class="sc-label" style="font-size:10px;" id="res-label-1">Berhasil</div>
         <div class="sc-value sc-green" id="res-berhasil" style="font-size:24px;">0</div>
       </div>
       <div class="stat-card" style="padding:14px;">
-        <div class="sc-label" style="font-size:10px;">Gagal / Duplikat</div>
+        <div class="sc-label" style="font-size:10px;" id="res-label-2">Gagal / Duplikat</div>
         <div class="sc-value" style="font-size:24px;color:var(--danger);" id="res-gagal">0</div>
       </div>
       <div class="stat-card" style="padding:14px;">
-        <div class="sc-label" style="font-size:10px;">Total Baris</div>
+        <div class="sc-label" style="font-size:10px;" id="res-label-3">Total Baris</div>
         <div class="sc-value sc-blue" id="res-total" style="font-size:24px;">0</div>
       </div>
     </div>
@@ -95,34 +146,37 @@
       <table>
         <thead>
           <tr>
-            <th>Baris</th><th>Nama</th><th>NIK</th><th>Status</th><th>Keterangan</th>
+            <th>Baris</th><th>Nama</th><th>NIK</th><th>Status</th><th>Keterangan</th><th>Aksi</th>
           </tr>
         </thead>
         <tbody id="tbody-result"></tbody>
       </table>
     </div>
-  </div>
+        </div>
 
-  <!-- Format panduan -->
-  <div class="card mt-24">
-    <div class="card-title"><div class="card-icon ci-orange">ℹ️</div> Format File Excel</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.9;">
-      <p style="margin-bottom:10px;">File Excel harus memiliki kolom berikut di baris pertama (header):</p>
-      <div class="table-wrap" style="margin-bottom:12px;">
-        <table>
-          <thead>
-            <tr><th>nama</th><th>nik</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Ahmad Suparjo</td><td>3404010101900001</td></tr>
-            <tr><td>Siti Aminah</td><td>3404015501850002</td></tr>
-          </tbody>
-        </table>
+        <div class="card mt-24">
+          <div class="card-title"><div class="card-icon ci-orange">IN</div> Format File Excel</div>
+          <div style="font-size:13px;color:var(--text2);line-height:1.9;">
+            <p style="margin-bottom:10px;">File Excel harus memiliki kolom berikut di baris pertama (header):</p>
+            <div class="table-wrap" style="margin-bottom:12px;">
+              <table>
+                <thead>
+                  <tr><th>nama</th><th>nik</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Ahmad Suparjo</td><td>3404010101900001</td></tr>
+                  <tr><td>Siti Aminah</td><td>3404015501850002</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Sistem akan melakukan cross-check lebih dulu sebelum import dijalankan.</p>
+            <p>NIK yang sudah ada di database akan ditolak dan dicatat di <a href="/log-duplikat" style="color:var(--accent);">Log Duplikat</a>.</p>
+            <p>NIK kosong atau tidak 16 digit akan ditandai bermasalah, lalu baru ikut diimport jika Anda lanjutkan.</p>
+          </div>
+        </div>
       </div>
-      <p>⚠️ NIK yang sudah ada di database akan <strong>ditolak</strong> dan dicatat di <a href="/log-duplikat" style="color:var(--accent);">Log Duplikat</a>.</p>
-      <p>⚠️ NIK yang tidak 16 digit akan <strong>tetap disimpan</strong> tapi diberi tanda bermasalah (warna kuning) di dashboard.</p>
     </div>
-  </div>
+  </main>
 </div>
 
 <div id="toast"></div>
@@ -138,9 +192,18 @@
   }
 
   let selectedFile = null;
+  let previewRows = [];
+  const excludedRows = new Set();
 
-  // Drop zone events
   const dropZone = document.getElementById('drop-zone');
+  const btnImport = document.getElementById('btn-import');
+  const btnConfirmImport = document.getElementById('btn-confirm-import');
+  const previewActions = document.getElementById('preview-actions');
+  const previewMessage = document.getElementById('preview-message');
+  const resultWrap = document.getElementById('result-wrap');
+  const alertSuccess = document.getElementById('alert-success');
+  const alertError = document.getElementById('alert-error');
+
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
   dropZone.addEventListener('drop', e => {
@@ -152,6 +215,64 @@
     }
   });
 
+  function hideAlerts() {
+    alertSuccess.classList.remove('show');
+    alertError.classList.remove('show');
+  }
+
+  function showError(message) {
+    alertError.textContent = '❌ ' + message;
+    alertError.classList.add('show');
+    alertSuccess.classList.remove('show');
+  }
+
+  function showSuccess(message) {
+    alertSuccess.textContent = '✅ ' + message;
+    alertSuccess.classList.add('show');
+    alertError.classList.remove('show');
+  }
+
+  function escapeHTML(value) {
+    return String(value || '').replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[char]));
+  }
+
+  function buildImportFormData() {
+    const kaderId = document.getElementById('inp-kader').value;
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('kaderId', kaderId);
+    formData.append('excludedBaris', JSON.stringify([...excludedRows]));
+    return formData;
+  }
+
+  function resetPreviewState() {
+    previewRows = [];
+    excludedRows.clear();
+    previewActions.style.display = 'none';
+    previewMessage.textContent = '';
+    btnConfirmImport.style.display = '';
+    resultWrap.style.display = 'none';
+    document.getElementById('tbody-result').innerHTML = '';
+    document.getElementById('result-title').textContent = 'Hasil Import';
+    document.getElementById('res-label-1').textContent = 'Berhasil';
+    document.getElementById('res-label-2').textContent = 'Gagal / Duplikat';
+    document.getElementById('res-label-3').textContent = 'Total Baris';
+    document.getElementById('res-berhasil').textContent = '0';
+    document.getElementById('res-gagal').textContent = '0';
+    document.getElementById('res-total').textContent = '0';
+  }
+
+  function checkReady() {
+    const kaderId = document.getElementById('inp-kader').value;
+    btnImport.disabled = !selectedFile || !kaderId;
+  }
+
   function onFileSelected(input) {
     const file = input.files[0];
     if (!file) return;
@@ -160,6 +281,8 @@
     document.getElementById('file-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
     document.getElementById('drop-zone').style.display = 'none';
     document.getElementById('file-info').style.display = 'flex';
+    hideAlerts();
+    resetPreviewState();
     checkReady();
   }
 
@@ -168,74 +291,227 @@
     document.getElementById('file-input').value = '';
     document.getElementById('drop-zone').style.display = '';
     document.getElementById('file-info').style.display = 'none';
+    hideAlerts();
+    resetPreviewState();
     checkReady();
   }
 
-  function checkReady() {
-    const kaderId = document.getElementById('inp-kader').value;
-    document.getElementById('btn-import').disabled = !selectedFile || !kaderId;
+  function setButtonLoading(button, isLoading, label) {
+    button.disabled = isLoading;
+    button.innerHTML = isLoading
+      ? '<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;"></span>' + label
+      : label;
   }
 
-  document.getElementById('inp-kader').addEventListener('change', checkReady);
+  function getPreviewStats() {
+    const akanDiimport = previewRows.filter(row => row.bisaImport && !excludedRows.has(row.baris)).length;
+    const diblokirSistem = previewRows.filter(row => !row.bisaImport).length;
+    const tidakDimasukkan = excludedRows.size;
+    const bermasalahAktif = previewRows.filter(row =>
+      row.status === 'bermasalah' && row.bisaImport && !excludedRows.has(row.baris)
+    ).length;
 
-  async function submitImport() {
+    return {
+      total: previewRows.length,
+      akanDiimport,
+      diblokirSistem,
+      tidakDimasukkan,
+      bermasalahAktif
+    };
+  }
+
+  function renderRowAction(row, mode) {
+    if (mode === 'preview') {
+      if (!row.bisaImport) return '<span style="font-size:12px;color:var(--danger);">Diblokir sistem</span>';
+
+      if (excludedRows.has(row.baris)) {
+        return `<button class="btn btn-outline btn-xs" onclick="toggleExcludeRow(${row.baris})">Masukkan Lagi</button>`;
+      }
+
+      return `<button class="btn btn-danger btn-xs" onclick="toggleExcludeRow(${row.baris})">Jangan Masukkan</button>`;
+    }
+
+    if (row.status === 'dilewati') {
+      return '<span style="font-size:12px;color:var(--text3);">Tidak dimasukkan</span>';
+    }
+
+    if (row.status === 'duplikat' || row.status === 'gagal') {
+      return '<span style="font-size:12px;color:var(--danger);">Ditolak sistem</span>';
+    }
+
+    return '<span style="font-size:12px;color:var(--text3);">Masuk</span>';
+  }
+
+  function renderRows(detail = [], mode = 'preview') {
+    const tbody = document.getElementById('tbody-result');
+    tbody.innerHTML = detail.map(row => `
+      <tr class="${row.status === 'duplikat' || row.status === 'gagal' || row.status === 'bermasalah' || (mode === 'preview' && excludedRows.has(row.baris)) ? 'row-dup' : ''}">
+        <td style="color:var(--text3);">${row.baris}</td>
+        <td style="font-weight:600;">${escapeHTML(row.nama || '-')}</td>
+        <td><span class="nik">${escapeHTML(row.nik || '-')}</span></td>
+        <td>${renderStatusBadge(row.status, mode)}</td>
+        <td style="font-size:12px;color:var(--text3);">${escapeHTML(row.alasan || '-')}</td>
+        <td>${renderRowAction(row, mode)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderStatusBadge(status, mode) {
+    if (status === 'siap') return '<span class="badge badge-blue">Siap Import</span>';
+    if (status === 'berhasil') return '<span class="badge badge-green">Berhasil</span>';
+    if (status === 'bermasalah') return `<span class="badge badge-orange">${mode === 'preview' ? 'Bermasalah' : 'Masuk, Perlu Cek'}</span>`;
+    if (status === 'dilewati') return '<span class="badge badge-red">Tidak Dimasukkan</span>';
+    if (status === 'duplikat') return '<span class="badge badge-red">Duplikat</span>';
+    return '<span class="badge badge-red">Gagal</span>';
+  }
+
+  function renderPreviewState() {
+    const stats = getPreviewStats();
+
+    document.getElementById('result-title').textContent = 'Hasil Cross-Check Import';
+    document.getElementById('res-label-1').textContent = 'Akan Diimport';
+    document.getElementById('res-label-2').textContent = 'Tidak Masuk';
+    document.getElementById('res-label-3').textContent = 'Total Baris';
+    document.getElementById('res-berhasil').textContent = stats.akanDiimport;
+    document.getElementById('res-gagal').textContent = stats.total - stats.akanDiimport;
+    document.getElementById('res-total').textContent = stats.total;
+
+    renderRows(previewRows, 'preview');
+    resultWrap.style.display = 'block';
+    resultWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const catatan = [];
+    if (stats.akanDiimport) catatan.push(`${stats.akanDiimport} baris akan diimport`);
+    if (stats.diblokirSistem) catatan.push(`${stats.diblokirSistem} diblokir sistem`);
+    if (stats.tidakDimasukkan) catatan.push(`${stats.tidakDimasukkan} Anda tandai jangan dimasukkan`);
+    if (stats.bermasalahAktif) catatan.push(`${stats.bermasalahAktif} masih bermasalah`);
+
+    previewMessage.textContent = catatan.length
+      ? `Cross-check selesai: ${catatan.join(', ')}. Gunakan tombol per baris atau tombol massal untuk menentukan data yang tidak boleh masuk.`
+      : 'Tidak ada data yang terbaca dari file.';
+
+    btnConfirmImport.style.display = stats.akanDiimport ? '' : 'none';
+    previewActions.style.display = 'block';
+  }
+
+  function toggleExcludeRow(baris) {
+    if (excludedRows.has(baris)) {
+      excludedRows.delete(baris);
+    } else {
+      excludedRows.add(baris);
+    }
+    renderPreviewState();
+  }
+
+  function excludeAllBermasalah() {
+    previewRows
+      .filter(row => row.bisaImport && row.status === 'bermasalah')
+      .forEach(row => excludedRows.add(row.baris));
+    renderPreviewState();
+  }
+
+  function excludeAllImportable() {
+    if (!previewRows.some(row => row.bisaImport && !excludedRows.has(row.baris))) {
+      showToast('Semua data yang bisa diimport memang sudah tidak dimasukkan', '⚠️');
+      return;
+    }
+
+    previewRows
+      .filter(row => row.bisaImport)
+      .forEach(row => excludedRows.add(row.baris));
+
+    showToast('Semua data dibatalkan dari import', '🗑️');
+    clearFile();
+  }
+
+  function includeAllRows() {
+    excludedRows.clear();
+    renderPreviewState();
+  }
+
+  function renderSummary(result, mode = 'preview') {
+    if (mode === 'preview') {
+      previewRows = result.detail || [];
+      excludedRows.clear();
+      renderPreviewState();
+    } else {
+      const masukKeSistem = (result.berhasil || 0) + (result.bermasalah || 0);
+      const tidakMasuk = (result.duplikat || 0) + (result.gagal || 0) + (result.dilewati || 0);
+      document.getElementById('result-title').textContent = 'Hasil Import';
+      document.getElementById('res-label-1').textContent = 'Masuk ke Sistem';
+      document.getElementById('res-label-2').textContent = 'Tidak Masuk';
+      document.getElementById('res-label-3').textContent = 'Total Baris';
+      document.getElementById('res-berhasil').textContent = masukKeSistem;
+      document.getElementById('res-gagal').textContent = tidakMasuk;
+      document.getElementById('res-total').textContent = result.total || 0;
+      renderRows(result.detail || [], mode);
+      resultWrap.style.display = 'block';
+      resultWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  document.getElementById('inp-kader').addEventListener('change', () => {
+    hideAlerts();
+    resetPreviewState();
+    checkReady();
+  });
+
+  async function previewImport() {
     const kaderId = document.getElementById('inp-kader').value;
     if (!selectedFile || !kaderId) return;
 
-    const btn = document.getElementById('btn-import');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;"></span>Mengimport…';
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('kaderId', kaderId);
+    hideAlerts();
+    setButtonLoading(btnImport, true, 'Memeriksa File...');
+    btnConfirmImport.disabled = true;
 
     try {
-      const result = await PemilihAPI.importExcel(formData);
-
+      const result = await PemilihAPI.previewImport(buildImportFormData());
       if (result.error) {
-        document.getElementById('alert-error').textContent = '❌ ' + result.error;
-        document.getElementById('alert-error').classList.add('show');
-        btn.disabled = false;
-        btn.innerHTML = '📥 Mulai Import';
+        showError(result.error);
         return;
       }
 
-      // Show results
-      document.getElementById('res-berhasil').textContent = result.berhasil;
-      document.getElementById('res-gagal').textContent    = result.gagal;
-      document.getElementById('res-total').textContent    = result.berhasil + result.gagal;
+      renderSummary(result, 'preview');
 
-      const tbody = document.getElementById('tbody-result');
-      tbody.innerHTML = (result.detail || []).map(d => `
-        <tr class="${d.status === 'gagal' || d.status === 'duplikat' || d.status === 'bermasalah' ? 'row-dup' : ''}">
-          <td style="color:var(--text3);">${d.baris}</td>
-          <td style="font-weight:600;">${d.nama || '-'}</td>
-          <td><span class="nik">${d.nik || '-'}</span></td>
-          <td>
-            ${d.status === 'berhasil'
-              ? '<span class="badge badge-green">✅ Berhasil</span>'
-              : d.status === 'duplikat'
-              ? '<span class="badge badge-red">⚠️ Duplikat</span>'
-              : d.status === 'bermasalah'
-              ? '<span class="badge badge-orange">⚠️ Bermasalah</span>'
-              : '<span class="badge badge-red">❌ Gagal</span>'}
-          </td>
-          <td style="font-size:12px;color:var(--text3);">${d.alasan || '-'}</td>
-        </tr>
-      `).join('');
-
-      document.getElementById('result-wrap').style.display = 'block';
-      document.getElementById('result-wrap').scrollIntoView({ behavior:'smooth' });
-
-      showToast(`Import selesai: ${result.berhasil} berhasil, ${result.gagal} gagal`);
+      showSuccess(result.pesan || 'Cross-check selesai. Silakan periksa hasilnya dulu dan tandai data yang jangan dimasukkan.');
     } catch (e) {
-      document.getElementById('alert-error').textContent = '❌ Terjadi kesalahan: ' + e.message;
-      document.getElementById('alert-error').classList.add('show');
+      showError('Terjadi kesalahan saat memeriksa file: ' + e.message);
+    } finally {
+      setButtonLoading(btnImport, false, 'Cek Dulu');
+      btnConfirmImport.disabled = false;
+      checkReady();
     }
+  }
 
-    btn.disabled = false;
-    btn.innerHTML = '📥 Mulai Import';
+  async function confirmImport() {
+    const kaderId = document.getElementById('inp-kader').value;
+    if (!selectedFile || !kaderId) return;
+    if (!confirm('Lanjutkan import data yang lolos cross-check ke kader terpilih?')) return;
+
+    hideAlerts();
+    setButtonLoading(btnConfirmImport, true, 'Mengimport...');
+    btnImport.disabled = true;
+
+    try {
+      const result = await PemilihAPI.importExcel(buildImportFormData());
+      if (result.error) {
+        showError(result.error);
+        return;
+      }
+
+      renderSummary(result, 'final');
+      previewActions.style.display = 'none';
+
+      const masukKeSistem = (result.berhasil || 0) + (result.bermasalah || 0);
+      const tidakMasuk = (result.duplikat || 0) + (result.gagal || 0) + (result.dilewati || 0);
+      showSuccess(`Import selesai. ${masukKeSistem} data masuk ke sistem, ${tidakMasuk} data tidak masuk.`);
+      showToast(`Import selesai: ${masukKeSistem} masuk, ${tidakMasuk} tidak masuk`);
+    } catch (e) {
+      showError('Terjadi kesalahan saat import: ' + e.message);
+    } finally {
+      setButtonLoading(btnConfirmImport, false, 'Lanjutkan Import');
+      checkReady();
+    }
   }
 
   populateKaderSelect();

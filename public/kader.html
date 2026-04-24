@@ -7,56 +7,107 @@
   <link rel="stylesheet" href="/css/style.css"/>
   <script src="/js/auth.js"></script>
 </head>
-<body>
+<body class="app-shell-page">
 
-<header>
-  <div class="container header-inner">
-    <a href="/" class="logo">
-      <div class="logo-icon">🗳️</div>
-      <div class="logo-text">Data<span>Pilih</span></div>
-    </a>
-    <nav class="nav">
-      <a href="/">📊 Dashboard</a>
-      <a href="/tambah-pemilih">➕ Tambah Pemilih</a>
-      <a href="/import">📥 Import</a>
-      <a href="/kader" class="active">🎖️ Kader</a>
-      <a href="/log-duplikat">🔍 Log Duplikat</a>
-    </nav>
-  </div>
-</header>
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
 
-<div class="container">
-  <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;">
-    <div>
-      <div class="breadcrumb"><a href="/">Dashboard</a> › <span>Kelola Kader</span></div>
-      <h1>Kelola Kader</h1>
-      <p>Tambah dan kelola data kader yang bertugas mendata pemilih.</p>
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader" class="active"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Monitoring wilayah</strong>
+          <span>Halaman ini dipakai untuk memantau persebaran kader, target suara, dan progres input per wilayah.</span>
+        </div>
+      </div>
     </div>
-    <a href="/tambah-kader" class="btn btn-green superadmin-only" style="width:auto;margin-bottom:2px;">➕ Tambah Kader</a>
-  </div>
+  </aside>
 
-  <div class="card">
-    <div class="card-title"><div class="card-icon ci-blue">🎖️</div> Daftar Semua Kader</div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Kader ke-</th>
-            <th>Nama Kader</th>
-            <th>Wilayah</th>
-            <th>Jumlah Orang</th>
-            <th>Target Suara</th>
-            <th>Progress</th>
-            <th>Ditambahkan</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="tbody-kader">
-          <tr><td colspan="8"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
-        </tbody>
-      </table>
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Manajemen Kader</div>
+        <div class="app-topbar-title">Kelola Data Kader</div>
+        <div class="app-topbar-subtitle">Tambah, lihat, dan evaluasi performa kader dari satu halaman.</div>
+      </div>
+      <div class="header-user-slot"></div>
     </div>
-  </div>
+
+    <div class="app-main-body">
+      <div class="container">
+        <div class="page-header page-header-card">
+          <div class="page-header-row">
+            <div>
+              <div class="breadcrumb"><a href="/">Dashboard</a> › <span>Kelola Kader</span></div>
+              <h1>Kelola Kader</h1>
+              <p>Tambah dan kelola data kader yang bertugas mendata pemilih.</p>
+            </div>
+            <div class="page-actions">
+              <a href="/tambah-kader" class="btn btn-green superadmin-only" style="width:auto;">Tambah Kader</a>
+            </div>
+          </div>
+          <div class="page-metric-grid">
+            <div class="page-metric">
+              <span>Fokus Halaman</span>
+              <strong>Wilayah</strong>
+            </div>
+            <div class="page-metric">
+              <span>Target</span>
+              <strong>Suara</strong>
+            </div>
+            <div class="page-metric">
+              <span>Aktivitas</span>
+              <strong>Tim</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><div class="card-icon ci-blue">🎖️</div> Daftar Semua Kader</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Kader ke-</th>
+                  <th>Nama Kader</th>
+                  <th>Wilayah</th>
+                  <th>Jumlah Orang</th>
+                  <th>Target Suara</th>
+                  <th>Progress</th>
+                  <th>Ditambahkan</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-kader">
+                <tr><td colspan="8"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 </div>
 
 <div id="toast"></div>
@@ -109,6 +160,7 @@
         <td style="font-size:12px;color:var(--text3);">${formatDate(k.created_at)}</td>
         <td>
           <div class="gap-12 superadmin-only">
+            <a href="/view-kader?id=${k.id}" class="btn btn-outline btn-xs" aria-label="Lihat detail Kader ${k.nomor} - ${k.nama}">👁️ Lihat</a>
             <a href="/edit-kader?id=${k.id}" class="btn btn-outline btn-xs" aria-label="Edit Kader ${k.nomor} - ${k.nama}">✏️ Edit</a>
             <button class="btn btn-danger btn-xs" aria-label="Hapus Kader ${k.nomor} - ${k.nama}" onclick="konfirmasiHapusKader('${k.id}','${k.nama}',${k.nomor})">🗑️ Hapus</button>
           </div>

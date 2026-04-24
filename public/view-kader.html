@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Detail Kader — Pendataan</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <script src="/js/auth.js"></script>
+</head>
+<body class="app-shell-page">
+
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">DP</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader" class="active"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Detail kader</strong>
+          <span>Lihat profil kader, wilayah kerja, target suara, dan daftar pemilih yang berada di bawahnya.</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Detail Kader</div>
+        <div class="app-topbar-title" id="header-kader-nama">Detail Kader</div>
+        <div class="app-topbar-subtitle" id="header-kader-info">Lihat dan kelola data pemilih dalam kader ini.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container-sm">
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › <a href="/kader">Kader</a> › <span id="breadcrumb-kader">Detail Kader</span>
+          </div>
+          <h1>Panel Detail Kader</h1>
+          <p>Informasi kader, wilayah kerja, dan daftar pemilih ditampilkan dalam satu area kerja.</p>
+        </div>
+
+        <div id="loading-wrap" class="card card-loading-wrap">
+          <div class="loading"><span class="spinner"></span> Memuat data…</div>
+        </div>
+
+        <div id="content-wrap" class="is-hidden">
+          <div class="section-grid">
+            <div class="card">
+              <div class="card-title"><div class="card-icon ci-blue">KD</div> Informasi Kader</div>
+              <div class="info-grid">
+                <div class="info-box">
+                  <strong>Nomor Kader</strong>
+                  <span>Kader <span id="info-nomor">-</span></span>
+                </div>
+                <div class="info-box">
+                  <strong>Nama Kader</strong>
+                  <span id="info-nama">-</span>
+                </div>
+                <div class="info-box">
+                  <strong>Target Suara</strong>
+                  <span id="info-target" class="mono-jetbrains">-</span>
+                </div>
+                <div class="info-box">
+                  <strong>Dusun</strong>
+                  <span id="info-dusun">-</span>
+                </div>
+                <div class="info-box">
+                  <strong>Kordus</strong>
+                  <span id="info-kordus">-</span>
+                </div>
+                <div class="info-box">
+                  <strong>Total Aktivitas</strong>
+                  <span id="info-total-aktivitas">-</span>
+                </div>
+                <div class="info-box">
+                  <strong>Data Masuk</strong>
+                  <span id="info-total-pemilih">-</span>
+                </div>
+                <div class="info-box">
+                  <strong>Butuh Cek</strong>
+                  <span id="info-total-bermasalah">-</span>
+                </div>
+                <div class="info-box">
+                  <strong>Log Duplikat</strong>
+                  <span id="info-total-duplikat">-</span>
+                </div>
+              </div>
+              <div class="gap-12 section-actions-top">
+                <a href="/kader" class="btn btn-outline btn-flex-fill-center">Kembali</a>
+                <a id="btn-edit-kader" href="#" class="btn btn-primary btn-flex-fill-center">Edit Kader</a>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title"><div class="card-icon ci-green">PM</div> Riwayat Input Kader <span id="pemilih-count" class="card-title-count">0 aktivitas</span></div>
+              <div class="audit-summary-note" id="audit-summary-note">Data masuk, data butuh cek, dan log duplikat akan dirangkum di sini untuk audit lapangan.</div>
+
+              <div class="card-toolbar">
+                <div class="search-wrap search-wrap-flex">
+                  <span class="search-icon">?</span>
+                  <input type="text" id="search-pemilih" placeholder="Cari nama, NIK, atau catatan audit..." />
+                </div>
+                <div class="gap-8">
+                  <button class="btn btn-outline btn-sm btn-nowrap" onclick="exportAuditCSV()">Export Audit CSV</button>
+                  <button class="btn btn-danger btn-sm btn-nowrap" onclick="openBulkDeleteModal()" title="Hapus beberapa atau semua data pemilih">Hapus Isi</button>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table id="table-pemilih" class="table-clean">
+                  <thead>
+                    <tr>
+                      <th>NIK</th>
+                      <th>Nama</th>
+                      <th>Status</th>
+                      <th>Detail</th>
+                      <th>Waktu</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbody-pemilih">
+                    <tr><td colspan="6"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="notfound-wrap" class="card is-hidden">
+          <div class="empty"><div class="empty-icon">XX</div><p>Kader tidak ditemukan. <a href="/kader" class="link-accent">Kembali ke daftar kader</a></p></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal Edit Pemilih -->
+<div id="modal-edit-pemilih" class="modal-overlay">
+  <div class="card modal-card-edit">
+    <div class="card-title">✏️ Edit Data Pemilih</div>
+    <div id="alert-error-modal" class="alert-error is-hidden"></div>
+    
+    <div class="form-group">
+      <label for="modal-nik">NIK (opsional, 16 digit bila tersedia)</label>
+      <input type="text" id="modal-nik" class="input-mono-spaced" placeholder="16 digit NIK atau kosongkan dulu" autocomplete="off"/>
+      <div id="modal-nik-status" class="helper-text-small"></div>
+    </div>
+    
+    <div class="form-group">
+      <label for="modal-nama">Nama Lengkap</label>
+      <input type="text" id="modal-nama" placeholder="Nama lengkap…" autocomplete="off"/>
+    </div>
+    
+    <div class="form-group">
+      <label for="modal-tgl-lahir">Tanggal Lahir</label>
+      <input type="date" id="modal-tgl-lahir"/>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group form-group-flex">
+        <label for="modal-jk">Jenis Kelamin</label>
+        <select id="modal-jk">
+          <option value="">—</option>
+          <option value="L">Laki-laki</option>
+          <option value="P">Perempuan</option>
+        </select>
+      </div>
+      <div class="form-group form-group-flex">
+        <label for="modal-umur">Umur</label>
+        <div id="modal-umur" class="modal-umur-box">-</div>
+      </div>
+    </div>
+    
+    <div class="gap-12 section-actions-16">
+      <button class="btn btn-outline btn-flex-1" onclick="closePemilihModal()">Batal</button>
+      <button class="btn btn-primary btn-flex-1" onclick="savePemilihEdit()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Pilih Kader untuk Pindah -->
+<div id="modal-pindah-pemilih" class="modal-overlay">
+  <div class="card modal-card-sm">
+    <div class="card-title">🔄 Pindahkan Pemilih ke Kader Lain</div>
+    
+    <div class="form-group">
+      <label for="modal-kader-target">Pilih Kader Tujuan</label>
+      <select id="modal-kader-target">
+        <option value="">— Pilih Kader —</option>
+      </select>
+    </div>
+    
+    <div class="gap-12">
+      <button class="btn btn-outline btn-flex-1" onclick="closePindahModal()">Batal</button>
+      <button class="btn btn-primary btn-flex-1" onclick="savePemilihPindah()">🔄 Pindahkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Pilih Pemilih untuk Dihapus -->
+<div id="modal-bulk-delete" class="modal-overlay modal-overlay-scroll">
+  <div class="card modal-card-md">
+    <div class="card-title">🗑️ Hapus Data Pemilih</div>
+    
+    <div class="danger-panel">
+      <strong>Opsi Penghapusan:</strong>
+      <div class="danger-panel-copy">
+        <label class="delete-option-label">
+          <input type="radio" name="delete-option" value="all" checked/>
+          <span>Hapus SEMUA data pemilih dalam kader ini</span>
+        </label>
+        <label class="delete-option-label">
+          <input type="radio" name="delete-option" value="selected"/>
+          <span>Pilih pemilih yang mau dihapus</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- List pemilih untuk opsi "selected" -->
+    <div id="pemilih-list-delete" class="delete-list">
+      <!-- Akan diisi oleh JavaScript -->
+    </div>
+
+    <div class="gap-12">
+      <button class="btn btn-outline btn-flex-1" onclick="closeBulkDeleteModal()">Batal</button>
+      <button class="btn btn-danger btn-flex-1" onclick="confirmBulkDelete()">🗑️ Hapus</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="/js/kader.js"></script>
+<script src="/js/pemilih.js"></script>
+<script src="/js/form-pemilih.js"></script>
+
+<script>
+  let kaderId = null;
+  let kaderData = null;
+  let pemilihList = [];
+  let duplikatList = [];
+  let riwayatList = [];
+  let filteredRiwayat = [];
+  let filteredPemilih = [];
+  let aktivitasSummary = null;
+  let currentEditPemilihId = null;
+
+  function showToast(msg, emoji='✅') {
+    const t = document.getElementById('toast');
+    t.innerHTML = `${emoji} ${msg}`;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function formatNum(n) {
+    return new Intl.NumberFormat('id-ID').format(Number(n) || 0);
+  }
+
+  function formatDateTime(value) {
+    if (!value) return '-';
+    return new Date(value).toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  function formatTanggal(value) {
+    if (!value) return '-';
+    return new Date(value).toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  function renderAktivitasSummary(summary = {}) {
+    aktivitasSummary = summary;
+
+    const totalAktivitas = Number(summary.totalAktivitas || 0);
+    const totalPemilih = Number(summary.totalPemilih || 0);
+    const totalBermasalah = Number(summary.totalBermasalah || 0);
+    const totalDuplikatPercobaan = Number(summary.totalDuplikatPercobaan || 0);
+
+    document.getElementById('info-total-aktivitas').textContent = formatNum(totalAktivitas);
+    document.getElementById('info-total-pemilih').textContent = formatNum(totalPemilih);
+    document.getElementById('info-total-bermasalah').textContent = formatNum(totalBermasalah);
+    document.getElementById('info-total-duplikat').textContent = formatNum(totalDuplikatPercobaan);
+    document.getElementById('audit-summary-note').textContent =
+      `${formatNum(totalPemilih)} data masuk, ${formatNum(totalBermasalah)} butuh cek, dan ${formatNum(totalDuplikatPercobaan)} percobaan duplikat siap diaudit dari halaman ini.`;
+  }
+
+  async function init() {
+    kaderId = new URLSearchParams(location.search).get('id');
+    if (!kaderId) { showPage('notfound'); return; }
+
+    try {
+      kaderData = await KaderAPI.getById(kaderId);
+      
+      document.getElementById('breadcrumb-kader').textContent = `Kader ${kaderData.nomor} — ${kaderData.nama}`;
+      document.getElementById('header-kader-nama').textContent = `Kader ${kaderData.nomor} — ${kaderData.nama}`;
+      document.getElementById('header-kader-info').textContent = `Lihat dan kelola ${kaderData.dusun || '-'} · Kordus ${kaderData.kordus || '-'}`;
+      
+      document.getElementById('info-nomor').textContent = kaderData.nomor;
+      document.getElementById('info-nama').textContent = kaderData.nama;
+      document.getElementById('info-dusun').textContent = kaderData.dusun || '-';
+      document.getElementById('info-kordus').textContent = kaderData.kordus || '-';
+      document.getElementById('info-target').textContent = kaderData.target_suara || '-';
+      document.getElementById('btn-edit-kader').href = `/edit-kader?id=${kaderId}`;
+      
+      await loadAktivitasKader();
+      showPage('content');
+    } catch (e) {
+      showPage('notfound');
+    }
+  }
+
+  async function loadAktivitasKader() {
+    const res = await fetchWithAuth(`/api/kader/${kaderId}/aktivitas`);
+    const payload = await res.json();
+    pemilihList = payload.pemilih || [];
+    duplikatList = payload.duplikat || [];
+    riwayatList = payload.riwayat || [];
+    filteredRiwayat = riwayatList;
+    filteredPemilih = riwayatList;
+    renderAktivitasSummary(payload.summary || {});
+    renderPemilihTable();
+  }
+
+  function renderPemilihTable() {
+    const tbody = document.getElementById('tbody-pemilih');
+    const totalAktivitas = Number(aktivitasSummary?.totalAktivitas || 0);
+    document.getElementById('pemilih-count').textContent = `${formatNum(filteredRiwayat.length)} / ${formatNum(riwayatList.length)} baris audit • ${formatNum(totalAktivitas)} aktivitas`;
+    
+    if (filteredRiwayat.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6">
+        <div class="empty audit-empty">
+          <div class="empty-icon">👥</div>
+          <p>Tidak ada data yang cocok untuk ditampilkan pada audit kader ini.</p>
+        </div>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filteredRiwayat.map(p => {
+      const jkText = p.jenis_kelamin === 'L' ? '♂️ Laki' : p.jenis_kelamin === 'P' ? '♀️ Perem' : '-';
+      return `
+      <tr class="audit-row">
+        <td class="audit-cell-nik">${p.nik || '-'}</td>
+        <td class="audit-cell-name">${p.nama}</td>
+        <td class="audit-cell-date">${p.tanggal_lahir ? new Date(p.tanggal_lahir).toLocaleDateString('id-ID') : '-'}</td>
+        <td class="audit-cell-center audit-cell-small">${p.umur !== null ? p.umur + ' thn' : '-'}</td>
+        <td class="audit-cell-center">${jkText}</td>
+        <td>
+          <div class="gap-8">
+            <button class="btn btn-outline btn-xs" onclick="openEditPemilihModal('${p.id}')">✏️</button>
+            <button class="btn btn-outline btn-xs" onclick="openPindahModal('${p.id}')">🔄</button>
+            <button class="btn btn-danger btn-xs" onclick="hapusPemilih('${p.id}','${p.nama}')">🗑️</button>
+          </div>
+        </td>
+      </tr>
+      `;
+    }).join('');
+  }
+
+  function showPage(page) {
+    document.getElementById('loading-wrap').style.display = page === 'loading' ? 'block' : 'none';
+    document.getElementById('content-wrap').style.display = page === 'content' ? 'block' : 'none';
+    document.getElementById('notfound-wrap').style.display = page === 'notfound' ? 'block' : 'none';
+  }
+
+  // ─── Search ────────────────────────────────────────
+  document.getElementById('search-pemilih').addEventListener('input', function(e) {
+    const q = e.target.value.toLowerCase().trim();
+    if (!q) {
+      filteredPemilih = pemilihList;
+    } else {
+      filteredPemilih = pemilihList.filter(p =>
+        p.nama.toLowerCase().includes(q) || (p.nik || '').includes(q)
+      );
+    }
+    renderPemilihTable();
+  });
+
+  // ─── Edit Pemilih Modal ────────────────────────────
+  async function openEditPemilihModal(pemilihId) {
+    const p = pemilihList.find(x => x.id === pemilihId);
+    if (!p) return;
+
+    currentEditPemilihId = pemilihId;
+    document.getElementById('modal-nik').value = p.nik || '';
+    document.getElementById('modal-nama').value = p.nama;
+    document.getElementById('modal-tgl-lahir').value = p.tanggal_lahir ? p.tanggal_lahir.substring(0, 10) : '';
+    document.getElementById('modal-jk').value = p.jenis_kelamin || '';
+    if (p.umur !== null) {
+      document.getElementById('modal-umur').textContent = p.umur + ' tahun';
+    } else {
+      document.getElementById('modal-umur').textContent = '-';
+    }
+    
+    document.getElementById('alert-error-modal').style.display = 'none';
+    document.getElementById('modal-edit-pemilih').style.display = 'flex';
+  }
+
+  function closePemilihModal() {
+    document.getElementById('modal-edit-pemilih').style.display = 'none';
+    currentEditPemilihId = null;
+  }
+
+  async function savePemilihEdit() {
+    const nik = document.getElementById('modal-nik').value.trim();
+    const nama = document.getElementById('modal-nama').value.trim();
+    const tglLahir = document.getElementById('modal-tgl-lahir').value;
+    const jk = document.getElementById('modal-jk').value;
+
+    if (!nama) {
+      showErrorModal('Nama harus diisi');
+      return;
+    }
+
+    if (nik && !/^\d+$/.test(nik)) {
+      showErrorModal('NIK harus berupa angka');
+      return;
+    }
+
+    try {
+      const res = await fetchWithAuth(`/api/pemilih/${currentEditPemilihId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nama,
+          nik,
+          kaderId,
+          tanggalLahir: tglLahir || null,
+          jenisKelamin: jk || null
+        })
+      });
+      const result = await res.json();
+      if (result.error) {
+        showErrorModal(result.error);
+        return;
+      }
+      showToast('Data pemilih berhasil diperbarui', '✅');
+      closePemilihModal();
+      await loadPemilihKader();
+    } catch (e) {
+      showErrorModal(e.message);
+    }
+  }
+
+  function showErrorModal(msg) {
+    document.getElementById('alert-error-modal').textContent = msg;
+    document.getElementById('alert-error-modal').style.display = 'block';
+  }
+
+  // ─── Pindah Pemilih Modal ──────────────────────────
+  let currentPindahPemilihId = null;
+
+  async function openPindahModal(pemilihId) {
+    const p = pemilihList.find(x => x.id === pemilihId);
+    if (!p) return;
+
+    currentPindahPemilihId = pemilihId;
+    const kaders = await KaderAPI.getAll();
+    const selectEl = document.getElementById('modal-kader-target');
+    selectEl.innerHTML = '<option value="">— Pilih Kader —</option>' +
+      kaders.filter(k => k.id !== kaderId).map(k =>
+        `<option value="${k.id}">Kader ${k.nomor} — ${k.nama}</option>`
+      ).join('');
+    
+    document.getElementById('modal-pindah-pemilih').style.display = 'flex';
+  }
+
+  function closePindahModal() {
+    document.getElementById('modal-pindah-pemilih').style.display = 'none';
+    currentPindahPemilihId = null;
+  }
+
+  async function savePemilihPindah() {
+    const targetKaderId = document.getElementById('modal-kader-target').value;
+    if (!targetKaderId) {
+      showToast('Pilih kader tujuan', '⚠️');
+      return;
+    }
+
+    try {
+      // Ambil data pemilih terlebih dahulu untuk mendapatkan field lainnya
+      const pemilih = pemilihList.find(p => p.id === currentPindahPemilihId);
+      if (!pemilih) {
+        showToast('Data pemilih tidak ditemukan', '❌');
+        return;
+      }
+
+      const res = await fetchWithAuth(`/api/pemilih/${currentPindahPemilihId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nama: pemilih.nama,
+          nik: pemilih.nik,
+          kaderId: targetKaderId,
+          tanggalLahir: pemilih.tanggal_lahir,
+          jenisKelamin: pemilih.jenis_kelamin
+        })
+      });
+      const result = await res.json();
+      if (result.error) {
+        showToast(result.error, '❌');
+        return;
+      }
+      showToast('Pemilih berhasil dipindahkan', '🔄');
+      closePindahModal();
+      await loadPemilihKader();
+    } catch (e) {
+      showToast(e.message, '❌');
+    }
+  }
+
+  // ─── Hapus Pemilih ────────────────────────────────
+  async function hapusPemilih(pemilihId, nama) {
+    if (!confirm(`Hapus data pemilih ${nama}?`)) return;
+
+    try {
+      const res = await fetchWithAuth(`/api/pemilih/${pemilihId}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.error) {
+        showToast(result.error, '❌');
+        return;
+      }
+      showToast(`${nama} dihapus dari kader`, '🗑️');
+      await loadPemilihKader();
+    } catch (e) {
+      showToast(e.message, '❌');
+    }
+  }
+
+  // ─── Bulk Delete Modal ─────────────────────────────
+  let selectedForDelete = new Set();
+
+  function openBulkDeleteModal() {
+    if (pemilihList.length === 0) {
+      showToast('Tidak ada data pemilih untuk dihapus', '⚠️');
+      return;
+    }
+
+    selectedForDelete.clear();
+    document.getElementById('modal-bulk-delete').style.display = 'flex';
+    renderBulkDeleteOptions();
+  }
+
+  function closeBulkDeleteModal() {
+    document.getElementById('modal-bulk-delete').style.display = 'none';
+    selectedForDelete.clear();
+  }
+
+  function renderBulkDeleteOptions() {
+    const listContainer = document.getElementById('pemilih-list-delete');
+    listContainer.innerHTML = pemilihList.map(p => `
+      <label class="delete-item">
+        <input type="checkbox" value="${p.id}" onchange="toggleSelectForDelete(this)"/>
+        <span class="delete-item-main">
+          <strong>${p.nama}</strong><br/>
+          <span class="delete-item-sub">NIK: ${p.nik || '-'}</span>
+        </span>
+      </label>
+    `).join('');
+  }
+
+  function toggleSelectForDelete(checkbox) {
+    if (checkbox.checked) {
+      selectedForDelete.add(checkbox.value);
+    } else {
+      selectedForDelete.delete(checkbox.value);
+    }
+  }
+
+  async function confirmBulkDelete() {
+    const option = document.querySelector('input[name="delete-option"]:checked').value;
+
+    if (option === 'all') {
+      const msg = `Hapus SEMUA data pemilih (${pemilihList.length} orang) dalam kader ini?\n\n⚠️ Ini tidak dapat dibatalkan!`;
+      if (!confirm(msg)) return;
+
+      try {
+        const res = await fetchWithAuth(`/api/kader/${kaderId}/pemilih/clear`, { method: 'DELETE' });
+        const result = await res.json();
+        if (result.error) {
+          showToast(result.error, '❌');
+          return;
+        }
+        showToast(`${result.deletedCount || pemilihList.length} data pemilih dihapus`, '🗑️');
+        closeBulkDeleteModal();
+        await loadPemilihKader();
+      } catch (e) {
+        showToast(e.message, '❌');
+      }
+    } else if (option === 'selected') {
+      if (selectedForDelete.size === 0) {
+        showToast('Pilih minimal 1 pemilih untuk dihapus', '⚠️');
+        return;
+      }
+
+      const msg = `Hapus ${selectedForDelete.size} data pemilih yang dipilih?\n\n⚠️ Ini tidak dapat dibatalkan!`;
+      if (!confirm(msg)) return;
+
+      try {
+        let deletedCount = 0;
+        for (const pemilihId of selectedForDelete) {
+          const res = await fetchWithAuth(`/api/pemilih/${pemilihId}`, { method: 'DELETE' });
+          const result = await res.json();
+          if (!result.error) deletedCount++;
+        }
+        showToast(`${deletedCount} data pemilih dihapus`, '🗑️');
+        closeBulkDeleteModal();
+        await loadPemilihKader();
+      } catch (e) {
+        showToast(e.message, '❌');
+      }
+    }
+  }
+
+  // Tampilkan/sembunyikan list checkbox saat radio button berubah
+  document.addEventListener('change', function(e) {
+    if (e.target.name === 'delete-option') {
+      const listContainer = document.getElementById('pemilih-list-delete');
+      listContainer.style.display = e.target.value === 'selected' ? 'block' : 'none';
+    }
+  });
+
+  // Close modal ketika klik di luar
+  window.addEventListener('click', function(e) {
+    const modalEdit = document.getElementById('modal-edit-pemilih');
+    const modalPindah = document.getElementById('modal-pindah-pemilih');
+    const modalDelete = document.getElementById('modal-bulk-delete');
+    if (e.target === modalEdit) closePemilihModal();
+    if (e.target === modalPindah) closePindahModal();
+    if (e.target === modalDelete) closeBulkDeleteModal();
+  });
+
+  init();
+</script>
+<script>
+  window.loadPemilihKader = loadAktivitasKader;
+
+  renderPemilihTable = function () {
+    const tbody = document.getElementById('tbody-pemilih');
+    const totalAktivitas = Number(aktivitasSummary?.totalAktivitas || 0);
+    document.getElementById('pemilih-count').textContent =
+      `${formatNum(filteredRiwayat.length)} / ${formatNum(riwayatList.length)} baris audit | ${formatNum(totalAktivitas)} aktivitas`;
+
+    if (!filteredRiwayat.length) {
+      tbody.innerHTML = `<tr><td colspan="6">
+        <div class="empty audit-empty">
+          <div class="empty-icon">Audit</div>
+          <p>Tidak ada data yang cocok untuk ditampilkan pada audit kader ini.</p>
+        </div>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filteredRiwayat.map(item => {
+      const isDuplikat = item.jenis_entry === 'duplikat';
+      const jkText = item.jenis_kelamin === 'L' ? 'Laki-laki' : item.jenis_kelamin === 'P' ? 'Perempuan' : '-';
+      const statusBadge = isDuplikat
+        ? `<span class="badge badge-red">Duplikat x${formatNum(item.jumlah_percobaan || 1)}</span>`
+        : item.status
+          ? '<span class="badge badge-orange">Butuh Cek</span>'
+          : '<span class="badge badge-green">Data Masuk</span>';
+      const detailText = isDuplikat
+        ? (item.catatan || '-')
+        : [
+            `Tgl lahir: ${formatTanggal(item.tanggal_lahir)}`,
+            `Umur: ${item.umur !== null ? `${item.umur} thn` : '-'}`,
+            `JK: ${jkText}`
+          ].join(' | ');
+      const actionButtons = isDuplikat
+        ? `<a href="/log-duplikat" class="btn btn-outline btn-xs">Lihat Log</a>`
+        : `<div class="gap-8">
+            <button class="btn btn-outline btn-xs" onclick="openEditPemilihModal('${item.id}')">Edit</button>
+            <button class="btn btn-outline btn-xs" onclick="openPindahModal('${item.id}')">Pindah</button>
+            <button class="btn btn-danger btn-xs" onclick="hapusPemilih('${item.id}','${item.nama}')">Hapus</button>
+          </div>`;
+
+      return `
+        <tr class="audit-row ${isDuplikat ? 'audit-row-dup' : item.status ? 'audit-row-warning' : ''}">
+          <td class="audit-cell-nik">${item.nik || '-'}</td>
+          <td>
+            <div class="audit-cell-name">${item.nama || '-'}</div>
+            <div class="audit-cell-sub">${isDuplikat ? 'Log percobaan duplikat' : 'Data pemilih kader'}</div>
+          </td>
+          <td>${statusBadge}</td>
+          <td class="audit-cell-detail">${detailText}</td>
+          <td class="audit-cell-time">${formatDateTime(item.waktu_input || item.created_at)}</td>
+          <td>${actionButtons}</td>
+        </tr>
+      `;
+    }).join('');
+  };
+
+  exportAuditCSV = function () {
+    if (!riwayatList.length) {
+      showToast('Tidak ada data audit untuk diekspor', '!');
+      return;
+    }
+
+    const headers = ['Jenis Entry', 'Status', 'NIK', 'Nama', 'Tanggal Lahir', 'Umur', 'Jenis Kelamin', 'Jumlah Percobaan', 'Catatan Audit', 'Waktu Input'];
+    const rows = riwayatList.map(item => [
+      item.jenis_entry === 'duplikat' ? 'Log Duplikat' : 'Data Pemilih',
+      item.label_status || '-',
+      item.nik || '',
+      `"${String(item.nama || '').replace(/"/g, '""')}"`,
+      item.tanggal_lahir || '',
+      item.umur ?? '',
+      item.jenis_kelamin || '',
+      item.jumlah_percobaan || '',
+      `"${String(item.catatan || '').replace(/"/g, '""')}"`,
+      item.waktu_input || item.created_at || ''
+    ]);
+
+    const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-kader-${kaderData?.nomor || 'detail'}-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Audit kader berhasil diekspor', 'OK');
+  };
+
+  (function bindAuditSearch() {
+    const oldInput = document.getElementById('search-pemilih');
+    if (!oldInput || !oldInput.parentNode) return;
+
+    const newInput = oldInput.cloneNode(true);
+    oldInput.parentNode.replaceChild(newInput, oldInput);
+    newInput.addEventListener('input', function (e) {
+      const q = e.target.value.toLowerCase().trim();
+      if (!q) {
+        filteredRiwayat = riwayatList;
+      } else {
+        filteredRiwayat = riwayatList.filter(item =>
+          (item.nama || '').toLowerCase().includes(q) ||
+          (item.nik || '').includes(q) ||
+          (item.catatan || '').toLowerCase().includes(q) ||
+          (item.label_status || '').toLowerCase().includes(q)
+        );
+      }
+      renderPemilihTable();
+    });
+  })();
+
+  Promise.resolve().then(() => {
+    if (riwayatList.length) {
+      filteredRiwayat = riwayatList;
+      renderPemilihTable();
+    }
+  });
+</script>
+</body>
+</html>

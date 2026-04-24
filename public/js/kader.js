@@ -79,13 +79,56 @@ function renderTabelKader(data, tbodyId = 'tbody-kader') {
 }
 
 async function konfirmasiHapusKader(id, nama, nomor) {
-  if (!confirm(`Hapus Kader ${nomor} — ${nama}?`)) return;
-  const res = await KaderAPI.hapus(id);
-  if (res.success) {
-    showToast(`Kader ${nomor} — ${nama} dihapus.`, '🗑️');
-    if (typeof loadKader === 'function') loadKader();
-    if (typeof updateHeaderStats === 'function') updateHeaderStats();
+  // Dialog dengan 3 pilihan: Batal, Hapus Isi, Hapus Kader
+  const choice = prompt(
+    `Pilih aksi untuk Kader ${nomor} — ${nama}:\n\n` +
+    `1 = Hapus hanya isi kader (pemilih)\n` +
+    `2 = Hapus kader + semua pemilih\n` +
+    `0 atau Cancel = Batalkan\n\n` +
+    `Masukkan pilihan (0/1/2):`,
+    '0'
+  );
+
+  if (!choice || choice === '0' || choice === 'Cancel') return;
+
+  if (choice === '1') {
+    // Hapus hanya isi kader (pemilih)
+    if (!confirm(`Hapus semua data pemilih dalam Kader ${nomor} — ${nama}?\n\nIni tidak dapat dibatalkan!`)) return;
+    
+    try {
+      const res = await fetchWithAuth(`/api/kader/${id}/pemilih/clear`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.error) {
+        showToast(result.error, '❌');
+        return;
+      }
+      showToast(`Semua data pemilih dalam Kader ${nomor} dihapus`, '🗑️');
+      if (typeof loadKader === 'function') loadKader();
+      if (typeof updateHeaderStats === 'function') updateHeaderStats();
+    } catch (e) {
+      showToast(e.message, '❌');
+    }
+  } else if (choice === '2') {
+    // Hapus kader + semua isi
+    if (!confirm(
+      `Hapus Kader ${nomor} — ${nama} + semua data pemilih (${parseInt(nomor)} orang)?\n\n` +
+      `⚠️ PERHATIAN: Data akan dihapus PERMANEN!\n\n` +
+      `Klik OK untuk melanjutkan, atau Cancel untuk batal.`
+    )) return;
+
+    try {
+      const res = await KaderAPI.hapus(id);
+      if (res.success) {
+        showToast(`Kader ${nomor} — ${nama} dan semua datanya dihapus`, '🗑️');
+        if (typeof loadKader === 'function') loadKader();
+        if (typeof updateHeaderStats === 'function') updateHeaderStats();
+      } else {
+        showToast(res.error || 'Gagal menghapus', '❌');
+      }
+    } catch (e) {
+      showToast(e.message, '❌');
+    }
   } else {
-    showToast(res.error || 'Gagal menghapus.', '❌');
+    showToast('Pilihan tidak valid', '⚠️');
   }
 }

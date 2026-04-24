@@ -22,12 +22,12 @@ CREATE TABLE IF NOT EXISTS kader (
 CREATE TABLE IF NOT EXISTS pemilih (
     id VARCHAR(20) PRIMARY KEY,
     nama VARCHAR(100) NOT NULL,
-    nik CHAR(16) NOT NULL,
+    nik VARCHAR(32) DEFAULT NULL,
     tanggal_lahir DATE DEFAULT NULL,
     jenis_kelamin ENUM('L','P') DEFAULT NULL,
     kader_id VARCHAR(20) NOT NULL,
     created_at DATETIME DEFAULT NOW(),
-    -- NIK unik (tidak boleh ada 2 NIK sama persis)
+    -- NIK unik bila tersedia (NULL boleh lebih dari satu)
     UNIQUE KEY uq_pemilih_nik (nik),
     -- FULLTEXT untuk pencarian nama cepat
     FULLTEXT KEY ft_pemilih_nama (nama),
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS pemilih (
 -- ── Tabel Log Duplikat (Audit Kecurangan) ────────────
 CREATE TABLE IF NOT EXISTS log_duplikat (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nik_target CHAR(16) NOT NULL,
+    nik_target VARCHAR(32) NOT NULL,
     nama_input VARCHAR(100) NOT NULL,
     kader_id_pelaku VARCHAR(20) NOT NULL,
     kader_id_existing VARCHAR(20) DEFAULT NULL,

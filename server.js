@@ -42,6 +42,39 @@ function hitungUmur(tanggalLahir) {
 }
 
 // ── Helper: parse NIK → tanggal lahir & jenis kelamin ──
+function normalizeNIK(value) {
+  const digits = String(value ?? '').trim().replace(/\D/g, '');
+  return digits || null;
+}
+
+function getNIKStatus(nik) {
+  return /^\d{16}$/.test(nik || '') ? null : 'NIK_INVALID';
+}
+
+function normalizeSpreadsheetKey(key) {
+  return String(key || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function getSpreadsheetValue(row, aliases = []) {
+  if (!row || typeof row !== 'object') return '';
+
+  const normalizedEntries = Object.entries(row).map(([key, value]) => [
+    normalizeSpreadsheetKey(key),
+    value
+  ]);
+
+  for (const alias of aliases) {
+    const normalizedAlias = normalizeSpreadsheetKey(alias);
+    const match = normalizedEntries.find(([key]) => key === normalizedAlias);
+    if (match) return match[1];
+  }
+
+  return '';
+}
+
 function parseNIK(nik) {
   if (!nik || nik.length !== 16) return null;
   let tanggal = parseInt(nik.substring(6, 8));
@@ -73,6 +106,40 @@ async function hasColumn(table, column) {
     [process.env.DB_NAME || '', table, column]
   );
   return res[0] && res[0].n > 0;
+}
+
+async function getColumnMeta(table, column) {
+  const res = await query(
+    `SELECT DATA_TYPE, COLUMN_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE
+     FROM information_schema.columns
+     WHERE table_schema = ? AND table_name = ? AND column_name = ?`,
+    [process.env.DB_NAME || 'pendataan_pemilih', table, column]
+  );
+  return res[0] || null;
+}
+
+async function cleanupDuplicateLogs(nikList = []) {
+  const uniqueNIKs = [...new Set(
+    (Array.isArray(nikList) ? nikList : [nikList])
+      .map(nik => String(nik || '').trim())
+      .filter(Boolean)
+  )];
+
+  let sql = `
+    DELETE l
+    FROM log_duplikat l
+    LEFT JOIN pemilih p ON p.nik = l.nik_target
+  `;
+  const params = [];
+
+  if (uniqueNIKs.length) {
+    sql += ` WHERE l.nik_target IN (${uniqueNIKs.map(() => '?').join(', ')}) AND p.id IS NULL`;
+    params.push(...uniqueNIKs);
+  } else {
+    sql += ' WHERE p.id IS NULL';
+  }
+
+  return query(sql, params);
 }
 
 // ══════ API AUTH ══════════════════════════════════════
@@ -210,10 +277,139 @@ app.put('/api/kader/:id', verifyToken, isSuperadmin, async (req, res) => {
 
 app.delete('/api/kader/:id', verifyToken, isSuperadmin, async (req, res) => {
   try {
-    const punya = await query('SELECT id FROM pemilih WHERE kader_id = ? LIMIT 1', [req.params.id]);
-    if (punya.length) return res.status(400).json({ error: 'Kader masih memiliki data pemilih' });
-    await query('DELETE FROM kader WHERE id = ?', [req.params.id]);
-    res.json({ success: true });
+    const { deleteAction } = req.body || {}; // 'delete' untuk hapus pemilih, 'keep' untuk pindah ke kader lain
+    
+    if (!deleteAction || deleteAction === 'delete') {
+      const pemilihDalamKader = await query('SELECT nik FROM pemilih WHERE kader_id = ?', [req.params.id]);
+
+      // Hapus semua pemilih dalam kader sebelum menghapus kader
+      await query('DELETE FROM pemilih WHERE kader_id = ?', [req.params.id]);
+      await cleanupDuplicateLogs(pemilihDalamKader.map(p => p.nik));
+      await query('DELETE FROM kader WHERE id = ?', [req.params.id]);
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ error: 'Action tidak valid' });
+    }
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Get daftar pemilih dalam satu kader ───────────────
+app.get('/api/kader/:id/pemilih', verifyToken, async (req, res) => {
+  try {
+    const data = await query(`
+      SELECT p.*, 
+             TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS umur
+      FROM pemilih p
+      WHERE p.kader_id = ?
+      ORDER BY p.created_at DESC
+    `, [req.params.id]);
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Hapus semua isi kader (pemilih saja, kader tetap ada) ─
+app.get('/api/kader/:id/aktivitas', verifyToken, async (req, res) => {
+  try {
+    await cleanupDuplicateLogs();
+
+    const kaderId = req.params.id;
+    const pemilih = await query(`
+      SELECT p.*,
+             TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS umur
+      FROM pemilih p
+      WHERE p.kader_id = ?
+      ORDER BY p.created_at DESC
+    `, [kaderId]);
+
+    const hasJumlahPercobaan = await hasColumn('log_duplikat', 'jumlah_percobaan');
+    const hasWaktuTerakhir   = await hasColumn('log_duplikat', 'waktu_terakhir');
+    const hasWaktuPertama    = await hasColumn('log_duplikat', 'waktu_pertama');
+
+    const duplikat = await query(`
+      SELECT CONCAT('dup-', COALESCE(l.nik_target, 'tanpa-nik'), '-', COALESCE(l.kader_id_pelaku, 'unknown')) AS id,
+             l.nik_target AS nik,
+             COALESCE(NULLIF(l.nama_input, ''), NULLIF(l.nama_existing, ''), '(tanpa nama)') AS nama,
+             l.nama_existing,
+             ${hasJumlahPercobaan ? 'l.jumlah_percobaan' : '1'} AS jumlah_percobaan,
+             ${hasWaktuPertama ? 'l.waktu_pertama' : 'l.created_at'} AS waktu_pertama,
+             ${hasWaktuTerakhir ? 'l.waktu_terakhir' : 'l.created_at'} AS waktu_terakhir,
+             CASE
+               WHEN ke.id IS NOT NULL THEN CONCAT('Kader ', ke.nomor, ' - ', ke.nama)
+               WHEN l.kader_id_existing IS NOT NULL THEN CONCAT('ID: ', l.kader_id_existing)
+               ELSE '-'
+             END AS kaderExisting
+      FROM log_duplikat l
+      LEFT JOIN kader ke ON ke.id = l.kader_id_existing
+      WHERE l.kader_id_pelaku = ?
+      ORDER BY ${hasWaktuTerakhir ? 'l.waktu_terakhir' : 'l.created_at'} DESC
+    `, [kaderId]);
+
+    const totalBermasalah = pemilih.filter(item => item.status !== null).length;
+    const totalDuplikatBaris = duplikat.length;
+    const totalDuplikatPercobaan = duplikat.reduce((sum, item) => sum + (Number(item.jumlah_percobaan) || 0), 0);
+
+    const riwayat = [
+      ...pemilih.map(item => ({
+        ...item,
+        jenis_entry: 'pemilih',
+        label_status: item.status ? 'Butuh Cek' : 'Data Masuk',
+        catatan: item.status
+          ? 'NIK kosong atau tidak valid. Perlu cek manual ke berkas fisik.'
+          : 'Data sudah tersimpan di database pemilih.',
+        waktu_input: item.created_at
+      })),
+      ...duplikat.map(item => ({
+        ...item,
+        tanggal_lahir: null,
+        jenis_kelamin: null,
+        umur: null,
+        status: 'DUPLIKAT_LOG',
+        jenis_entry: 'duplikat',
+        label_status: 'Duplikat',
+        catatan: `Bentrok dengan ${item.nama_existing || 'data yang sudah ada'} (${item.kaderExisting || '-'})`,
+        waktu_input: item.waktu_terakhir
+      }))
+    ].sort((a, b) => {
+      const timeA = new Date(a.waktu_input || 0).getTime();
+      const timeB = new Date(b.waktu_input || 0).getTime();
+      return timeB - timeA;
+    });
+
+    res.json({
+      pemilih,
+      duplikat,
+      riwayat,
+      summary: {
+        totalPemilih: pemilih.length,
+        totalBermasalah,
+        totalDuplikatBaris,
+        totalDuplikatPercobaan,
+        totalBarisAudit: riwayat.length,
+        totalAktivitas: pemilih.length + totalDuplikatPercobaan
+      }
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/kader/:id/pemilih/clear', verifyToken, isSuperadmin, async (req, res) => {
+  try {
+    const kaderId = req.params.id;
+    
+    // Validasi kader ada
+    const kaderCheck = await query('SELECT id FROM kader WHERE id = ?', [kaderId]);
+    if (!kaderCheck.length) return res.status(404).json({ error: 'Kader tidak ditemukan' });
+
+    const pemilihDalamKader = await query('SELECT nik FROM pemilih WHERE kader_id = ?', [kaderId]);
+    
+    // Hapus semua pemilih dalam kader ini
+    const result = await query('DELETE FROM pemilih WHERE kader_id = ?', [kaderId]);
+    await cleanupDuplicateLogs(pemilihDalamKader.map(p => p.nik));
+    
+    res.json({ 
+      success: true,
+      message: `Semua data pemilih dalam kader dihapus`,
+      deletedCount: result.affectedRows
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -221,7 +417,7 @@ app.delete('/api/kader/:id', verifyToken, isSuperadmin, async (req, res) => {
 
 app.get('/api/pemilih', verifyToken, async (req, res) => {
   try {
-    const { q, kaderId, page, limit } = req.query;
+    const { q, kaderId, statusFilter, page, limit } = req.query;
     const pg  = Math.max(1, parseInt(page) || 1);
     const lim = Math.min(200, Math.max(1, parseInt(limit) || 50));
     const offset = (pg - 1) * lim;
@@ -231,6 +427,11 @@ app.get('/api/pemilih', verifyToken, async (req, res) => {
 
     if (kaderId)  { where += ' AND p.kader_id = ?';                params.push(kaderId); }
     if (q)        { where += ' AND (p.nama LIKE ? OR p.nik LIKE ?)'; params.push(`%${q}%`, `%${q}%`); }
+    if (statusFilter === 'bermasalah') {
+      where += ' AND p.status IS NOT NULL';
+    } else if (statusFilter === 'clear') {
+      where += ' AND p.status IS NULL';
+    }
 
     // Count total
     const [countRow] = await query(
@@ -260,8 +461,11 @@ app.get('/api/pemilih', verifyToken, async (req, res) => {
 
 app.get('/api/pemilih/statistik', verifyToken, async (req, res) => {
   try {
-    const [total] = await query('SELECT COUNT(*) AS n FROM pemilih');
+    await cleanupDuplicateLogs();
+
+    const [totalSemua] = await query('SELECT COUNT(*) AS n FROM pemilih');
     const [bermasalah] = await query('SELECT COUNT(*) AS n FROM pemilih WHERE status IS NOT NULL');
+    const clear = Math.max((totalSemua.n || 0) - (bermasalah.n || 0), 0);
 
     // Be tolerant terhadap beberapa versi skema log_duplikat (dengan/ tanpa jumlah_percobaan)
     const [logRows] = await query('SELECT COUNT(*) AS n FROM log_duplikat');
@@ -272,7 +476,14 @@ app.get('/api/pemilih/statistik', verifyToken, async (req, res) => {
       percobaanDuplikat = logDup.n;
     }
 
-    res.json({ total: total.n, bermasalah: bermasalah.n, percobaanDuplikat, entryDuplikat: logRows.n });
+    res.json({
+      total: clear,
+      clear,
+      totalSemua: totalSemua.n,
+      bermasalah: bermasalah.n,
+      percobaanDuplikat,
+      entryDuplikat: logRows.n
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -302,7 +513,8 @@ app.get('/api/pemilih/:id', verifyToken, async (req, res) => {
 app.post('/api/pemilih', verifyToken, async (req, res) => {
   try {
     const { nama, nik, kaderId, tanggalLahir, jenisKelamin } = req.body;
-    if (!nama || !nik || !kaderId) return res.status(400).json({ error: 'Nama, NIK, dan Kader wajib diisi' });
+    if (!nama || !kaderId) return res.status(400).json({ error: 'Nama dan Kader wajib diisi' });
+    const normalizedNik = normalizeNIK(nik);
 
     // Validasi tanggal lahir → umur minimal 17 (jika tanggal lahir disediakan)
     if (tanggalLahir) {
@@ -314,16 +526,16 @@ app.post('/api/pemilih', verifyToken, async (req, res) => {
     if (!kaderAda.length) return res.status(400).json({ error: 'Kader tidak ditemukan' });
 
     // Tentukan status berdasarkan validitas NIK
-    let status = null;
-    if (!/^\d{16}$/.test(nik)) {
-      status = 'NIK_INVALID';
-    }
+    const status = getNIKStatus(normalizedNik);
 
     // ═══ CEK NIK DUPLIKAT — TOLAK KERAS ═══
-    const nikDup = await query(`
+    let nikDup = [];
+    if (normalizedNik) {
+      nikDup = await query(`
       SELECT p.id, p.nama, p.kader_id, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader
       FROM pemilih p JOIN kader k ON k.id = p.kader_id WHERE p.nik = ?
-    `, [nik]);
+      `, [normalizedNik]);
+    }
 
     if (nikDup.length) {
       const hasJumlahPercobaan = await hasColumn('log_duplikat', 'jumlah_percobaan');
@@ -337,18 +549,18 @@ app.post('/api/pemilih', verifyToken, async (req, res) => {
              jumlah_percobaan = jumlah_percobaan + 1,
              waktu_terakhir = CURRENT_TIMESTAMP,
              nama_input = VALUES(nama_input)`,
-          [nik, nama.trim(), kaderId, nikDup[0].kader_id, nikDup[0].nama]
+          [normalizedNik, nama.trim(), kaderId, nikDup[0].kader_id, nikDup[0].nama]
         );
       } else {
         // Tabel lama tanpa jumlah_percobaan; simpan log duplikat sebagai baris baru
         await query(
           'INSERT INTO log_duplikat (nik_target, nama_input, kader_id_pelaku, kader_id_existing, nama_existing) VALUES (?, ?, ?, ?, ?)',
-          [nik, nama.trim(), kaderId, nikDup[0].kader_id, nikDup[0].nama]
+          [normalizedNik, nama.trim(), kaderId, nikDup[0].kader_id, nikDup[0].nama]
         );
       }
 
       return res.status(409).json({
-        error: `DITOLAK: NIK ${nik} sudah terdaftar pada ${nikDup[0].namaKader} atas nama "${nikDup[0].nama}".`,
+        error: `DITOLAK: NIK ${normalizedNik} sudah terdaftar pada ${nikDup[0].namaKader} atas nama "${nikDup[0].nama}".`,
         existing: nikDup[0]
       });
     }
@@ -357,7 +569,7 @@ app.post('/api/pemilih', verifyToken, async (req, res) => {
     const id = genId();
     await query(
       'INSERT INTO pemilih (id, nama, nik, tanggal_lahir, jenis_kelamin, kader_id, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [id, nama.trim(), nik, tanggalLahir || null, jenisKelamin || null, kaderId, status]
+      [id, nama.trim(), normalizedNik, tanggalLahir || null, jenisKelamin || null, kaderId, status]
     );
 
     const [p] = await query(`
@@ -375,24 +587,31 @@ app.post('/api/pemilih', verifyToken, async (req, res) => {
 app.put('/api/pemilih/:id', verifyToken, async (req, res) => {
   try {
     const { nama, nik, kaderId, tanggalLahir, jenisKelamin } = req.body;
-    if (!nama || !nik || !kaderId) return res.status(400).json({ error: 'Semua field wajib diisi' });
+    if (!nama || !kaderId) return res.status(400).json({ error: 'Nama dan Kader wajib diisi' });
+    const normalizedNik = normalizeNIK(nik);
+
+    const pemilihLama = await query('SELECT nik FROM pemilih WHERE id = ?', [req.params.id]);
+    if (!pemilihLama.length) return res.status(404).json({ error: 'Pemilih tidak ditemukan' });
 
     // Tentukan status berdasarkan validitas NIK
-    let status = null;
-    if (!/^\d{16}$/.test(nik)) {
-      status = 'NIK_INVALID';
-    }
+    const status = getNIKStatus(normalizedNik);
 
-    const nikDup = await query(`
+    let nikDup = [];
+    if (normalizedNik) {
+      nikDup = await query(`
       SELECT p.nama, CONCAT('Kader ', k.nomor, ' — ', k.nama) AS namaKader
       FROM pemilih p JOIN kader k ON k.id = p.kader_id WHERE p.nik = ? AND p.id != ?
-    `, [nik, req.params.id]);
+      `, [normalizedNik, req.params.id]);
+    }
     if (nikDup.length) return res.status(400).json({ error: `NIK sudah dipakai oleh ${nikDup[0].nama} (${nikDup[0].namaKader})` });
 
     await query(
       'UPDATE pemilih SET nama = ?, nik = ?, kader_id = ?, tanggal_lahir = ?, jenis_kelamin = ?, status = ? WHERE id = ?',
-      [nama.trim(), nik, kaderId, tanggalLahir || null, jenisKelamin || null, status, req.params.id]
+      [nama.trim(), normalizedNik, kaderId, tanggalLahir || null, jenisKelamin || null, status, req.params.id]
     );
+    if ((pemilihLama[0].nik || null) !== normalizedNik) {
+      await cleanupDuplicateLogs([pemilihLama[0].nik]);
+    }
     const [p] = await query(`
       SELECT p.*, CONCAT('Kader ', k.nomor, ' — ', k.nama) AS namaKader,
              TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS umur
@@ -404,14 +623,162 @@ app.put('/api/pemilih/:id', verifyToken, async (req, res) => {
 
 app.delete('/api/pemilih/:id', verifyToken, isSuperadmin, async (req, res) => {
   try {
+    const pemilih = await query('SELECT nik FROM pemilih WHERE id = ?', [req.params.id]);
+    if (!pemilih.length) return res.status(404).json({ error: 'Pemilih tidak ditemukan' });
+
     await query('DELETE FROM pemilih WHERE id = ?', [req.params.id]);
+    await cleanupDuplicateLogs([pemilih[0].nik]);
     res.json({ success: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ══════ IMPORT EXCEL ═══════════════════════════════════
 
-app.post('/api/pemilih/import', verifyToken, upload.single('file'), async (req, res) => {
+function cleanupUploadedFile(filePath) {
+  if (!filePath) return;
+  const fs = require('fs');
+  try { fs.unlinkSync(filePath); } catch (_) {}
+}
+
+async function findExistingPemilihByNIK(nikList = []) {
+  const uniqueNIKs = [...new Set(nikList.filter(Boolean))];
+  if (!uniqueNIKs.length) return new Map();
+
+  const rows = await query(`
+    SELECT p.nik, p.nama, p.kader_id,
+           CONCAT('Kader ', k.nomor, ' â€” ', k.nama, ' (', COALESCE(k.dusun, '-'), ' Â· ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' Â· ', k.korlap), ''), ')') AS namaKader
+    FROM pemilih p
+    JOIN kader k ON k.id = p.kader_id
+    WHERE p.nik IN (${uniqueNIKs.map(() => '?').join(', ')})
+  `, uniqueNIKs);
+
+  return new Map(rows.map(row => [row.nik, row]));
+}
+
+async function catatLogDuplikat(nik, namaInput, kaderIdPelaku, existingRow) {
+  if (!nik || !existingRow) return;
+
+  const hasJumlahPercobaan = await hasColumn('log_duplikat', 'jumlah_percobaan');
+  if (hasJumlahPercobaan) {
+    await query(
+      `INSERT INTO log_duplikat (nik_target, nama_input, kader_id_pelaku, kader_id_existing, nama_existing)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         jumlah_percobaan = jumlah_percobaan + 1,
+         waktu_terakhir = CURRENT_TIMESTAMP,
+         nama_input = VALUES(nama_input)`,
+      [nik, namaInput, kaderIdPelaku, existingRow.kader_id, existingRow.nama]
+    );
+  } else {
+    await query(
+      'INSERT INTO log_duplikat (nik_target, nama_input, kader_id_pelaku, kader_id_existing, nama_existing) VALUES (?, ?, ?, ?, ?)',
+      [nik, namaInput, kaderIdPelaku, existingRow.kader_id, existingRow.nama]
+    );
+  }
+}
+
+async function analyzeImportRows(rows) {
+  const normalizedRows = rows.map((row, index) => ({
+    baris: index + 2,
+    nama: String(getSpreadsheetValue(row, ['nama', 'NAMA', 'Nama'])).trim(),
+    nik: normalizeNIK(getSpreadsheetValue(row, ['nik', 'NIK', 'Nik']))
+  }));
+
+  const existingByNIK = await findExistingPemilihByNIK(normalizedRows.map(row => row.nik));
+  const seenInFile = new Map();
+
+  const hasil = {
+    total: normalizedRows.length,
+    siap: 0,
+    bermasalah: 0,
+    duplikat: 0,
+    gagal: 0,
+    akanDiimport: 0,
+    detail: []
+  };
+
+  for (const row of normalizedRows) {
+    const { baris, nama, nik } = row;
+
+    if (!nama) {
+      hasil.gagal++;
+      hasil.detail.push({
+        baris, nama, nik,
+        status: 'gagal',
+        alasan: 'Nama wajib diisi',
+        bisaImport: false
+      });
+      continue;
+    }
+
+    if (nik && seenInFile.has(nik)) {
+      const firstInFile = seenInFile.get(nik);
+      hasil.duplikat++;
+      hasil.detail.push({
+        baris, nama, nik,
+        status: 'duplikat',
+        alasan: `NIK ganda di dalam file import (duplikat dari baris ${firstInFile.baris})`,
+        bisaImport: false,
+        existing: {
+          nama: firstInFile.nama,
+          kader_id: null,
+          namaKader: `baris ${firstInFile.baris} di file import`
+        }
+      });
+      continue;
+    }
+
+    const existing = nik ? existingByNIK.get(nik) : null;
+    if (existing) {
+      hasil.duplikat++;
+      hasil.detail.push({
+        baris, nama, nik,
+        status: 'duplikat',
+        alasan: `NIK sudah terdaftar atas nama "${existing.nama}" di ${existing.namaKader}`,
+        bisaImport: false,
+        existing
+      });
+      continue;
+    }
+
+    if (nik) {
+      seenInFile.set(nik, { baris, nama });
+    }
+
+    let status = 'siap';
+    let alasan = '';
+    let importStatus = null;
+
+    if (!nik) {
+      status = 'bermasalah';
+      alasan = 'NIK kosong';
+      importStatus = 'NIK_INVALID';
+      hasil.bermasalah++;
+    } else if (nik.length !== 16) {
+      status = 'bermasalah';
+      alasan = `NIK tidak 16 digit (${nik.length} digit)`;
+      importStatus = 'NIK_INVALID';
+      hasil.bermasalah++;
+    } else {
+      hasil.siap++;
+    }
+
+    hasil.akanDiimport++;
+    hasil.detail.push({
+      baris,
+      nama,
+      nik,
+      status,
+      alasan,
+      bisaImport: true,
+      importStatus
+    });
+  }
+
+  return hasil;
+}
+
+app.post('/api/pemilih/import/preview', verifyToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'File tidak ditemukan' });
     const kaderId = req.body.kaderId;
@@ -421,90 +788,153 @@ app.post('/api/pemilih/import', verifyToken, upload.single('file'), async (req, 
     if (!kaderAda.length) return res.status(400).json({ error: 'Kader tidak ditemukan' });
 
     const workbook = XLSX.readFile(req.file.path);
-    const sheet    = workbook.Sheets[workbook.SheetNames[0]];
-    const rows     = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    const hasil = await analyzeImportRows(rows);
 
-    const hasil = { berhasil: 0, gagal: 0, detail: [] };
+    cleanupUploadedFile(req.file.path);
 
-    for (let i = 0; i < rows.length; i++) {
-      const row  = rows[i];
-      const nama = String(row.nama || row.Nama || row.NAMA || '').trim();
-      const nik  = String(row.nik || row.NIK || row.Nik || '').trim().replace(/\D/g, '');
+    res.json({
+      mode: 'preview',
+      ...hasil,
+      perluKonfirmasi: hasil.total > 0,
+      pesan: hasil.duplikat || hasil.bermasalah || hasil.gagal
+        ? 'Periksa hasil cross-check dulu sebelum melanjutkan import.'
+        : 'Semua data lolos cross-check dan siap diimport.'
+    });
+  } catch (e) {
+    cleanupUploadedFile(req.file?.path);
+    res.status(500).json({ error: e.message });
+  }
+});
 
-      if (!nama || !nik) {
-        hasil.gagal++;
-        hasil.detail.push({ baris: i + 2, nama, nik, status: 'gagal', alasan: 'Nama atau NIK kosong' });
-        continue;
-      }
+app.post('/api/pemilih/import', verifyToken, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'File tidak ditemukan' });
+    const kaderId = req.body.kaderId;
+    if (!kaderId) return res.status(400).json({ error: 'Kader tujuan wajib dipilih' });
+    let excludedBaris = [];
 
-      let status = null;
-      let alasan = '';
-
-      // Cek panjang NIK
-      if (nik.length !== 16) {
-        status = 'NIK_INVALID';
-        alasan = `NIK tidak 16 digit (${nik.length} digit)`;
-      }
-
-      // Parse NIK for tanggal lahir & jenis kelamin (tetap lakukan meski NIK invalid)
-      const parsed = parseNIK(nik);
-      const tanggalLahir  = parsed ? parsed.tanggalLahir : null;
-      const jenisKelamin  = parsed ? parsed.jenisKelamin : null;
-
-      // Cek duplikat
-      const nikDup = await query('SELECT nama, kader_id FROM pemilih WHERE nik = ?', [nik]);
-      if (nikDup.length) {
-        const hasJumlahPercobaan = await hasColumn('log_duplikat', 'jumlah_percobaan');
-        if (hasJumlahPercobaan) {
-          // UPSERT: increment counter jika sudah ada
-          await query(
-            `INSERT INTO log_duplikat (nik_target, nama_input, kader_id_pelaku, kader_id_existing, nama_existing)
-             VALUES (?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE
-               jumlah_percobaan = jumlah_percobaan + 1,
-               waktu_terakhir = CURRENT_TIMESTAMP,
-               nama_input = VALUES(nama_input)`,
-            [nik, nama, kaderId, nikDup[0].kader_id, nikDup[0].nama]
-          );
-        } else {
-          await query(
-            'INSERT INTO log_duplikat (nik_target, nama_input, kader_id_pelaku, kader_id_existing, nama_existing) VALUES (?, ?, ?, ?, ?)',
-            [nik, nama, kaderId, nikDup[0].kader_id, nikDup[0].nama]
-          );
-        }
-        hasil.gagal++;
-        hasil.detail.push({ baris: i + 2, nama, nik, status: 'duplikat', alasan: `NIK sudah terdaftar atas nama "${nikDup[0].nama}"` });
-        continue;
-      }
-
-      // Insert (selalu berhasil, tapi mungkin dengan status bermasalah)
-      const id = genId();
-      await query(
-        'INSERT INTO pemilih (id, nama, nik, tanggal_lahir, jenis_kelamin, kader_id, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [id, nama, nik, tanggalLahir, jenisKelamin, kaderId, status]
-      );
-
-      if (status) {
-        hasil.gagal++; // Hitung sebagai gagal untuk statistik
-        hasil.detail.push({ baris: i + 2, nama, nik, status: 'bermasalah', alasan });
-      } else {
-        hasil.berhasil++;
-        hasil.detail.push({ baris: i + 2, nama, nik, status: 'berhasil', alasan: '' });
+    if (req.body.excludedBaris) {
+      try {
+        const parsedExcluded = JSON.parse(req.body.excludedBaris);
+        excludedBaris = Array.isArray(parsedExcluded) ? parsedExcluded.map(Number).filter(Number.isFinite) : [];
+      } catch (_) {
+        return res.status(400).json({ error: 'Format data pengecualian import tidak valid' });
       }
     }
 
-    // Cleanup uploaded file
-    const fs = require('fs');
-    try { fs.unlinkSync(req.file.path); } catch (_) {}
+    const kaderAda = await query('SELECT id, nama, nomor FROM kader WHERE id = ?', [kaderId]);
+    if (!kaderAda.length) return res.status(400).json({ error: 'Kader tidak ditemukan' });
 
-    res.json(hasil);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    const workbook = XLSX.readFile(req.file.path);
+    const sheet    = workbook.Sheets[workbook.SheetNames[0]];
+    const rows     = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    const analisis = await analyzeImportRows(rows);
+    const excludedSet = new Set(excludedBaris);
+    const hasil = {
+      berhasil: 0,
+      bermasalah: 0,
+      duplikat: 0,
+      gagal: 0,
+      dilewati: 0,
+      detail: []
+    };
+
+    for (const item of analisis.detail) {
+      if (!item.bisaImport) {
+        if (item.status === 'duplikat') {
+          hasil.duplikat++;
+          let existingForLog = item.existing && item.existing.kader_id
+            ? item.existing
+            : null;
+
+          if (!existingForLog && item.nik) {
+            const currentExisting = await query(
+              'SELECT nama, kader_id FROM pemilih WHERE nik = ? LIMIT 1',
+              [item.nik]
+            );
+            existingForLog = currentExisting[0] || null;
+          }
+
+          if (existingForLog) {
+            await catatLogDuplikat(item.nik, item.nama, kaderId, existingForLog);
+          }
+        } else {
+          hasil.gagal++;
+        }
+
+        hasil.detail.push({
+          baris: item.baris,
+          nama: item.nama,
+          nik: item.nik,
+          status: item.status,
+          alasan: item.alasan
+        });
+        continue;
+      }
+
+      if (excludedSet.has(item.baris)) {
+        hasil.dilewati++;
+        hasil.detail.push({
+          baris: item.baris,
+          nama: item.nama,
+          nik: item.nik,
+          status: 'dilewati',
+          alasan: 'Ditandai jangan dimasukkan saat preview'
+        });
+        continue;
+      }
+
+      const parsed = parseNIK(item.nik);
+      const tanggalLahir = parsed ? parsed.tanggalLahir : null;
+      const jenisKelamin = parsed ? parsed.jenisKelamin : null;
+
+      await query(
+        'INSERT INTO pemilih (id, nama, nik, tanggal_lahir, jenis_kelamin, kader_id, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [genId(), item.nama, item.nik, tanggalLahir, jenisKelamin, kaderId, item.importStatus]
+      );
+
+      if (item.status === 'bermasalah') {
+        hasil.bermasalah++;
+        hasil.detail.push({
+          baris: item.baris,
+          nama: item.nama,
+          nik: item.nik,
+          status: 'bermasalah',
+          alasan: item.alasan
+        });
+      } else {
+        hasil.berhasil++;
+        hasil.detail.push({
+          baris: item.baris,
+          nama: item.nama,
+          nik: item.nik,
+          status: 'berhasil',
+          alasan: ''
+        });
+      }
+    }
+
+    cleanupUploadedFile(req.file.path);
+    res.json({
+      ...hasil,
+      total: analisis.total,
+      siap: analisis.siap,
+      akanDiimport: analisis.akanDiimport
+    });
+  } catch (e) {
+    cleanupUploadedFile(req.file?.path);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ══════ API LOG DUPLIKAT ═══════════════════════════════
 
 app.get('/api/log-duplikat', verifyToken, isSuperadmin, async (req, res) => {
   try {
+    await cleanupDuplicateLogs();
+
     const { page, limit, kaderId } = req.query;
     const pg  = Math.max(1, parseInt(page) || 1);
     const lim = Math.min(200, Math.max(1, parseInt(limit) || 50));
@@ -556,6 +986,8 @@ app.get('/api/log-duplikat', verifyToken, isSuperadmin, async (req, res) => {
 
 app.get('/api/log-duplikat/statistik', verifyToken, isSuperadmin, async (req, res) => {
   try {
+    await cleanupDuplicateLogs();
+
     const hasJumlahPercobaan = await hasColumn('log_duplikat', 'jumlah_percobaan');
 
     const [totalNIK] = await query('SELECT COUNT(*) AS n FROM log_duplikat');
@@ -594,6 +1026,7 @@ app.get('/tambah-kader',   (req, res) => res.sendFile(path.join(__dirname, 'publ
 app.get('/kader',          (req, res) => res.sendFile(path.join(__dirname, 'public', 'kader.html')));
 app.get('/edit-pemilih',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'edit-pemilih.html')));
 app.get('/edit-kader',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'edit-kader.html')));
+app.get('/view-kader',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'view-kader.html')));
 app.get('/import',         (req, res) => res.sendFile(path.join(__dirname, 'public', 'import.html')));
 app.get('/log-duplikat',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'log-duplikat.html')));
 app.get('/kelola-user',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'kelola-user.html')));
@@ -621,9 +1054,31 @@ async function ensureRoleEnum() {
 }
 
 // ── Start ─────────────────────────────────────────────
+async function ensureNikColumnsFlexible() {
+  try {
+    const pemilihNik = await getColumnMeta('pemilih', 'nik');
+    if (pemilihNik && (
+      Number(pemilihNik.CHARACTER_MAXIMUM_LENGTH || 0) < 32 ||
+      pemilihNik.IS_NULLABLE !== 'YES'
+    )) {
+      console.log('Menyesuaikan kolom pemilih.nik agar NIK kosong/bermasalah tetap bisa disimpan');
+      await query('ALTER TABLE pemilih MODIFY COLUMN nik VARCHAR(32) NULL');
+    }
+
+    const logNik = await getColumnMeta('log_duplikat', 'nik_target');
+    if (logNik && Number(logNik.CHARACTER_MAXIMUM_LENGTH || 0) < 32) {
+      console.log('Memperlebar kolom log_duplikat.nik_target agar sinkron dengan data pemilih');
+      await query('ALTER TABLE log_duplikat MODIFY COLUMN nik_target VARCHAR(32) NOT NULL');
+    }
+  } catch (err) {
+    console.warn('Gagal memastikan panjang kolom NIK:', err.message);
+  }
+}
+
 async function start() {
   await testConnection();
   await ensureRoleEnum();
+  await ensureNikColumnsFlexible();
   app.listen(PORT, () => console.log(`✅ Server berjalan di http://localhost:${PORT}`));
 }
 start();
