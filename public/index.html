@@ -485,7 +485,7 @@
           const jumlahPemilih = Number(k.jumlahPemilih || 0);
           const pct = target > 0 ? Math.min(100, Math.round((jumlahPemilih / target) * 100)) : 0;
           const levelClass = pct >= 100 ? 'progress-level-success' : pct >= 50 ? 'progress-level-accent' : 'progress-level-warning';
-          const wilayah = `${k.dusun || '-'} · Kordus ${k.kordus || '-'}${k.korlap ? ' · Korlap ' + k.korlap : ''}`;
+          const wilayah = `${k.dusun || '-'} · Kordus ${k.kordus || '-'}`;
 
           return `<div class="compact-progress-item">
             <div class="compact-progress-head">

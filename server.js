@@ -731,7 +731,7 @@ app.get('/api/kader', verifyToken, async (req, res) => {
     }
 
     const rows = await query(`
-      SELECT k.id, k.nama, k.nomor, k.dusun, k.kordus, k.korlap, k.target_suara, k.created_at, k.koordinator_id,
+      SELECT k.id, k.nama, k.nomor, k.dusun, k.kordus, k.target_suara, k.created_at, k.koordinator_id,
              COALESCE(ko.nama, NULLIF(k.kordus, '')) AS namaKoordinator,
              (
                SELECT COUNT(*)
