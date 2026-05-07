@@ -161,6 +161,24 @@
         padding: 32px 26px;
       }
     }
+    
+    .password-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 14px;
+      cursor: pointer;
+      font-size: 18px;
+      user-select: none;
+      color: var(--text3);
+      transition: color 0.2s;
+    }
+    .password-toggle:hover {
+      color: var(--accent);
+    }
   </style>
   <script src="/js/auth.js"></script>
 </head>
@@ -210,13 +228,30 @@
       
       <div class="form-group login-password-group">
         <label for="inp-password">Password</label>
-        <input type="password" id="inp-password" class="form-control" placeholder="••••••••" required autocomplete="current-password" />
+        <div class="password-wrap">
+          <input type="password" id="inp-password" class="form-control" placeholder="••••••••" required autocomplete="current-password" style="padding-right: 45px;" />
+          <span class="password-toggle" id="toggle-password" onclick="togglePasswordVisibility()">👁️</span>
+        </div>
       </div>
 
       <button type="submit" id="btn-login" class="btn btn-primary btn-full">Masuk Sistem</button>
     </form>
   </div>
 </div>
+
+<script>
+  function togglePasswordVisibility() {
+    const pwd = document.getElementById('inp-password');
+    const toggle = document.getElementById('toggle-password');
+    if (pwd.type === 'password') {
+      pwd.type = 'text';
+      toggle.textContent = '🔒'; // Icon saat terlihat
+    } else {
+      pwd.type = 'password';
+      toggle.textContent = '👁️'; // Icon saat tersembunyi
+    }
+  }
+</script>
 
 <script>
   // Tampilkan warning jika redirect karena expired
