@@ -53,7 +53,7 @@ function renderUsers() {
     const td3 = document.createElement('td');
     const badge = document.createElement('span');
     badge.className = u.role === 'Superadmin' ? 'badge badge-orange' : 'badge badge-blue';
-    badge.textContent = u.role === 'Superadmin' ? 'Admin' : 'Kader';
+    badge.textContent = u.role === 'Superadmin' ? 'Admin' : 'User';
     td3.appendChild(badge);
     tr.appendChild(td3);
 

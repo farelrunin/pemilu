@@ -289,11 +289,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Kosmetik RBAC: Sembunyikan elemen Superadmin / Admin Kantor sesuai role
+  // Kosmetik RBAC: Sembunyikan elemen sesuai role
   if (userRole === 'Kader') {
-    document.querySelectorAll('.superadmin-only, .admin-only').forEach(el => el.style.display = 'none');
+    // Sembunyikan semua tombol tambah, edit, hapus, dan import untuk User biasa
+    document.querySelectorAll('.superadmin-only, .admin-only, .editor-only').forEach(el => el.style.display = 'none');
   } else if (userRole === 'AdminKantor') {
-    // Admin Kantor tidak perlu lihat log duplikat / fitur superadmin
     document.querySelectorAll('.superadmin-only').forEach(el => el.style.display = 'none');
   }
 
