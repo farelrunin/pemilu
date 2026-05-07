@@ -574,7 +574,7 @@ app.get('/api/auth/me', verifyToken, async (req, res) => {
   try {
     const users = await query(`
       SELECT u.id, u.username, u.role, u.id_kader,
-             CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader
+             CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), ')') AS namaKader
       FROM users u LEFT JOIN kader k ON k.id = u.id_kader WHERE u.id = ?
     `, [req.user.id]);
     if (!users.length) return res.status(404).json({ error: 'User tidak ditemukan' });
@@ -607,7 +607,7 @@ app.get('/api/auth/users', verifyToken, isSuperadmin, async (req, res) => {
   try {
     const data = await query(`
       SELECT u.id, u.username, u.role, u.id_kader, u.created_at,
-             CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader
+             CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), ')') AS namaKader
       FROM users u LEFT JOIN kader k ON k.id = u.id_kader ORDER BY u.created_at DESC
     `);
     res.json(data);
@@ -971,7 +971,7 @@ app.get('/api/pemilih', verifyToken, async (req, res) => {
 
     // Data with pagination
     const data = await query(`
-      SELECT p.*, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader,
+      SELECT p.*, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), ')') AS namaKader,
              TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS umur
       FROM pemilih p JOIN kader k ON k.id = p.kader_id
       ${where}
@@ -1021,7 +1021,7 @@ app.get('/api/pemilih/statistik', verifyToken, async (req, res) => {
 app.get('/api/pemilih/cek-nik/:nik', verifyToken, async (req, res) => {
   try {
     const rows = await query(`
-      SELECT p.nama, p.nik, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader
+      SELECT p.nama, p.nik, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), ')') AS namaKader
       FROM pemilih p JOIN kader k ON k.id = p.kader_id WHERE p.nik = ?
     `, [req.params.nik]);
     res.json({ exists: rows.length > 0, data: rows[0] || null });
@@ -1031,7 +1031,7 @@ app.get('/api/pemilih/cek-nik/:nik', verifyToken, async (req, res) => {
 app.get('/api/pemilih/:id', verifyToken, async (req, res) => {
   try {
     const rows = await query(`
-      SELECT p.*, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader,
+      SELECT p.*, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), ')') AS namaKader,
              TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS umur
       FROM pemilih p JOIN kader k ON k.id = p.kader_id WHERE p.id = ?
     `, [req.params.id]);
@@ -1062,7 +1062,7 @@ app.post('/api/pemilih', verifyToken, async (req, res) => {
     let nikDup = [];
     if (normalizedNik) {
       nikDup = await query(`
-      SELECT p.id, p.nama, p.kader_id, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' · ', k.korlap), ''), ')') AS namaKader
+      SELECT p.id, p.nama, p.kader_id, CONCAT('Kader ', k.nomor, ' — ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), ')') AS namaKader
       FROM pemilih p JOIN kader k ON k.id = p.kader_id WHERE p.nik = ?
       `, [normalizedNik]);
     }
@@ -1191,7 +1191,7 @@ async function findExistingPemilihByNIK(nikList = []) {
 
   const rows = await query(`
     SELECT p.nik, p.nama, p.kader_id,
-           CONCAT('Kader ', k.nomor, ' ', k.nama, ' (', COALESCE(k.dusun, '-'), ' Â· ', COALESCE(k.kordus, '-'), COALESCE(CONCAT(' Â· ', k.korlap), ''), ')') AS namaKader
+           CONCAT('Kader ', k.nomor, ' ', k.nama, ' (', COALESCE(k.dusun, '-'), ' · ', COALESCE(k.kordus, '-'), ')') AS namaKader
     FROM pemilih p
     JOIN kader k ON k.id = p.kader_id
     WHERE p.nik IN (${uniqueNIKs.map(() => '?').join(', ')})
