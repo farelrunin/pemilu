@@ -33,8 +33,8 @@ async function submitTambahKader() {
   hideKaderAlerts();
 
   // Validasi ketat untuk cegah typo dan injection
-  if (!nama || nama.length > 100 || !/^[a-zA-Z0-9\s\-._/()]+$/.test(nama)) {
-    showKaderError('Nama kader tidak valid! Gunakan huruf, angka, spasi, atau tanda baca standar.');
+  if (!nama || nama.length > 100 || !/^[a-zA-Z0-9\s\-._/(),]+$/.test(nama)) {
+    showKaderError('Nama kader tidak valid! Gunakan huruf, angka, spasi, atau tanda baca standar (titik, koma, dsb).');
     return;
   }
   if (!nomor || parseInt(nomor, 10) < 1 || parseInt(nomor, 10) > 9999) {
