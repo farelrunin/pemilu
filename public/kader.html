@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Kelola User — Pendataan</title>
+  <title>Kelola Kader — Pendataan</title>
   <link rel="stylesheet" href="/css/style.css"/>
   <script src="/js/auth.js"></script>
 </head>
@@ -25,7 +25,7 @@
         <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
         <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
         <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
-        <a href="/kader" class="active"><span><strong>Data User</strong></span><span class="nav-pill">UR</span></a>
+        <a href="/kader" class="active"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
         <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
         <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
       </nav>
@@ -60,9 +60,9 @@
   <main class="app-main">
     <div class="app-topbar">
       <div class="app-topbar-copy">
-        <div class="page-kicker">Manajemen User</div>
-        <div class="app-topbar-title">Kelola Data User</div>
-        <div class="app-topbar-subtitle">Cari, filter, dan urutkan user per koordinator agar struktur tim lebih rapi.</div>
+        <div class="page-kicker">Manajemen Kader</div>
+        <div class="app-topbar-title">Kelola Data Kader</div>
+        <div class="app-topbar-subtitle">Cari, filter, dan urutkan kader per koordinator agar struktur tim lebih rapi.</div>
       </div>
       <div class="header-user-slot"></div>
     </div>
@@ -72,13 +72,13 @@
         <div class="page-header page-header-card">
           <div class="page-header-row">
             <div>
-              <div class="breadcrumb"><a href="/">Dashboard</a> › <span>Kelola User</span></div>
-              <h1>Kelola User</h1>
-              <p>Tambah dan kelola data user yang bertugas mendata pemilih, sekarang tersusun per koordinator dan dusun.</p>
+              <div class="breadcrumb"><a href="/">Dashboard</a> › <span>Kelola Kader</span></div>
+              <h1>Kelola Kader</h1>
+              <p>Tambah dan kelola data kader yang bertugas mendata pemilih, sekarang tersusun per koordinator dan dusun.</p>
             </div>
             <div class="page-actions">
               <a href="/koordinator" class="btn btn-outline btn-auto admin-only">Data Koordinator</a>
-              <a href="/tambah-kader" class="btn btn-green btn-auto admin-only">Tambah User</a>
+              <a href="/tambah-kader" class="btn btn-green btn-auto admin-only">Tambah Kader</a>
             </div>
           </div>
           <div class="page-metric-grid">
@@ -98,12 +98,12 @@
         </div>
 
         <div class="card">
-          <div class="card-title"><div class="card-icon ci-blue">🎖️</div> Daftar Semua User</div>
+          <div class="card-title"><div class="card-icon ci-blue">🎖️</div> Daftar Semua Kader</div>
 
           <div class="toolbar-filters">
             <div class="search-wrap search-wrap-wide">
               <span class="search-icon">⌕</span>
-              <input type="search" id="search-kader" placeholder="Cari nama user, nomor, dusun, atau koordinator..."/>
+              <input type="search" id="search-kader" placeholder="Cari nama kader, nomor, dusun, atau koordinator..."/>
             </div>
             <div class="filter-kader-wrap">
               <label for="filter-koordinator" class="filter-kader-label">Koordinator</label>
@@ -117,8 +117,8 @@
             <table>
               <thead>
                 <tr>
-                  <th>User ke-</th>
-                  <th>Nama User</th>
+                  <th>Kader ke-</th>
+                  <th>Nama Kader</th>
                   <th>Koordinator</th>
                   <th>Dusun</th>
                   <th>Jumlah Orang</th>
