@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard — Pendataan Pemilih</title>
   <link rel="stylesheet" href="/css/style.css"/>
+  <style>
+    @keyframes rowFlash {
+      0%,100% { background: transparent; }
+      30%     { background: rgba(250,204,21,0.45); }
+    }
+    .row-highlight { animation: rowFlash 1.8s ease 3; outline: 2px solid #facc15; }
+  </style>
   <script src="/js/auth.js"></script>
 </head>
 <body class="dashboard-page app-shell-page">
@@ -26,13 +33,26 @@
         <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
         <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
         <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
         <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UP</span></a>
+        <a href="/perbandingan-tps"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">CMP</span></a>
+        <a href="/statistik-tps"><span><strong>Statistik TPS</strong></span><span class="nav-pill">STAT</span></a>
       </nav>
 
       <div class="sidebar-section-label">Akses Cepat</div>
       <nav class="nav">
         <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
         <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-section-label superadmin-only">Akses Khusus Admin</div>
+      <nav class="nav superadmin-only">
+        <a href="/admin-dashboard"><span><strong>Panel Admin</strong></span><span class="nav-pill">ADM</span></a>
       </nav>
 
       <div class="sidebar-footer">
@@ -585,7 +605,7 @@
           : p.jenis_kelamin === 'L'
             ? '<span class="badge badge-blue">Laki-laki</span>'
             : '<span class="text-muted">-</span>';
-        return `<tr class="${statusClass}">
+        return `<tr class="${statusClass}" data-pid="${p.id}">
           <td class="table-cell-muted">${startNo+i+1}${statusIcon}</td>
           <td class="table-cell-strong">${p.nama}</td>
           <td><span class="nik">${p.nik || '-'}</span></td>
@@ -604,6 +624,8 @@
       }).join('');
     }
     renderPagination();
+    tryHighlightRow();
+    handleDeepLink();
   }
 
   // ── Render pagination ───────────────────────────────
@@ -632,6 +654,37 @@
     }
     btns += `<button class="page-btn" onclick="goToPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>→</button>`;
     wrap.innerHTML = btns;
+  }
+
+  // ── Highlight baris pemilih dari URL ?highlight=ID ────
+  const highlightId = new URLSearchParams(window.location.search).get('highlight');
+
+  function tryHighlightRow() {
+    if (!highlightId) return;
+    const row = document.querySelector(`tr[data-pid="${highlightId}"]`);
+    if (row) {
+      row.classList.add('row-highlight');
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Bersihkan param dari URL setelah scroll agar tidak re-highlight saat reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('highlight');
+      history.replaceState({}, '', url);
+    }
+  }
+
+  // Jika ada highlight, cari nama pemilih dulu agar muncul di halaman yang benar
+  async function resolveHighlight() {
+    if (!highlightId) return;
+    try {
+      const res = await PemilihAPI.getById(highlightId);
+      if (res && res.nama) {
+        searchQuery = res.nama;
+        const inp = document.getElementById('inp-search');
+        if (inp) inp.value = res.nama;
+        // Scroll ke section tabel
+        document.getElementById('data-pemilih')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } catch (_) { /* abaikan jika gagal */ }
   }
 
   // ── Load dashboard ──────────────────────────────────
@@ -671,13 +724,20 @@
 
     renderKaderBreakdown(kaders);
 
+    await resolveHighlight();
     loadTabel();
+  }
+
+  function handleDeepLink() {
+    if (window.location.hash === '#data-pemilih') {
+      document.getElementById('data-pemilih')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   async function loadPemilih()       { loadTabel(); }
   async function updateHeaderStats() { loadSemua(); }
 
-  loadSemua();
+  loadSemua().then(handleDeepLink);
 </script>
 </body>
 </html>

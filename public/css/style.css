@@ -84,6 +84,9 @@ body.app-shell-page {
     radial-gradient(circle at top left, rgba(63, 111, 166, 0.16), transparent 28%),
     linear-gradient(180deg, rgba(248, 251, 255, 0.98), rgba(229, 238, 246, 0.98));
   box-shadow: var(--shadow);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(63, 111, 166, 0.25) transparent;
 }
 .sidebar-brand {
   display: flex;
@@ -467,6 +470,87 @@ body.app-shell-page {
 .modal-card-md {
   width: 90%;
   max-width: 600px;
+}
+.app-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.52);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  z-index: 4000;
+}
+.app-dialog-overlay.is-open {
+  display: flex;
+}
+.app-dialog {
+  width: min(100%, 520px);
+  max-height: min(86vh, 760px);
+  overflow: auto;
+  padding: 22px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
+}
+.app-dialog-head {
+  margin-bottom: 12px;
+}
+.app-dialog-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+}
+.app-dialog-body {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text2);
+  white-space: pre-line;
+}
+.app-dialog-input {
+  width: 100%;
+  margin-top: 14px;
+}
+.app-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+.app-dialog-actions .btn {
+  min-width: 110px;
+}
+.app-dialog-choice-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+.app-dialog-choice-btn {
+  justify-content: flex-start;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.45;
+}
+.app-dialog-choice-btn small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text3);
+}
+.app-dialog-danger-note {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.14);
+  color: #991b1b;
+  font-size: 13px;
+  line-height: 1.5;
 }
 .input-mono-spaced {
   font-family: 'JetBrains Mono', monospace;
@@ -1224,6 +1308,19 @@ tbody tr:hover { background-color: rgba(219, 231, 243, 0.94); }
 }
 .table-cell-small {
   font-size: 12px;
+}
+.kader-name {
+  font-weight: 600;
+  color: var(--text);
+}
+.kader-dusun {
+  font-size: 12px;
+  color: var(--text3);
+  max-width: 180px;
+}
+.kader-date {
+  font-size: 12px;
+  color: var(--text3);
 }
 .page-ellipsis {
   color: var(--text3);

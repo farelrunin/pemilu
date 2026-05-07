@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard — Pendataan</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <script src="/js/auth.js"></script>
+</head>
+<body class="app-shell-page">
+
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Admin Panel</div>
+      <nav class="nav">
+        <a href="/admin-dashboard" class="active"><span><strong>Admin Dashboard</strong></span><span class="nav-pill">AD</span></a>
+        <a href="/admin-users"><span><strong>Kelola User</strong></span><span class="nav-pill">US</span></a>
+        <a href="/"><span><strong>Dashboard Utama</strong></span><span class="nav-pill">DB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Hanya Admin</strong>
+          <span>Halaman ini menampilkan statistik dan akses manajemen user.</span>
+        </div>
+        <button id="logoutBtn" class="btn btn-outline" style="width:100%;margin-top:12px;">Logout</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Admin</div>
+        <div class="app-topbar-title">Admin Dashboard</div>
+        <div class="app-topbar-subtitle">Kelola user, lihat statistik login, dan riwayat impor data dari sini.</div>
+      </div>
+      <div class="header-user-slot">
+        <a href="/" class="btn btn-outline btn-sm">← Kembali ke Dashboard Utama</a>
+      </div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container">
+        <div class="page-header page-header-card">
+          <div class="page-header-row">
+            <div>
+              <div class="breadcrumb"><a href="/">Dashboard</a> › <span>Admin Dashboard</span></div>
+              <h1>Halaman Admin Khusus</h1>
+              <p>Ringkasan pengguna, aktivitas login, dan akses kontrol untuk admin saja.</p>
+            </div>
+            <div class="page-actions">
+              <a href="/admin-users" class="btn btn-green btn-auto">Buka Kelola User</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-3 gap-16">
+          <div class="card card-stat">
+            <div class="card-title"><span class="card-icon ci-blue">👥</span> Total User</div>
+            <div id="stat-total-users" class="stat-value">—</div>
+          </div>
+          <div class="card card-stat">
+            <div class="card-title"><span class="card-icon ci-orange">✅</span> Active User</div>
+            <div id="stat-active-users" class="stat-value">—</div>
+          </div>
+          <div class="card card-stat">
+            <div class="card-title"><span class="card-icon ci-green">📥</span> Login History</div>
+            <div id="stat-login-history" class="stat-value">—</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><div class="card-icon ci-blue">📋</div> Daftar User Terbaru</div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Username</th>
+                  <th>Role</th>
+                  <th>Dibuat</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-admin-users">
+                <tr><td colspan="4"><div class="loading"><span class="spinner"></span> Memuat…</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid-2 gap-16">
+          <div class="card">
+            <div class="card-title"><div class="card-icon ci-orange">🕒</div> Login History</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Waktu</th>
+                    <th>Username</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-login-history">
+                  <tr><td colspan="3"><div class="loading"><span class="spinner"></span> Memuat…</div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><div class="card-icon ci-green">📦</div> Riwayat Impor</div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>User</th>
+                    <th>Baris</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-import-history">
+                  <tr><td colspan="3"><div class="loading"><span class="spinner"></span> Memuat…</div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script src="/js/admin-dashboard.js"></script>
+<script>
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    fetch('/api/logout', { method: 'POST' }).then(() => {
+      window.location.href = '/login.html';
+    });
+  });
+</script>
+</body>
+</html>

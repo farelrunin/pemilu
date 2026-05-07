@@ -262,7 +262,8 @@
       localStorage.setItem('idKader', data.user.idKader || '');
       localStorage.setItem('namaKader', data.user.namaKader || '');
 
-      // Redirect ke dashboard
+      // Redirect ke halaman sesuai role
+      // Redirect ke dashboard utama
       window.location.href = '/';
       
     } catch (error) {

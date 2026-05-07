@@ -26,7 +26,15 @@
         <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
         <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
         <a href="/kader" class="active"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
         <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/perbandingan-tps"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+        <a href="/statistik-tps"><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
       </nav>
 
       <div class="sidebar-section-label">Akses Cepat</div>
@@ -38,7 +46,7 @@
       <div class="sidebar-footer">
         <div class="sidebar-note">
           <strong>Update data</strong>
-          <span>Perbarui identitas kader dan target suara tanpa keluar dari pola layout yang sama.</span>
+          <span>Perbarui identitas kader tanpa keluar dari pola layout yang sama.</span>
         </div>
       </div>
     </div>
@@ -78,8 +86,11 @@
             <div id="alert-error" class="alert-error"></div>
 
             <div class="form-group">
-              <label for="kader-kordus">Koordinator <span class="required-marker">*</span></label>
-              <input type="text" id="kader-kordus" placeholder="Nama koordinator" autocomplete="off"/>
+              <label for="kader-koordinator">Koordinator <span class="required-marker">*</span></label>
+              <select id="kader-koordinator" title="Pilih koordinator">
+                <option value="">Memuat data koordinator...</option>
+              </select>
+              <div class="hint">Pilih dari master koordinator agar pengelompokan kader tetap rapi. <a href="/koordinator" class="link-accent-color">Kelola koordinator</a></div>
             </div>
 
             <div class="form-group">
@@ -96,12 +107,6 @@
               <label for="kader-dusun">Nama Dusun <span class="required-marker">*</span></label>
               <input type="text" id="kader-dusun" placeholder="Contoh: Dusun Krajan" autocomplete="off"/>
               <div class="hint">Wilayah dusun tempat kader bertugas.</div>
-            </div>
-
-            <div class="form-group">
-              <label for="kader-target">Target Suara</label>
-              <input type="number" id="kader-target" placeholder="Contoh: 500" min="0"/>
-              <div class="hint">Target jumlah pemilih yang harus dikumpulkan kader ini.</div>
             </div>
 
             <div class="gap-12 gap-margin-top-8">
@@ -121,6 +126,7 @@
 
 <div id="toast"></div>
 
+<script src="/js/koordinator.js"></script>
 <script src="/js/kader.js"></script>
 <script src="/js/form-kader.js"></script>
 <script>
@@ -138,12 +144,12 @@
     const data = await KaderAPI.getById(id);
     if (data.error) { showPage('notfound'); return; }
 
+    await isiKoordinatorDropdown(data.koordinator_id || '', data.namaKoordinator || data.kordus || '');
+
     document.getElementById('edit-id').value      = data.id;
     document.getElementById('kader-nama').value   = data.nama;
     document.getElementById('kader-nomor').value  = data.nomor;
     document.getElementById('kader-dusun').value  = data.dusun || '';
-    document.getElementById('kader-kordus').value = data.kordus || '';
-    document.getElementById('kader-target').value = data.target_suara || '';
     showPage('form');
   }
 

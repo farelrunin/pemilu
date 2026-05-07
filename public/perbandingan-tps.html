@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasil Perbandingan TPS - Pemilu</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/tps-pages.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="app-shell-page">
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/perbandingan-tps" class="active"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+        <a href="/statistik-tps"><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Mode audit TPS</strong>
+          <span>Cocokkan data TPS dengan database internal, lalu cek status yang masih perlu ditindaklanjuti.</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Perbandingan TPS</div>
+        <div class="app-topbar-title">Audit Hasil Pencocokan TPS</div>
+        <div class="app-topbar-subtitle">Pilih TPS, lihat ringkasan status, dan telusuri detail pencocokan per baris.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container">
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › <a href="/upload-tps">Modul TPS</a> › <span>Perbandingan</span>
+          </div>
+          <h1>Hasil Perbandingan TPS</h1>
+          <p>Setelah data TPS diunggah, halaman ini membantu melihat seberapa banyak data yang cocok, perlu dicek, atau belum terhubung ke database internal.</p>
+        </div>
+
+        <div class="tps-grid-two">
+          <div class="card">
+            <div class="section-title">Pilih TPS untuk Dibandingkan</div>
+            <div class="filters">
+              <div class="filter-group">
+                <label for="tpsList">Pilih TPS</label>
+                <select id="tpsList" onchange="selectTps()">
+                  <option value="">-- Pilih TPS --</option>
+                </select>
+              </div>
+              <button id="compareBtn" onclick="runComparison()" class="btn btn-primary" disabled>Bandingkan</button>
+            </div>
+            <div class="tps-link-row">
+              <a href="/upload-tps" class="btn btn-outline">Upload TPS Baru</a>
+              <a href="/statistik-tps" class="btn btn-outline">Lihat Statistik</a>
+            </div>
+          </div>
+
+          <div class="tps-kpi-stack">
+            <div class="tps-stat-callout">
+              <div class="tps-stat-callout-label">TPS aktif</div>
+              <div class="tps-stat-callout-value" id="activeTpsLabel">Belum dipilih</div>
+              <div class="tps-stat-callout-copy">Pilih TPS untuk menjalankan perbandingan otomatis dan membuka detail hasilnya.</div>
+            </div>
+            <div class="tps-note-box">
+              <strong>Tips baca hasil</strong>
+              Status <em>perlu dicek</em> biasanya menandakan kemiripan parsial pada nama, usia, atau lokasi. Gunakan tabel detail di bawah untuk verifikasi lanjutan.
+            </div>
+          </div>
+        </div>
+
+        <div id="resultSection" class="hidden">
+          <div class="card">
+            <div class="section-title">Ringkasan Perbandingan</div>
+            <div class="stats-grid" id="statsGrid"></div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">Distribusi Status</div>
+            <div class="chart-container">
+              <canvas id="statusChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="section-title">Detail Hasil Perbandingan</div>
+            <div class="filters" style="flex-wrap:wrap;gap:8px;align-items:flex-end;">
+              <div class="filter-group">
+                <label for="statusFilter">Filter status</label>
+                <select id="statusFilter" onchange="onFilterChange()">
+                  <option value="">Semua</option>
+                  <option value="COCOK">COCOK</option>
+                  <option value="PERLU_DICEK">PERLU DICEK</option>
+                  <option value="TIDAK_COCOK">TIDAK COCOK</option>
+                </select>
+              </div>
+              <div id="paginationInfo" style="margin-left:auto;font-size:0.85rem;color:var(--text-secondary,#888);align-self:center;"></div>
+            </div>
+
+            <div id="loadingRow" style="display:none;padding:24px;text-align:center;color:var(--text-secondary,#888);">
+              ⏳ Memuat data...
+            </div>
+
+            <div class="table-container">
+              <table class="result-table">
+                <thead>
+                  <tr>
+                    <th>Pemilih TPS</th>
+                    <th>Database Saya</th>
+                    <th>Usia</th>
+                    <th>Lokasi</th>
+                    <th>Skor</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="resultBody"></tbody>
+              </table>
+            </div>
+
+            <!-- Pagination controls -->
+            <div id="paginationControls" style="display:none;padding:16px 0;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;">
+              <button id="btnFirst" onclick="gotoPage(1)" class="btn btn-outline btn-xs">« Pertama</button>
+              <button id="btnPrev"  onclick="gotoPage(currentPage - 1)" class="btn btn-outline btn-xs">‹ Sebelumnya</button>
+              <span id="pageLabel" style="font-size:0.88rem;padding:0 8px;"></span>
+              <button id="btnNext"  onclick="gotoPage(currentPage + 1)" class="btn btn-outline btn-xs">Berikutnya ›</button>
+              <button id="btnLast"  onclick="gotoPage(totalPages)" class="btn btn-outline btn-xs">Terakhir »</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Detail Perbandingan -->
+        <div id="detailModal" class="modal">
+          <div class="modal-content modal-lg">
+            <div class="modal-header">
+              <h2 id="modalTitle">Detail Perbandingan</h2>
+              <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="comparison-container">
+                <div class="comparison-card">
+                  <div class="comparison-label">DATA TPS (EXCEL)</div>
+                  <div id="tpsDataContent" class="comparison-fields"></div>
+                </div>
+                <div class="comparison-vs">VS</div>
+                <div class="comparison-card">
+                  <div class="comparison-label">DATA INTERNAL (KADER)</div>
+                  <div id="internalDataContent" class="comparison-fields"></div>
+                </div>
+              </div>
+              <div class="score-breakdown-box">
+                <div class="section-title">Analisis Kecocokan</div>
+                <div id="scoreBreakdownContent" class="score-list"></div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <div id="pemilihLinkContainer"></div>
+              <button class="btn btn-secondary" onclick="closeModal()">Tutup</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="emptySection" class="card">
+          <div class="tps-note-box">
+            <strong>Belum ada perbandingan aktif</strong>
+            Pilih salah satu TPS dari daftar di atas, lalu klik tombol <em>Bandingkan</em> untuk menampilkan ringkasan dan tabel audit.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/auth.js"></script>
+<script>
+  let currentTps = null;
+  let statusChart = null;
+  let currentPage = 1;
+  let totalPages = 1;
+  let currentStatus = '';
+  let currentDetailItem = null;
+
+  const PAGE_LIMIT = 50;
+  const requestedTps    = new URLSearchParams(window.location.search).get('tps');
+  const requestedStatus = new URLSearchParams(window.location.search).get('status');
+
+  // ── Load daftar TPS ──────────────────────────────────
+  async function loadTpsList() {
+    try {
+      const response = await fetch('/api/tps/list?limit=100', {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const result = await response.json();
+      const select = document.getElementById('tpsList');
+
+      if (result.data && result.data.length > 0) {
+        result.data.forEach(tps => {
+          const option = document.createElement('option');
+          option.value = tps.nama_tps;
+          option.textContent = tps.nama_tps + ' (' + tps.total_data + ' orang)';
+          select.appendChild(option);
+        });
+
+        if (requestedTps) {
+          const decodedTps = decodeURIComponent(requestedTps);
+          const hasMatch = result.data.some(tps => tps.nama_tps === decodedTps);
+          if (hasMatch) {
+            select.value = decodedTps;
+            currentTps = decodedTps;
+            selectTps();
+            if (requestedStatus && ['COCOK','PERLU_DICEK','TIDAK_COCOK'].includes(requestedStatus)) {
+              currentStatus = requestedStatus;
+              document.getElementById('statusFilter').value = requestedStatus;
+            }
+            await loadResults(1);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error:', err);
+    }
+  }
+
+  function selectTps() {
+    const tps = document.getElementById('tpsList').value;
+    document.getElementById('compareBtn').disabled = !tps;
+    document.getElementById('activeTpsLabel').textContent = tps || 'Belum dipilih';
+    currentTps = tps || null;
+  }
+
+  // ── Jalankan perbandingan ────────────────────────────
+  async function runComparison() {
+    currentTps = document.getElementById('tpsList').value;
+    if (!currentTps) return;
+
+    const btn = document.getElementById('compareBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Memproses...';
+
+    try {
+      const response = await fetch('/api/tps/' + encodeURIComponent(currentTps) + '/perbandingan', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const result = await response.json();
+
+      if (response.ok) {
+        currentPage = 1;
+        currentStatus = document.getElementById('statusFilter').value;
+        await loadResults(1);
+      } else {
+        await showAppAlert('Error: ' + result.error, { title: 'Perbandingan Gagal' });
+      }
+    } catch (err) {
+      await showAppAlert('Error: ' + err.message, { title: 'Perbandingan Gagal' });
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Bandingkan';
+    }
+  }
+
+  // ── Filter berubah ───────────────────────────────────
+  function onFilterChange() {
+    currentStatus = document.getElementById('statusFilter').value;
+    currentPage = 1;
+    loadResults(1);
+  }
+
+  // ── Ganti halaman ────────────────────────────────────
+  function gotoPage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    loadResults(page);
+  }
+
+  // ── Load hasil dari server (server-side pagination) ──
+  async function loadResults(page) {
+    if (!currentTps) return;
+
+    document.getElementById('emptySection').style.display = 'none';
+    document.getElementById('resultSection').classList.remove('hidden');
+    document.getElementById('loadingRow').style.display = 'block';
+    document.getElementById('resultBody').innerHTML = '';
+    document.getElementById('paginationControls').style.display = 'none';
+
+    try {
+      let url = `/api/tps/${encodeURIComponent(currentTps)}/hasil?page=${page}&limit=${PAGE_LIMIT}`;
+      if (currentStatus) url += `&status=${currentStatus}`;
+
+      const response = await fetch(url, {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const result = await response.json();
+      const data = result.data || [];
+      const pagination = result.pagination || {};
+      totalPages = pagination.totalPages || 1;
+      currentPage = pagination.page || page;
+
+      // Update stat cards hanya saat pertama / tidak ada filter
+      if (!currentStatus || page === 1) {
+        await updateSummaryStats();
+      }
+
+      renderTable(data);
+      updatePagination(pagination);
+    } catch (err) {
+      console.error('Error loadResults:', err);
+    } finally {
+      document.getElementById('loadingRow').style.display = 'none';
+    }
+  }
+
+  // ── Ambil ringkasan (semua status) untuk stat cards ──
+  async function updateSummaryStats() {
+    try {
+      const statResp = await fetch('/api/tps/statistik', {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const statResult = await statResp.json();
+      const perbandingan = (statResult.data && statResult.data.perbandingan) || [];
+      const tpsStat = perbandingan.find(t => t.nama_tps === currentTps);
+
+      if (tpsStat) {
+        const total = Number(tpsStat.total || 0);
+        const cocok = Number(tpsStat.cocok || 0);
+        const perlu = Number(tpsStat.perlu_dicek || 0);
+        const tidak = Number(tpsStat.tidak_cocok || 0);
+        renderStatCards(total, cocok, perlu, tidak);
+        drawChart(cocok, perlu, tidak);
+      }
+    } catch (err) {
+      console.error('updateSummaryStats error:', err);
+    }
+  }
+
+  function renderStatCards(total, cocok, perlu, tidak) {
+    document.getElementById('statsGrid').innerHTML =
+      '<button type="button" class="stat-card stat-card-link primary" onclick="setStatusFilter(\'\')"><div class="number">' + total + '</div><div class="label">Total Pemilih</div></button>' +
+      '<button type="button" class="stat-card stat-card-link cocok" onclick="setStatusFilter(\'COCOK\')"><div class="number">' + cocok + '</div><div class="label">COCOK</div></button>' +
+      '<button type="button" class="stat-card stat-card-link perlu_dicek" onclick="setStatusFilter(\'PERLU_DICEK\')"><div class="number">' + perlu + '</div><div class="label">PERLU DICEK</div></button>' +
+      '<button type="button" class="stat-card stat-card-link tidak_cocok" onclick="setStatusFilter(\'TIDAK_COCOK\')"><div class="number">' + tidak + '</div><div class="label">TIDAK COCOK</div></button>';
+  }
+
+  // ── Render tabel ─────────────────────────────────────
+  function renderTable(data) {
+    if (!data.length) {
+      document.getElementById('resultBody').innerHTML =
+        '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-secondary,#888);">Tidak ada data untuk ditampilkan.</td></tr>';
+      return;
+    }
+
+    document.getElementById('resultBody').innerHTML = data.map((item, idx) => {
+      const statusClass = item.status_cocok.toLowerCase().replace(/_/g, '-');
+      const pemilihLink = item.pemilih_id
+        ? `<a href="/?highlight=${encodeURIComponent(item.pemilih_id)}" target="_blank" class="btn btn-outline btn-xs" title="Buka data pemilih">🔗 Buka</a>`
+        : '';
+      return '<tr class="' + statusClass + '">' +
+        '<td>' + esc(item.nama_tps) + '</td>' +
+        '<td>' + (item.nama_pemilih
+          ? (item.pemilih_id
+              ? `<a href="/?highlight=${encodeURIComponent(item.pemilih_id)}" target="_blank" style="color:inherit;text-decoration:underline dotted;" title="Lihat di database">${esc(item.nama_pemilih)}</a>`
+              : esc(item.nama_pemilih))
+          : '<span class="text-muted">TIDAK DITEMUKAN</span>') + '</td>' +
+        '<td>' + (item.usia_tps || '?') + ' vs ' + (item.usia_pemilih || '?') + '</td>' +
+        '<td>' + esc(item.dusun_tps || '-') + '</td>' +
+        '<td>' + (item.skor_total || 0) + '%</td>' +
+        '<td><span class="tps-chip ' + statusClass + '">' + item.status_cocok.replace(/_/g, ' ') + '</span></td>' +
+        '<td style="white-space:nowrap">' +
+          '<button onclick="showDetail(' + idx + ',currentPageData)" class="btn btn-outline btn-xs">Detail</button> ' +
+          pemilihLink +
+        '</td>' +
+        '</tr>';
+    }).join('');
+
+    // Simpan data halaman ini untuk showDetail
+    window.currentPageData = data;
+  }
+
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Pagination controls ──────────────────────────────
+  function updatePagination(pagination) {
+    const total = pagination.total || 0;
+    const page  = pagination.page || 1;
+    const pages = pagination.totalPages || 1;
+    const from  = (page - 1) * PAGE_LIMIT + 1;
+    const to    = Math.min(page * PAGE_LIMIT, total);
+
+    document.getElementById('paginationInfo').textContent =
+      total > 0 ? `Menampilkan ${from}–${to} dari ${total} data` : 'Tidak ada data';
+
+    const ctrl = document.getElementById('paginationControls');
+    if (pages > 1) {
+      ctrl.style.display = 'flex';
+      document.getElementById('pageLabel').textContent = `Halaman ${page} / ${pages}`;
+      document.getElementById('btnFirst').disabled = page <= 1;
+      document.getElementById('btnPrev').disabled  = page <= 1;
+      document.getElementById('btnNext').disabled  = page >= pages;
+      document.getElementById('btnLast').disabled  = page >= pages;
+    } else {
+      ctrl.style.display = 'none';
+    }
+  }
+
+  // ── Filter shortcut dari stat card ───────────────────
+  function setStatusFilter(status) {
+    currentStatus = status;
+    document.getElementById('statusFilter').value = status;
+    currentPage = 1;
+    loadResults(1);
+  }
+
+  // ── Detail modal ─────────────────────────────────────
+  function showDetail(index, data) {
+    const item = (data || window.currentPageData || [])[index];
+    if (!item) return;
+    currentDetailItem = item;
+
+    document.getElementById('modalTitle').textContent = 'Detail: ' + item.nama_tps;
+
+    document.getElementById('tpsDataContent').innerHTML = `
+      <div class="comparison-field"><div class="field-label">Nama</div><div class="field-value">${esc(item.nama_tps)}</div></div>
+      <div class="comparison-field"><div class="field-label">Jenis Kelamin</div><div class="field-value">${esc(item.jk_tps || '-')}</div></div>
+      <div class="comparison-field"><div class="field-label">Usia</div><div class="field-value">${esc(item.usia_tps || '-')} thn</div></div>
+      <div class="comparison-field"><div class="field-label">Dusun / Alamat</div><div class="field-value">${esc(item.dusun_tps || '-')}</div></div>
+      <div class="comparison-field"><div class="field-label">RT/RW</div><div class="field-value">${esc(item.rt_tps || '-')}/${esc(item.rw_tps || '-')}</div></div>
+    `;
+
+    let internalHtml = '';
+    if (item.pemilih_id) {
+      internalHtml = `
+        <div class="comparison-field"><div class="field-label">Nama</div><div class="field-value">${esc(item.nama_pemilih)}</div></div>
+        <div class="comparison-field"><div class="field-label">Jenis Kelamin</div><div class="field-value">${esc(item.jk_pemilih || '-')}</div></div>
+        <div class="comparison-field"><div class="field-label">Usia</div><div class="field-value">${esc(item.usia_pemilih || '-')} thn</div></div>
+        <div class="comparison-field"><div class="field-label">Dusun / Lokasi</div><div class="field-value">${esc(item.dusun_pemilih || '-')}</div></div>
+        <div class="comparison-field"><div class="field-label">Kader / Kordus</div><div class="field-value">${esc(item.kordus || '-')}</div></div>
+      `;
+    } else {
+      internalHtml = '<div class="empty-state">Tidak ada data internal yang cocok.</div>';
+    }
+    document.getElementById('internalDataContent').innerHTML = internalHtml;
+
+    let breakdownHtml = '';
+    if (item.pemilih_id) {
+      const match = item.catatan ? item.catatan.match(/nama: (\d+)%, usia: (\d+)%, lokasi: (\d+)%/) : null;
+      if (match) {
+        breakdownHtml = `
+          <div class="score-item"><div class="score-label">Nama</div><div class="score-val">${match[1]}%</div></div>
+          <div class="score-item"><div class="score-label">Usia</div><div class="score-val">${match[2]}%</div></div>
+          <div class="score-item"><div class="score-label">Lokasi</div><div class="score-val">${match[3]}%</div></div>
+          <div class="score-item"><div class="score-label">SKOR TOTAL</div><div class="score-val">${item.skor_total}%</div></div>
+        `;
+      } else {
+        breakdownHtml = `<div class="field-value">${esc(item.catatan || 'Skor: ' + item.skor_total + '%')}</div>`;
+      }
+    } else {
+      breakdownHtml = '<div class="field-value">Sistem tidak menemukan data pemilih yang memiliki kemiripan minimal (60%) dengan baris ini.</div>';
+    }
+    document.getElementById('scoreBreakdownContent').innerHTML = breakdownHtml;
+
+    // Tombol buka pemilih di footer
+    const linkContainer = document.getElementById('pemilihLinkContainer');
+    if (item.pemilih_id) {
+      linkContainer.innerHTML = `<a href="/?highlight=${encodeURIComponent(item.pemilih_id)}" target="_blank" class="btn btn-outline">🔗 Buka Data Pemilih</a>`;
+    } else {
+      linkContainer.innerHTML = '';
+    }
+
+    document.getElementById('detailModal').style.display = 'block';
+  }
+
+  function closeModal() {
+    document.getElementById('detailModal').style.display = 'none';
+  }
+
+  window.onclick = function(event) {
+    const modal = document.getElementById('detailModal');
+    if (event.target === modal) closeModal();
+  };
+
+  // ── Grafik ───────────────────────────────────────────
+  function drawChart(cocok, perluDicek, tidakCocok) {
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    if (statusChart) statusChart.destroy();
+    statusChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['COCOK', 'PERLU DICEK', 'TIDAK COCOK'],
+        datasets: [{ data: [cocok, perluDicek, tidakCocok], backgroundColor: ['#4f8b76', '#c69246', '#bb6a6a'] }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+  }
+
+  window.addEventListener('load', () => {
+    loadUserInfo();
+    loadTpsList();
+  });
+</script>
+</body>
+</html>

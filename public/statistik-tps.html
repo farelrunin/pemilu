@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistik TPS - Pemilu</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/tps-pages.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="app-shell-page">
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/perbandingan-tps"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+        <a href="/statistik-tps" class="active"><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Ringkasan coverage</strong>
+          <span>Lihat performa tiap TPS secara keseluruhan agar lebih mudah menentukan wilayah yang masih perlu pengecekan.</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Statistik TPS</div>
+        <div class="app-topbar-title">Ringkasan Coverage Seluruh TPS</div>
+        <div class="app-topbar-subtitle">Pantau jumlah TPS, total data, distribusi status, dan performa coverage per TPS dari satu dashboard statistik.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container">
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › <a href="/upload-tps">Modul TPS</a> › <span>Statistik</span>
+          </div>
+          <h1>Statistik TPS</h1>
+          <p>Halaman ini merangkum progress pencocokan seluruh TPS agar kamu bisa cepat melihat TPS terbaik, rata-rata coverage, dan titik yang perlu dibenahi.</p>
+          <div class="tps-link-row">
+            <a href="/upload-tps" class="btn btn-outline">Kembali ke Upload</a>
+            <a href="/perbandingan-tps" class="btn btn-outline">Lihat Detail Perbandingan</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Ringkasan Keseluruhan</div>
+          <div class="stats-grid" id="overviewStats"></div>
+        </div>
+
+        <div class="tps-grid-two">
+          <div class="card">
+            <div class="section-title">Persentase Cocok Per TPS</div>
+            <div class="chart-container">
+              <canvas id="tpsChart"></canvas>
+            </div>
+          </div>
+
+          <div class="tps-kpi-stack">
+            <div class="tps-stat-callout">
+              <div class="tps-stat-callout-label">Rata-rata coverage</div>
+              <div class="tps-stat-callout-value" id="avgCoverageValue">0%</div>
+              <div class="tps-stat-callout-copy">Rerata kecocokan dari seluruh TPS yang sudah diproses sistem.</div>
+            </div>
+            <div class="card">
+              <div class="section-title">Breakdown Status Keseluruhan</div>
+              <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Detail Per TPS</div>
+          <div class="table-container">
+            <table class="result-table" id="detailTable">
+              <thead>
+                <tr>
+                  <th>TPS</th>
+                  <th>Total Pemilih</th>
+                  <th>Cocok</th>
+                  <th>Perlu Dicek</th>
+                  <th>Tidak Cocok</th>
+                  <th>Coverage</th>
+                </tr>
+              </thead>
+              <tbody id="detailBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Insights</div>
+          <div id="insightsBox" class="tps-insight-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/auth.js"></script>
+<script>
+  let statistikData = null;
+  let tpsChart = null;
+  let statusChart = null;
+
+  function buildComparisonLink(params = {}) {
+    const query = new URLSearchParams(params);
+    const suffix = query.toString();
+    return '/perbandingan-tps' + (suffix ? '?' + suffix : '');
+  }
+
+  async function loadStatistik() {
+    try {
+      const response = await fetch('/api/tps/statistik', {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const result = await response.json();
+      statistikData = result.data;
+
+      displayOverview();
+      displayDetailTable();
+      drawCharts();
+      generateInsights();
+    } catch (err) {
+      console.error('Error:', err);
+    }
+  }
+
+  function displayOverview() {
+    const data = statistikData;
+    const total = data.perbandingan.reduce((sum, p) => sum + p.total, 0);
+    const cocokTotal = data.ringkasan.total_cocok_seluruh;
+    const perluDicekTotal = data.ringkasan.total_perlu_dicek_seluruh;
+    const tidakCocokTotal = data.ringkasan.total_tidak_cocok_seluruh;
+
+    const html = '<a href="/upload-tps" class="stat-card stat-card-link primary"><div class="number">' + data.total_tps + '</div><div class="label">TPS Diupload</div></a>' +
+      '<a href="/upload-tps" class="stat-card stat-card-link"><div class="number">' + total + '</div><div class="label">Total Data TPS</div></a>' +
+      '<a href="' + buildComparisonLink({ status: 'COCOK' }) + '" class="stat-card stat-card-link success"><div class="number">' + cocokTotal + '</div><div class="label">COCOK</div></a>' +
+      '<a href="' + buildComparisonLink({ status: 'PERLU_DICEK' }) + '" class="stat-card stat-card-link warning"><div class="number">' + perluDicekTotal + '</div><div class="label">PERLU DICEK</div></a>' +
+      '<a href="' + buildComparisonLink({ status: 'TIDAK_COCOK' }) + '" class="stat-card stat-card-link danger"><div class="number">' + tidakCocokTotal + '</div><div class="label">TIDAK COCOK</div></a>';
+
+    document.getElementById('overviewStats').innerHTML = html;
+  }
+
+  function displayDetailTable() {
+    const data = statistikData;
+    const tbody = document.getElementById('detailBody');
+
+    tbody.innerHTML = data.perbandingan.map(tps =>
+      '<tr>' +
+      '<td><a href="' + buildComparisonLink({ tps: tps.nama_tps }) + '"><strong>' + tps.nama_tps + '</strong></a></td>' +
+      '<td>' + tps.total + ' orang</td>' +
+      '<td><a href="' + buildComparisonLink({ tps: tps.nama_tps, status: 'COCOK' }) + '">' + tps.cocok + '</a></td>' +
+      '<td><a href="' + buildComparisonLink({ tps: tps.nama_tps, status: 'PERLU_DICEK' }) + '">' + tps.perlu_dicek + '</a></td>' +
+      '<td><a href="' + buildComparisonLink({ tps: tps.nama_tps, status: 'TIDAK_COCOK' }) + '">' + tps.tidak_cocok + '</a></td>' +
+      '<td><a href="' + buildComparisonLink({ tps: tps.nama_tps }) + '"><span class="tps-chip success">' + tps.persentase_cocok + '%</span></a></td>' +
+      '</tr>'
+    ).join('');
+  }
+
+  function drawCharts() {
+    const data = statistikData;
+
+    const barCtx = document.getElementById('tpsChart').getContext('2d');
+    if (tpsChart) tpsChart.destroy();
+
+    tpsChart = new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: data.perbandingan.map(p => p.nama_tps),
+        datasets: [
+          {
+            label: 'COCOK',
+            data: data.perbandingan.map(p => p.persentase_cocok),
+            backgroundColor: '#4f8b76',
+            borderRadius: 10
+          }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+
+    const pieCtx = document.getElementById('statusChart').getContext('2d');
+    if (statusChart) statusChart.destroy();
+
+    const cocokTotal = data.ringkasan.total_cocok_seluruh;
+    const perluDicekTotal = data.ringkasan.total_perlu_dicek_seluruh;
+    const tidakCocokTotal = data.ringkasan.total_tidak_cocok_seluruh;
+
+    statusChart = new Chart(pieCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['COCOK', 'PERLU DICEK', 'TIDAK COCOK'],
+        datasets: [{
+          data: [cocokTotal, perluDicekTotal, tidakCocokTotal],
+          backgroundColor: ['#4f8b76', '#c69246', '#bb6a6a']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  }
+
+  function generateInsights() {
+    const data = statistikData;
+    const ranked = [...data.perbandingan].sort((a, b) => b.persentase_cocok - a.persentase_cocok);
+    const bestTps = ranked[0];
+    const lowestTps = ranked[ranked.length - 1];
+    const total = data.perbandingan.reduce((sum, p) => sum + p.total, 0);
+    const cocokTotal = data.ringkasan.total_cocok_seluruh;
+    const avgPercentage = total ? Math.round((cocokTotal / total) * 100) : 0;
+
+    document.getElementById('avgCoverageValue').textContent = avgPercentage + '%';
+
+    const insights = [
+      '<div class="tps-insight-item"><strong>Total TPS aktif:</strong> ' + data.total_tps + ' TPS siap dipantau dari dashboard statistik.</div>',
+      '<div class="tps-insight-item"><strong>Rata-rata coverage:</strong> ' + avgPercentage + '% dari seluruh data TPS sudah punya tingkat kecocokan rata-rata seperti ini.</div>',
+      '<div class="tps-insight-item"><strong>TPS terbaik:</strong> ' + (bestTps ? bestTps.nama_tps + ' dengan coverage ' + bestTps.persentase_cocok + '%' : '-') + '.</div>',
+      '<div class="tps-insight-item"><strong>TPS paling butuh perhatian:</strong> ' + (lowestTps ? lowestTps.nama_tps + ' dengan coverage ' + lowestTps.persentase_cocok + '%' : '-') + '.</div>'
+    ];
+
+    document.getElementById('insightsBox').innerHTML = insights.join('');
+  }
+
+  window.addEventListener('load', () => {
+    loadUserInfo();
+    loadStatistik();
+  });
+</script>
+</body>
+</html>

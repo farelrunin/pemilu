@@ -26,7 +26,15 @@
         <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
         <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
         <a href="/kader" class="active"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
         <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/perbandingan-tps"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+        <a href="/statistik-tps"><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
       </nav>
 
       <div class="sidebar-section-label">Akses Cepat</div>
@@ -38,7 +46,7 @@
       <div class="sidebar-footer">
         <div class="sidebar-note">
           <strong>Monitoring wilayah</strong>
-          <span>Halaman ini dipakai untuk memantau persebaran kader, target suara, dan progres input per wilayah.</span>
+          <span>Halaman ini dipakai untuk memantau persebaran kader per koordinator dan progres input.</span>
         </div>
       </div>
     </div>
@@ -49,7 +57,7 @@
       <div class="app-topbar-copy">
         <div class="page-kicker">Manajemen Kader</div>
         <div class="app-topbar-title">Kelola Data Kader</div>
-        <div class="app-topbar-subtitle">Tambah, lihat, dan evaluasi performa kader dari satu halaman.</div>
+        <div class="app-topbar-subtitle">Cari, filter, dan urutkan kader per koordinator agar struktur tim lebih rapi.</div>
       </div>
       <div class="header-user-slot"></div>
     </div>
@@ -61,20 +69,21 @@
             <div>
               <div class="breadcrumb"><a href="/">Dashboard</a> › <span>Kelola Kader</span></div>
               <h1>Kelola Kader</h1>
-              <p>Tambah dan kelola data kader yang bertugas mendata pemilih.</p>
+              <p>Tambah dan kelola data kader yang bertugas mendata pemilih, sekarang tersusun per koordinator dan dusun.</p>
             </div>
             <div class="page-actions">
-              <a href="/tambah-kader" class="btn btn-green superadmin-only" style="width:auto;">Tambah Kader</a>
+              <a href="/koordinator" class="btn btn-outline btn-auto superadmin-only">Data Koordinator</a>
+              <a href="/tambah-kader" class="btn btn-green btn-auto superadmin-only">Tambah Kader</a>
             </div>
           </div>
           <div class="page-metric-grid">
             <div class="page-metric">
-              <span>Fokus Halaman</span>
-              <strong>Wilayah</strong>
+              <span>Urutan</span>
+              <strong>Koordinator</strong>
             </div>
             <div class="page-metric">
-              <span>Target</span>
-              <strong>Suara</strong>
+              <span>Filter</span>
+              <strong>Pencarian</strong>
             </div>
             <div class="page-metric">
               <span>Aktivitas</span>
@@ -85,22 +94,35 @@
 
         <div class="card">
           <div class="card-title"><div class="card-icon ci-blue">🎖️</div> Daftar Semua Kader</div>
+
+          <div class="toolbar-filters">
+            <div class="search-wrap search-wrap-wide">
+              <span class="search-icon">⌕</span>
+              <input type="search" id="search-kader" placeholder="Cari nama kader, nomor, dusun, atau koordinator..."/>
+            </div>
+            <div class="filter-kader-wrap">
+              <label for="filter-koordinator" class="filter-kader-label">Koordinator</label>
+              <select id="filter-koordinator" class="filter-kader-select" title="Filter koordinator">
+                <option value="">Semua koordinator</option>
+              </select>
+            </div>
+          </div>
+
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>Kader ke-</th>
                   <th>Nama Kader</th>
-                  <th>Wilayah</th>
+                  <th>Koordinator</th>
+                  <th>Dusun</th>
                   <th>Jumlah Orang</th>
-                  <th>Target Suara</th>
-                  <th>Progress</th>
                   <th>Ditambahkan</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody id="tbody-kader">
-                <tr><td colspan="8"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
+                <tr><td colspan="7"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
               </tbody>
             </table>
           </div>
@@ -112,64 +134,172 @@
 
 <div id="toast"></div>
 
+<script src="/js/koordinator.js"></script>
 <script src="/js/kader.js"></script>
 <script>
-  function formatDate(ts) {
-    return new Date(ts).toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+  let kaderSearchTimer = null;
+
+  // Sanitization function to prevent XSS
+  function sanitizeText(text) {
+    if (typeof text !== 'string') return '';
+    return text.replace(/[<>]/g, '').substring(0, 200); // Strip tags and limit length
   }
-  function showToast(msg, emoji='✅') {
+
+  function formatDate(ts) {
+    const date = new Date(ts);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function showToast(msg, emoji = '✅') {
     const t = document.getElementById('toast');
-    t.innerHTML = `${emoji} ${msg}`;
+    t.textContent = `${emoji} ${sanitizeText(msg)}`; // Use textContent and sanitize
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
+  async function loadKoordinatorFilter() {
+    const data = await KoordinatorAPI.getAll();
+    const select = document.getElementById('filter-koordinator');
+    const currentValue = select.value;
+
+    // Clear existing options except the first
+    while (select.children.length > 1) {
+      select.removeChild(select.lastChild);
+    }
+
+    if (Array.isArray(data)) {
+      data.forEach(item => {
+        const option = document.createElement('option');
+        option.value = sanitizeText(item.id || '');
+        option.textContent = sanitizeText(item.nama || '');
+        if (item.id === currentValue) option.selected = true;
+        select.appendChild(option);
+      });
+    }
+  }
+
   async function loadKader() {
-    const data = await KaderAPI.getAll();
+    const rawQ = document.getElementById('search-kader').value.trim();
+    if (rawQ.length > 100) {
+      showToast('Pencarian terlalu panjang', '❌');
+      return;
+    }
+    const q = encodeURIComponent(rawQ);
+    const rawKoordinatorId = document.getElementById('filter-koordinator').value;
+    const koordinatorId = /^[a-zA-Z0-9-]+$/.test(rawKoordinatorId) ? rawKoordinatorId : '';
+    const data = await KaderAPI.getAll({ q, koordinatorId });
     const tbody = document.getElementById('tbody-kader');
 
-    if (data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8">
-        <div class="empty"><div class="empty-icon">🎖️</div>
-        <p>Belum ada kader. <a href="/tambah-kader" style="color:var(--accent);">Tambah kader pertama</a></p></div>
-      </td></tr>`;
+    // Clear tbody safely
+    tbody.innerHTML = '';
+
+    if (!Array.isArray(data) || data.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 7;
+      // Use innerHTML only for static HTML, but sanitize if dynamic
+      td.innerHTML = '<div class="empty"><div class="empty-icon">🎖️</div><p>Belum ada kader yang cocok. <a href="/tambah-kader" style="color:var(--accent);">Tambah kader</a> atau ubah pencarian.</p></div>';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
       return;
     }
 
-    tbody.innerHTML = data.map(k => {
-      const target = k.target_suara || 0;
-      const pct = target > 0 ? Math.min(100, Math.round(k.jumlahPemilih / target * 100)) : 0;
-      const barColor = pct >= 100 ? 'var(--success)' : pct >= 50 ? 'var(--accent)' : 'var(--warning)';
-      const wilayah = `${k.dusun || '-'} · Kordus ${k.kordus || '-'}${k.korlap ? ' · Korlap ' + k.korlap : ''}`;
-      return `
-      <tr>
-        <td><span class="badge badge-blue">Kader ${k.nomor}</span></td>
-        <td style="font-weight:600;color:var(--text);">${k.nama}</td>
-        <td style="font-size:12px;color:var(--text3);max-width:200px;">${wilayah}</td>
-        <td><span class="badge badge-green">${k.jumlahPemilih} orang</span></td>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:13px;">${target > 0 ? target : '<span style="color:var(--text3);">-</span>'}</td>
-        <td style="min-width:120px;">
-          ${target > 0 ? `
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="progress-bar-track" style="flex:1;">
-              <div class="progress-bar-fill" style="width:${pct}%;background:${barColor};"></div>
-            </div>
-            <span style="font-size:12px;font-weight:700;color:${barColor};font-family:'JetBrains Mono',monospace;">${pct}%</span>
-          </div>` : '<span style="color:var(--text3);font-size:12px;">—</span>'}
-        </td>
-        <td style="font-size:12px;color:var(--text3);">${formatDate(k.created_at)}</td>
-        <td>
-          <div class="gap-12 superadmin-only">
-            <a href="/view-kader?id=${k.id}" class="btn btn-outline btn-xs" aria-label="Lihat detail Kader ${k.nomor} - ${k.nama}">👁️ Lihat</a>
-            <a href="/edit-kader?id=${k.id}" class="btn btn-outline btn-xs" aria-label="Edit Kader ${k.nomor} - ${k.nama}">✏️ Edit</a>
-            <button class="btn btn-danger btn-xs" aria-label="Hapus Kader ${k.nomor} - ${k.nama}" onclick="konfirmasiHapusKader('${k.id}','${k.nama}',${k.nomor})">🗑️ Hapus</button>
-          </div>
-        </td>
-      </tr>
-    `}).join('');
+    data.forEach(k => {
+      // Sanitize API data
+      const safeNama = sanitizeText(k.nama || '');
+      const safeNomor = sanitizeText(k.nomor || '');
+      const safeDusun = sanitizeText(k.dusun || '');
+      const safeId = /^[a-f0-9-]+$/.test(k.id) ? k.id : ''; // Validate ID format
+
+      const jumlahPemilih = Number(k.jumlahPemilih) || 0;
+      const namaKoordinator = sanitizeText(k.namaKoordinator || k.kordus || '-');
+
+      const tr = document.createElement('tr');
+
+      const td1 = document.createElement('td');
+      const span1 = document.createElement('span');
+      span1.className = 'badge badge-blue';
+      span1.textContent = `Kader ${safeNomor}`;
+      td1.appendChild(span1);
+      tr.appendChild(td1);
+
+      const td2 = document.createElement('td');
+      td2.textContent = safeNama;
+      td2.className = 'kader-name'; // Use CSS class instead of inline style
+      tr.appendChild(td2);
+
+      const td3 = document.createElement('td');
+      const span3 = document.createElement('span');
+      span3.className = 'badge badge-orange';
+      span3.textContent = namaKoordinator;
+      td3.appendChild(span3);
+      tr.appendChild(td3);
+
+      const td4 = document.createElement('td');
+      td4.textContent = safeDusun || '-';
+      td4.className = 'kader-dusun'; // Use CSS class
+      tr.appendChild(td4);
+
+      const td5 = document.createElement('td');
+      const span5 = document.createElement('span');
+      span5.className = 'badge badge-green';
+      span5.textContent = `${jumlahPemilih} orang`;
+      td5.appendChild(span5);
+      tr.appendChild(td5);
+
+      const td6 = document.createElement('td');
+      td6.textContent = formatDate(k.created_at);
+      td6.className = 'kader-date'; // Use CSS class
+      tr.appendChild(td6);
+
+      const td7 = document.createElement('td');
+      const div = document.createElement('div');
+      div.className = 'gap-12 superadmin-only';
+
+      if (safeId) {
+        const a1 = document.createElement('a');
+        a1.href = `/view-kader?id=${encodeURIComponent(safeId)}`;
+        a1.className = 'btn btn-outline btn-xs';
+        a1.setAttribute('aria-label', `Lihat detail Kader ${safeNomor} - ${safeNama}`);
+        a1.textContent = '👁️ Lihat';
+        div.appendChild(a1);
+
+        const a2 = document.createElement('a');
+        a2.href = `/edit-kader?id=${encodeURIComponent(safeId)}`;
+        a2.className = 'btn btn-outline btn-xs';
+        a2.setAttribute('aria-label', `Edit Kader ${safeNomor} - ${safeNama}`);
+        a2.textContent = '✏️ Edit';
+        div.appendChild(a2);
+
+        const button = document.createElement('button');
+        button.className = 'btn btn-danger btn-xs';
+        button.setAttribute('aria-label', `Hapus Kader ${safeNomor} - ${safeNama}`);
+        button.textContent = '🗑️ Hapus';
+        button.addEventListener('click', () => konfirmasiHapusKader(safeId, safeNama, safeNomor));
+        div.appendChild(button);
+      }
+
+      td7.appendChild(div);
+      tr.appendChild(td7);
+
+      tbody.appendChild(tr);
+    });
   }
 
-  loadKader();
+  document.getElementById('search-kader').addEventListener('input', () => {
+    clearTimeout(kaderSearchTimer);
+    kaderSearchTimer = setTimeout(loadKader, 250);
+  });
+
+  document.getElementById('filter-koordinator').addEventListener('change', loadKader);
+
+  async function initPage() {
+    await loadKoordinatorFilter();
+    await loadKader();
+  }
+
+  initPage();
 </script>
 </body>
 </html>

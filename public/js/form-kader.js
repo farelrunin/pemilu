@@ -17,24 +17,40 @@ async function isiNomorKaderOtomatis() {
   }
 }
 
+async function isiKoordinatorDropdown(selectedId = '', selectedName = '') {
+  const select = document.getElementById('kader-koordinator');
+  if (!select || typeof populateKoordinatorSelect !== 'function') return;
+
+  await populateKoordinatorSelect('kader-koordinator', selectedId, selectedName);
+}
+
 async function submitTambahKader() {
   const nama = document.getElementById('kader-nama').value.trim();
   const nomor = document.getElementById('kader-nomor').value;
   const dusun = document.getElementById('kader-dusun').value.trim();
-  const kordus = document.getElementById('kader-kordus').value.trim();
-  const targetSuara = document.getElementById('kader-target')?.value || 0;
+  const koordinatorId = document.getElementById('kader-koordinator').value;
 
   hideKaderAlerts();
-  if (!nama || !nomor || !dusun || !kordus) {
-    showKaderError('Nama, nomor, dusun, dan kordus wajib diisi!');
+
+  // Validasi ketat untuk cegah typo dan injection
+  if (!nama || nama.length > 100 || !/^[a-zA-Z\s]+$/.test(nama)) {
+    showKaderError('Nama kader harus diisi, maksimal 100 karakter, hanya huruf dan spasi!');
     return;
   }
-  if (parseInt(nomor, 10) < 1) {
-    showKaderError('Nomor kader harus lebih dari 0!');
+  if (!nomor || parseInt(nomor, 10) < 1 || parseInt(nomor, 10) > 9999) {
+    showKaderError('Nomor kader harus angka positif, maksimal 9999!');
+    return;
+  }
+  if (!dusun || dusun.length > 100 || !/^[a-zA-Z0-9\s\-.,]+$/.test(dusun)) {
+    showKaderError('Nama dusun harus diisi, maksimal 100 karakter, hanya huruf, angka, spasi, strip, titik, koma!');
+    return;
+  }
+  if (!koordinatorId || !/^[a-f0-9-]{1,36}$/.test(koordinatorId)) {
+    showKaderError('Koordinator harus dipilih dengan benar!');
     return;
   }
 
-  const res = await KaderAPI.tambah({ nama, nomor, dusun, kordus, targetSuara });
+  const res = await KaderAPI.tambah({ nama, nomor, dusun, koordinatorId });
   if (res.error) {
     if (String(res.error).toLowerCase().includes('terdaftar')) {
       await isiNomorKaderOtomatis();
@@ -47,10 +63,7 @@ async function submitTambahKader() {
   document.getElementById('kader-nama').value = '';
   document.getElementById('kader-nomor').value = '';
   document.getElementById('kader-dusun').value = '';
-  document.getElementById('kader-kordus').value = '';
-  if (document.getElementById('kader-target')) {
-    document.getElementById('kader-target').value = '';
-  }
+  document.getElementById('kader-koordinator').value = '';
 
   await isiNomorKaderOtomatis();
   showToast(`OK Kader ${nomor} berhasil disimpan!`);
@@ -62,16 +75,15 @@ async function submitEditKader() {
   const nama = document.getElementById('kader-nama').value.trim();
   const nomor = document.getElementById('kader-nomor').value;
   const dusun = document.getElementById('kader-dusun').value.trim();
-  const kordus = document.getElementById('kader-kordus').value.trim();
-  const targetSuara = document.getElementById('kader-target')?.value || 0;
+  const koordinatorId = document.getElementById('kader-koordinator').value;
 
   hideKaderAlerts();
-  if (!nama || !nomor || !dusun || !kordus) {
-    showKaderError('Nama, nomor, dusun, dan kordus wajib diisi!');
+  if (!nama || !nomor || !dusun || !koordinatorId) {
+    showKaderError('Nama, nomor, dusun, dan koordinator wajib diisi!');
     return;
   }
 
-  const res = await KaderAPI.edit(id, { nama, nomor, dusun, kordus, targetSuara });
+  const res = await KaderAPI.edit(id, { nama, nomor, dusun, koordinatorId });
   if (res.error) {
     showKaderError(res.error);
     return;
@@ -101,8 +113,9 @@ function hideKaderAlerts() {
   document.getElementById('alert-success')?.classList.remove('show');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await isiKoordinatorDropdown();
   if (document.getElementById('kader-nomor') && !document.getElementById('edit-id')) {
-    isiNomorKaderOtomatis();
+    await isiNomorKaderOtomatis();
   }
 });

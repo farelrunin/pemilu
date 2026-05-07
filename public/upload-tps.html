@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload TPS - Pemilu</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/tps-pages.css">
+</head>
+<body class="app-shell-page">
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps" class="active"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/perbandingan-tps"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+        <a href="/statistik-tps"><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Alur modul TPS</strong>
+          <span>Upload daftar TPS, cek hasil pencocokan, lalu pantau coverage dari satu rangkaian halaman yang seragam.</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Modul TPS</div>
+        <div class="app-topbar-title">Upload dan Kelola Data TPS</div>
+        <div class="app-topbar-subtitle">Masukkan file Excel TPS, pantau daftar unggahan, dan lanjutkan ke proses perbandingan tanpa keluar dari layout utama.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container">
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › <span>Import TPS</span>
+          </div>
+          <h1>Upload Excel TPS</h1>
+          <p>Tarik file Excel ke area upload atau pilih manual, lalu sistem akan menyiapkan data TPS untuk dikelola dan dibandingkan.</p>
+          <div class="tps-link-row">
+            <a href="/perbandingan-tps" class="btn btn-outline">Lihat Perbandingan</a>
+            <a href="/statistik-tps" class="btn btn-outline">Buka Statistik</a>
+          </div>
+        </div>
+
+        <div id="alertBox" class="hidden"></div>
+
+        <div class="tps-grid-two">
+          <div class="card">
+            <div class="section-title">Form Upload TPS</div>
+            <div class="form-group">
+              <label for="namaTps">Nama TPS</label>
+              <input type="text" id="namaTps" placeholder="Contoh: TPS 01 Dusun A">
+            </div>
+
+            <div class="form-group">
+              <label for="fileInput">File Excel</label>
+              <div id="dropZone" class="drag-drop-zone">
+                <span class="icon">Upload</span>
+                <strong>Pilih file Excel TPS</strong>
+                <p>Format .xlsx atau .xls, maksimal 10MB.</p>
+                <div id="fileName" class="file-name hidden"></div>
+              </div>
+              <input type="file" id="fileInput" accept=".xlsx,.xls">
+            </div>
+
+            <div class="alert alert-info">
+              Kolom yang dibaca: <strong>nama</strong>, <strong>jenis_kelamin/jk/gender</strong>, <strong>usia/age</strong>, <strong>dusun</strong>, <strong>alamat</strong>, <strong>rt</strong>, <strong>rw</strong>.
+            </div>
+
+            <div class="tps-actions-row">
+              <button id="uploadBtn" class="btn btn-primary" onclick="uploadTps()">Upload TPS</button>
+              <button class="btn btn-secondary" onclick="refreshTpsList()">Refresh Daftar</button>
+            </div>
+          </div>
+
+          <div class="tps-kpi-stack">
+            <div class="tps-stat-callout">
+              <div class="tps-stat-callout-label">Status file</div>
+              <div class="tps-stat-callout-value" id="uploadStateValue">Belum ada</div>
+              <div class="tps-stat-callout-copy">Pilih nama TPS dan file Excel untuk mulai mengunggah.</div>
+            </div>
+            <div class="tps-note-box">
+              <strong>Sebelum upload</strong>
+              Pastikan nama kolom sesuai format, data usia sudah rapi, dan nama TPS konsisten agar proses perbandingan berikutnya lebih bersih.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">TPS Yang Sudah Diunggah</div>
+          <div id="listLoading" class="loading-state">Memuat daftar TPS...</div>
+          <div id="emptyState" class="empty-state">
+            <p class="empty-state-text">Belum ada data TPS yang diunggah.</p>
+          </div>
+          <div id="tableWrap" class="table-container hidden">
+            <table class="result-table">
+              <thead>
+                <tr>
+                  <th>Nama TPS</th>
+                  <th>Total Data</th>
+                  <th>Sudah Dibandingkan</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tpsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/auth.js"></script>
+<script src="/js/tps.js"></script>
+<script>
+  let selectedFile = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadUserInfo();
+    setupDropZone();
+    refreshTpsList();
+  });
+
+  function setupDropZone() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (event) => setSelectedFile(event.target.files[0] || null));
+
+    dropZone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dropZone.classList.remove('dragover');
+      const file = event.dataTransfer.files[0] || null;
+      if (file) {
+        fileInput.files = event.dataTransfer.files;
+        setSelectedFile(file);
+      }
+    });
+  }
+
+  function setSelectedFile(file) {
+    selectedFile = file;
+    const fileName = document.getElementById('fileName');
+    const uploadStateValue = document.getElementById('uploadStateValue');
+    if (file) {
+      fileName.textContent = 'File terpilih: ' + file.name;
+      fileName.classList.remove('hidden');
+      uploadStateValue.textContent = file.name;
+    } else {
+      fileName.textContent = '';
+      fileName.classList.add('hidden');
+      uploadStateValue.textContent = 'Belum ada';
+    }
+  }
+
+  function showAlert(type, message) {
+    const alertBox = document.getElementById('alertBox');
+    alertBox.className = 'alert alert-' + type;
+    alertBox.textContent = message;
+    alertBox.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function buildComparisonSummary(comparison) {
+    if (!comparison || !comparison.statistik) return '';
+    const stats = comparison.statistik;
+    return ' Hasil otomatis: ' +
+      stats.cocok + ' cocok, ' +
+      stats.perlu_dicek + ' perlu dicek, ' +
+      stats.tidak_cocok + ' tidak cocok (' +
+      stats.persentase_cocok + '% cocok).';
+  }
+
+  async function uploadTps() {
+    const namaTps = document.getElementById('namaTps').value.trim();
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    if (!namaTps) {
+      showAlert('warning', 'Nama TPS wajib diisi.');
+      return;
+    }
+
+    if (!selectedFile) {
+      showAlert('warning', 'Silakan pilih file Excel TPS terlebih dulu.');
+      return;
+    }
+
+    try {
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="loading"></span> Uploading...';
+
+      const result = await TPS_API.uploadTPS(selectedFile, namaTps);
+      const comparisonMessage = buildComparisonSummary(result.data && result.data.comparison);
+      showAlert('success', (result.message || 'Upload TPS berhasil.') + comparisonMessage);
+
+      document.getElementById('namaTps').value = '';
+      document.getElementById('fileInput').value = '';
+      setSelectedFile(null);
+      await refreshTpsList();
+    } catch (error) {
+      showAlert('danger', error.message || 'Upload TPS gagal.');
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = 'Upload TPS';
+    }
+  }
+
+  async function refreshTpsList() {
+    const loadingEl = document.getElementById('listLoading');
+    const emptyEl = document.getElementById('emptyState');
+    const tableWrap = document.getElementById('tableWrap');
+    const tbody = document.getElementById('tpsTableBody');
+
+    // Sembunyikan alert lama sebelum refresh
+    const alertBox = document.getElementById('alertBox');
+    alertBox.classList.add('hidden');
+
+    loadingEl.classList.remove('hidden');
+    emptyEl.style.display = 'none';
+    tableWrap.classList.add('hidden');
+    tbody.innerHTML = '';
+
+    try {
+      const response = await TPS_API.listTPS(1, 100);
+      const items = response.data || [];
+
+      if (!items.length) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+
+      tbody.innerHTML = items.map((item) => {
+        const isCompared = item.status_perbandingan === 'SUDAH_DIBANDING';
+        return `
+          <tr>
+            <td><strong>${escapeHtml(item.nama_tps || '-')}</strong></td>
+            <td>${Number(item.total_data || 0)}</td>
+            <td><span class="tps-chip ${isCompared ? 'success' : 'warning'}">${isCompared ? 'Sudah dibandingkan' : 'Belum dibandingkan'}</span></td>
+            <td>
+              <div class="tps-table-actions">
+                <button class="btn btn-primary" onclick="goToManage('${encodeURIComponent(item.nama_tps || '')}')">Kelola</button>
+                <button class="btn btn-secondary" onclick="goToComparison('${encodeURIComponent(item.nama_tps || '')}')">Buka</button>
+                <button class="btn btn-danger" onclick="deleteTpsGroup('${encodeURIComponent(item.nama_tps || '')}', '${escapeHtml(item.nama_tps || '')}')">Hapus</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tableWrap.classList.remove('hidden');
+    } catch (error) {
+      showAlert('danger', error.message || 'Gagal memuat daftar TPS.');
+    } finally {
+      loadingEl.classList.add('hidden');
+    }
+  }
+
+  function goToComparison(namaTps) {
+    window.location.href = '/perbandingan-tps?tps=' + namaTps;
+  }
+
+  function goToManage(namaTps) {
+    window.location.href = '/kelola-tps?tps=' + namaTps;
+  }
+
+  async function deleteTpsGroup(encodedNamaTps, displayName) {
+    const confirmDelete = await showAppConfirm('Hapus seluruh data untuk TPS ' + displayName + '?', {
+      title: 'Hapus TPS',
+      confirmText: 'Hapus TPS',
+      confirmClassName: 'btn-danger',
+      dangerNote: 'Semua data di TPS ini akan dihapus permanen.'
+    });
+    if (!confirmDelete) return;
+    try {
+      await TPS_API.deleteTPSGroup(decodeURIComponent(encodedNamaTps));
+      showAlert('success', 'TPS berhasil dihapus.');
+      await refreshTpsList();
+    } catch (error) {
+      showAlert('danger', error.message || 'Gagal menghapus TPS.');
+    }
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Data Koordinator — Pendataan</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <script src="/js/auth.js"></script>
+</head>
+<body class="app-shell-page">
+
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator" class="active"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/perbandingan-tps"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+        <a href="/statistik-tps"><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Master koordinator</strong>
+          <span>Gunakan halaman ini untuk menjaga struktur tim tetap rapi dan mudah dihitung.</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Master Koordinator</div>
+        <div class="app-topbar-title">Kelola Data Koordinator</div>
+        <div class="app-topbar-subtitle">Pantau jumlah koordinator, kader di bawahnya, dan total pemilih dari satu halaman.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container">
+        <div class="page-header page-header-card">
+          <div class="page-header-row">
+            <div>
+              <div class="breadcrumb"><a href="/">Dashboard</a> › <span>Koordinator</span></div>
+              <h1>Data Koordinator</h1>
+              <p>Master koordinator dipakai agar kader bisa dikelompokkan dengan rapi dan tidak tercampur acak.</p>
+            </div>
+          </div>
+          <div class="page-metric-grid">
+            <div class="page-metric">
+              <span>Total Koordinator</span>
+              <strong id="metric-koordinator">0</strong>
+            </div>
+            <div class="page-metric">
+              <span>Total Kader</span>
+              <strong id="metric-kader">0</strong>
+            </div>
+            <div class="page-metric">
+              <span>Total Pemilih</span>
+              <strong id="metric-pemilih">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card superadmin-only">
+            <div class="card-title"><div class="card-icon ci-green">🧭</div> Tambah Koordinator</div>
+            <div id="alert-success" class="alert-success"></div>
+            <div id="alert-error" class="alert-error"></div>
+
+            <div class="form-group">
+              <label for="koordinator-nama">Nama Koordinator <span class="required-marker">*</span></label>
+              <input type="text" id="koordinator-nama" placeholder="Contoh: Koordinator Dusun Utara" autocomplete="off"/>
+              <div class="hint">Nama ini akan dipakai di form kader sebagai pilihan resmi.</div>
+            </div>
+
+            <div class="gap-12 gap-margin-top-8">
+              <button class="btn btn-green btn-flex-2" onclick="submitKoordinator()">Simpan Koordinator</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><div class="card-icon ci-blue">📌</div> Ringkasan</div>
+            <div class="compact-progress-list">
+              <div class="compact-progress-item">
+                <div class="compact-progress-head">
+                  <div class="compact-progress-name">Fungsi halaman ini</div>
+                </div>
+                <div class="table-cell-muted">Koordinator menjadi titik kumpul untuk melihat berapa kader aktif dan berapa pemilih yang masuk di bawah masing-masing koordinator.</div>
+              </div>
+              <div class="compact-progress-item">
+                <div class="compact-progress-head">
+                  <div class="compact-progress-name">Dampak ke Data Kader</div>
+                </div>
+                <div class="table-cell-muted">Setelah master koordinator dipakai, daftar kader akan diurutkan per koordinator lalu per dusun supaya tidak lagi campur acak.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><div class="card-icon ci-blue">🗂️</div> Daftar Koordinator</div>
+
+          <div class="toolbar-filters">
+            <div class="search-wrap search-wrap-wide">
+              <span class="search-icon">⌕</span>
+              <input type="search" id="search-koordinator" placeholder="Cari nama koordinator..."/>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Koordinator</th>
+                  <th>Jumlah Kader</th>
+                  <th>Jumlah Pemilih</th>
+                  <th>Jumlah Dusun</th>
+                  <th>Ditambahkan</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-koordinator">
+                <tr><td colspan="6"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script src="/js/koordinator.js"></script>
+<script>
+  let searchTimer = null;
+
+  function formatDate(ts) {
+    return ts ? new Date(ts).toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-';
+  }
+
+  function showToast(msg, emoji = '✅') {
+    const t = document.getElementById('toast');
+    t.innerHTML = `${emoji} ${msg}`;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('alert-error');
+    if (!el) return;
+    el.textContent = `ERROR ${msg}`;
+    el.classList.add('show');
+  }
+
+  function showSuccess(msg) {
+    const el = document.getElementById('alert-success');
+    if (!el) return;
+    el.textContent = `OK ${msg}`;
+    el.classList.add('show');
+  }
+
+  function hideAlerts() {
+    document.getElementById('alert-error')?.classList.remove('show');
+    document.getElementById('alert-success')?.classList.remove('show');
+  }
+
+  function updateMetrics(data) {
+    const list = Array.isArray(data) ? data : [];
+    const totalKader = list.reduce((sum, item) => sum + (Number(item.jumlahKader) || 0), 0);
+    const totalPemilih = list.reduce((sum, item) => sum + (Number(item.jumlahPemilih) || 0), 0);
+
+    document.getElementById('metric-koordinator').textContent = list.length;
+    document.getElementById('metric-kader').textContent = totalKader;
+    document.getElementById('metric-pemilih').textContent = totalPemilih;
+  }
+
+  async function loadKoordinator() {
+    const tbody = document.getElementById('tbody-koordinator');
+    const q = document.getElementById('search-koordinator').value.trim();
+    const data = await KoordinatorAPI.getAll(q);
+
+    updateMetrics(data);
+
+    if (!Array.isArray(data) || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6">
+        <div class="empty"><div class="empty-icon">🧭</div><p>Belum ada data koordinator yang cocok.</p></div>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(item => `
+      <tr>
+        <td class="table-cell-strong">${item.nama}</td>
+        <td><span class="badge badge-blue">${Number(item.jumlahKader) || 0} kader</span></td>
+        <td><span class="badge badge-green">${Number(item.jumlahPemilih) || 0} pemilih</span></td>
+        <td class="table-cell-small">${Number(item.jumlahDusun) || 0} dusun</td>
+        <td class="table-cell-small">${formatDate(item.created_at)}</td>
+        <td>
+          <div class="gap-12 superadmin-only">
+            <button class="btn btn-outline btn-xs" onclick="editKoordinator('${item.id}', decodeURIComponent('${encodeURIComponent(String(item.nama))}'))">✏️ Edit</button>
+            <button class="btn btn-danger btn-xs" onclick="hapusKoordinator('${item.id}', decodeURIComponent('${encodeURIComponent(String(item.nama))}'), ${Number(item.jumlahKader) || 0})">🗑️ Hapus</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function submitKoordinator() {
+    hideAlerts();
+    const input = document.getElementById('koordinator-nama');
+    const nama = input.value.trim();
+
+    if (!nama) {
+      showError('Nama koordinator wajib diisi');
+      return;
+    }
+
+    const res = await KoordinatorAPI.tambah({ nama });
+    if (res.error) {
+      showError(res.error);
+      return;
+    }
+
+    input.value = '';
+    showSuccess(`Koordinator ${nama} berhasil ditambahkan`);
+    showToast(`Koordinator ${nama} disimpan`);
+    await loadKoordinator();
+  }
+
+  async function editKoordinator(id, namaLama) {
+    const namaBaru = await showAppPrompt('Ubah nama koordinator:', {
+      title: 'Edit Koordinator',
+      defaultValue: namaLama,
+      confirmText: 'Simpan'
+    });
+    if (namaBaru === null) return;
+
+    const nama = String(namaBaru || '').trim();
+    if (!nama || nama === namaLama) return;
+
+    const res = await KoordinatorAPI.edit(id, { nama });
+    if (res.error) {
+      showToast(res.error, '❌');
+      return;
+    }
+
+    showToast(`Koordinator diperbarui menjadi ${nama}`);
+    await loadKoordinator();
+  }
+
+  async function hapusKoordinator(id, nama, jumlahKader) {
+    if (jumlahKader > 0) {
+      showToast(`Koordinator ${nama} masih dipakai ${jumlahKader} kader`, '⚠️');
+      return;
+    }
+
+    const confirmDelete = await showAppConfirm(`Hapus koordinator ${nama}?`, {
+      title: 'Hapus Koordinator',
+      confirmText: 'Hapus',
+      confirmClassName: 'btn-danger',
+      dangerNote: 'Koordinator yang tidak dipakai bisa dihapus permanen.'
+    });
+    if (!confirmDelete) return;
+
+    const res = await KoordinatorAPI.hapus(id);
+    if (res.error) {
+      showToast(res.error, '❌');
+      return;
+    }
+
+    showToast(`Koordinator ${nama} dihapus`, '🗑️');
+    await loadKoordinator();
+  }
+
+  document.getElementById('search-koordinator').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadKoordinator, 250);
+  });
+
+  loadKoordinator();
+</script>
+</body>
+</html>

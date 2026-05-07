@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kelola TPS - Pemilu</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/tps-pages.css">
+  <style>
+    .kelola-tps-table th:nth-child(1),
+    .kelola-tps-table td:nth-child(1) { min-width: 240px; }
+    .kelola-tps-table input[type="text"],
+    .kelola-tps-table input[type="number"],
+    .kelola-tps-table select { min-width: 60px; }
+    .kelola-tps-table .nama-input  { min-width: 220px; }
+    .kelola-tps-table .alamat-input { min-width: 180px; }
+    .kelola-page-ctrl {
+      display: flex; gap: 8px; justify-content: center;
+      align-items: center; flex-wrap: wrap; padding: 16px 0;
+    }
+    .kelola-page-info {
+      font-size: 0.85rem; color: var(--text-secondary, #888);
+      text-align: right; padding: 4px 0 12px;
+    }
+  </style>
+</head>
+<body class="app-shell-page">
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/kelola-tps" class="active"><span><strong>Kelola Data TPS</strong></span><span class="nav-pill">KT</span></a>
+        <a href="/perbandingan-tps"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+        <a href="/statistik-tps"><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Kelola baris TPS</strong>
+          <span>Edit atau hapus baris satu per satu. Perubahan akan otomatis memperbarui hasil perbandingan.</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Modul TPS</div>
+        <div class="app-topbar-title" id="topbarTitle">Kelola Data TPS</div>
+        <div class="app-topbar-subtitle">Edit atau hapus baris data TPS satu per satu. Setiap perubahan otomatis memperbarui hasil perbandingan.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container">
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › <a href="/upload-tps">Modul TPS</a> › <span id="breadcrumbTps">Kelola TPS</span>
+          </div>
+          <h1 id="pageTitle">Kelola Data TPS</h1>
+          <p>Baris-baris di bawah bisa langsung diedit. Klik Simpan pada baris yang sudah diubah.</p>
+          <div class="tps-link-row">
+            <a href="/upload-tps" class="btn btn-outline">← Kembali ke Upload</a>
+            <a id="compareLink" href="/perbandingan-tps" class="btn btn-outline">Lihat Perbandingan</a>
+          </div>
+        </div>
+
+        <!-- Alert -->
+        <div id="alertBox" class="hidden"></div>
+
+        <!-- Header info + tombol aksi -->
+        <div class="card">
+          <div class="section-title">Info TPS</div>
+          <div id="headerInfo" class="alert alert-info">Memuat data TPS...</div>
+          <div class="tps-actions-row" style="margin-top:12px;">
+            <button class="btn btn-secondary" onclick="reloadPage()">🔄 Refresh</button>
+            <button class="btn btn-danger" onclick="deleteCurrentTps()">🗑️ Hapus TPS Ini</button>
+          </div>
+        </div>
+
+        <!-- Tabel -->
+        <div class="card">
+          <div class="section-title">Data Pemilih TPS</div>
+
+          <!-- Info halaman + loading -->
+          <div id="pageInfo" class="kelola-page-info"></div>
+          <div id="loadingState" class="loading-state">Memuat baris TPS...</div>
+          <div id="emptyState" class="empty-state" style="display:none;">
+            <p class="empty-state-text">Belum ada data untuk TPS ini.</p>
+          </div>
+
+          <div id="tableWrap" class="table-container hidden">
+            <table class="result-table kelola-tps-table">
+              <thead>
+                <tr>
+                  <th>Nama</th>
+                  <th>JK</th>
+                  <th>Usia</th>
+                  <th>Alamat</th>
+                  <th>RT</th>
+                  <th>RW</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="rowsBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div id="pageControls" class="kelola-page-ctrl" style="display:none;">
+            <button id="btnFirst" onclick="gotoPage(1)" class="btn btn-outline btn-xs">« Pertama</button>
+            <button id="btnPrev"  onclick="gotoPage(currentPage - 1)" class="btn btn-outline btn-xs">‹ Sebelumnya</button>
+            <span id="pageLabel" style="font-size:0.88rem;padding:0 8px;"></span>
+            <button id="btnNext"  onclick="gotoPage(currentPage + 1)" class="btn btn-outline btn-xs">Berikutnya ›</button>
+            <button id="btnLast"  onclick="gotoPage(totalPages)" class="btn btn-outline btn-xs">Terakhir »</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/auth.js"></script>
+<script src="/js/tps.js"></script>
+<script>
+  const currentTps = new URLSearchParams(window.location.search).get('tps') || '';
+  const PAGE_LIMIT  = 50;
+
+  let currentPage = 1;
+  let totalPages  = 1;
+  let totalData   = 0;
+  // Simpan dusun per row id agar saat simpan tetap terkirim (field tersembunyi)
+  let dusunCache  = {};
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    loadUserInfo();
+
+    if (!currentTps) {
+      showAlert('warning', 'Nama TPS tidak ditemukan di URL. Kembali ke <a href="/upload-tps">halaman upload</a>.');
+      document.getElementById('loadingState').classList.add('hidden');
+      return;
+    }
+
+    // Update judul & link
+    const decodedTps = decodeURIComponent(currentTps);
+    document.getElementById('topbarTitle').textContent  = 'Kelola: ' + decodedTps;
+    document.getElementById('pageTitle').textContent    = 'Kelola Data TPS — ' + decodedTps;
+    document.getElementById('breadcrumbTps').textContent = decodedTps;
+    document.getElementById('compareLink').href = '/perbandingan-tps?tps=' + encodeURIComponent(currentTps);
+
+    await loadRows(1);
+  });
+
+  // ── Navigasi halaman ─────────────────────────────────
+  function gotoPage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    loadRows(page);
+  }
+
+  function reloadPage() {
+    hideAlert();
+    loadRows(currentPage);
+  }
+
+  // ── Load baris dari server ────────────────────────────
+  async function loadRows(page) {
+    const loadingState = document.getElementById('loadingState');
+    const tableWrap    = document.getElementById('tableWrap');
+    const emptyState   = document.getElementById('emptyState');
+    const pageControls = document.getElementById('pageControls');
+
+    loadingState.classList.remove('hidden');
+    tableWrap.classList.add('hidden');
+    emptyState.style.display   = 'none';
+    pageControls.style.display = 'none';
+    document.getElementById('rowsBody').innerHTML = '';
+
+    try {
+      const result = await TPS_API.getTPSData(currentTps, page, PAGE_LIMIT);
+      const rows      = result.data || [];
+      const pagination = result.pagination || {};
+      totalPages = pagination.totalPages || 1;
+      totalData  = pagination.total || 0;
+      currentPage = pagination.page || page;
+
+      // Cache dusun untuk pengiriman saat simpan
+      rows.forEach(row => { dusunCache[row.id] = row.dusun || ''; });
+
+      // Update info header
+      document.getElementById('headerInfo').textContent =
+        'TPS ' + decodeURIComponent(currentTps) + ' — total ' + totalData + ' data.';
+
+      updatePageInfo(pagination);
+      renderRows(rows);
+
+      if (totalPages > 1) {
+        updatePageControls();
+        pageControls.style.display = 'flex';
+      }
+    } catch (error) {
+      showAlert('danger', error.message || 'Gagal memuat detail TPS.');
+    } finally {
+      loadingState.classList.add('hidden');
+    }
+  }
+
+  function updatePageInfo(pagination) {
+    const total = pagination.total || 0;
+    const page  = pagination.page  || 1;
+    const from  = total ? (page - 1) * PAGE_LIMIT + 1 : 0;
+    const to    = Math.min(page * PAGE_LIMIT, total);
+    document.getElementById('pageInfo').textContent =
+      total ? `Menampilkan ${from}–${to} dari ${total} baris` : '';
+  }
+
+  function updatePageControls() {
+    document.getElementById('pageLabel').textContent = `Halaman ${currentPage} / ${totalPages}`;
+    document.getElementById('btnFirst').disabled = currentPage <= 1;
+    document.getElementById('btnPrev').disabled  = currentPage <= 1;
+    document.getElementById('btnNext').disabled  = currentPage >= totalPages;
+    document.getElementById('btnLast').disabled  = currentPage >= totalPages;
+  }
+
+  // ── Render tabel ─────────────────────────────────────
+  function renderRows(rows) {
+    const tbody    = document.getElementById('rowsBody');
+    const tableWrap = document.getElementById('tableWrap');
+    const emptyState = document.getElementById('emptyState');
+
+    if (!rows.length) {
+      tableWrap.classList.add('hidden');
+      emptyState.style.display = 'block';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+    tableWrap.classList.remove('hidden');
+
+    const statusChip = (status) => {
+      if (!status || status === 'BELUM') return '<span style="color:var(--text-secondary,#888);font-size:0.8rem;">Belum</span>';
+      const cls = status === 'COCOK' ? 'cocok' : status === 'PERLU_DICEK' ? 'perlu-dicek' : 'tidak-cocok';
+      return `<span class="tps-chip ${cls}" style="font-size:0.75rem;">${status.replace(/_/g,' ')}</span>`;
+    };
+
+    tbody.innerHTML = rows.map(row => `
+      <tr>
+        <td><input type="text" class="nama-input" id="nama-${row.id}" value="${escapeHtml(row.nama)}"></td>
+        <td>
+          <select id="jk-${row.id}">
+            <option value=""  ${!row.jenis_kelamin ? 'selected' : ''}>-</option>
+            <option value="L" ${row.jenis_kelamin === 'L' ? 'selected' : ''}>L</option>
+            <option value="P" ${row.jenis_kelamin === 'P' ? 'selected' : ''}>P</option>
+          </select>
+        </td>
+        <td><input type="number" id="usia-${row.id}" value="${escapeHtml(row.usia)}" style="width:60px;"></td>
+        <td><input type="text" class="alamat-input" id="alamat-${row.id}" value="${escapeHtml(row.alamat || row.dusun)}"></td>
+        <td><input type="text" id="rt-${row.id}" value="${escapeHtml(row.rt)}" style="width:48px;"></td>
+        <td><input type="text" id="rw-${row.id}" value="${escapeHtml(row.rw)}" style="width:48px;"></td>
+        <td>${statusChip(row.status_cocok)}</td>
+        <td>
+          <div style="display:flex;gap:4px;flex-wrap:nowrap;">
+            <button class="btn btn-primary btn-xs" onclick="saveRow(${row.id})">💾 Simpan</button>
+            <button class="btn btn-danger btn-xs"  onclick="deleteRow(${row.id})">🗑️</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ── Simpan satu baris ────────────────────────────────
+  async function saveRow(id) {
+    const btn = document.querySelector(`button[onclick="saveRow(${id})"]`);
+    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+
+    try {
+      await TPS_API.updateTPSRow(id, {
+        nama:         document.getElementById('nama-'  + id).value,
+        jenis_kelamin:document.getElementById('jk-'   + id).value,
+        usia:         document.getElementById('usia-'  + id).value,
+        dusun:        dusunCache[id] || '',
+        alamat:       document.getElementById('alamat-'+ id).value,
+        rt:           document.getElementById('rt-'   + id).value,
+        rw:           document.getElementById('rw-'   + id).value
+      });
+      showAlert('success', '✅ Baris berhasil disimpan. Perbandingan otomatis di-refresh.');
+      // Reload halaman yang sama untuk menampilkan status terbaru
+      await loadRows(currentPage);
+    } catch (error) {
+      showAlert('danger', error.message || 'Gagal menyimpan perubahan.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = '💾 Simpan'; }
+    }
+  }
+
+  // ── Hapus satu baris ─────────────────────────────────
+  async function deleteRow(id) {
+    const confirmDelete = await showAppConfirm('Hapus baris TPS ini?', {
+      title: 'Hapus Baris TPS',
+      confirmText: 'Hapus',
+      confirmClassName: 'btn-danger',
+      dangerNote: 'Data baris TPS yang dihapus tidak bisa dikembalikan.'
+    });
+    if (!confirmDelete) return;
+
+    try {
+      await TPS_API.deleteTPSRow(id);
+      showAlert('success', '✅ Baris berhasil dihapus.');
+      // Kalau ini baris terakhir di halaman dan bukan halaman 1, mundur satu halaman
+      const newPage = (document.querySelectorAll('#rowsBody tr').length <= 1 && currentPage > 1)
+        ? currentPage - 1
+        : currentPage;
+      await loadRows(newPage);
+    } catch (error) {
+      showAlert('danger', error.message || 'Gagal menghapus baris TPS.');
+    }
+  }
+
+  // ── Hapus seluruh TPS ────────────────────────────────
+  async function deleteCurrentTps() {
+    const confirmDelete = await showAppConfirm(
+      'Hapus seluruh data untuk TPS ' + decodeURIComponent(currentTps) + '?', {
+      title: 'Hapus TPS',
+      confirmText: 'Hapus TPS',
+      confirmClassName: 'btn-danger',
+      dangerNote: 'Semua data di TPS ini akan dihapus permanen dan tidak bisa dikembalikan.'
+    });
+    if (!confirmDelete) return;
+
+    try {
+      await TPS_API.deleteTPSGroup(currentTps);
+      window.location.href = '/upload-tps';
+    } catch (error) {
+      showAlert('danger', error.message || 'Gagal menghapus TPS.');
+    }
+  }
+
+  // ── Helpers ──────────────────────────────────────────
+  function showAlert(type, message) {
+    const alertBox = document.getElementById('alertBox');
+    alertBox.className = 'alert alert-' + type;
+    alertBox.innerHTML = message;
+    alertBox.classList.remove('hidden');
+    alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function hideAlert() {
+    const alertBox = document.getElementById('alertBox');
+    alertBox.classList.add('hidden');
+  }
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+</script>
+</body>
+</html>

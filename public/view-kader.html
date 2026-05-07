@@ -26,7 +26,15 @@
         <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
         <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
         <a href="/kader" class="active"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
         <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/perbandingan-tps"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+        <a href="/statistik-tps"><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
       </nav>
 
       <div class="sidebar-section-label">Akses Cepat</div>
@@ -38,7 +46,7 @@
       <div class="sidebar-footer">
         <div class="sidebar-note">
           <strong>Detail kader</strong>
-          <span>Lihat profil kader, wilayah kerja, target suara, dan daftar pemilih yang berada di bawahnya.</span>
+          <span>Lihat profil kader, wilayah kerja, dan daftar pemilih yang berada di bawahnya.</span>
         </div>
       </div>
     </div>
@@ -82,15 +90,11 @@
                   <span id="info-nama">-</span>
                 </div>
                 <div class="info-box">
-                  <strong>Target Suara</strong>
-                  <span id="info-target" class="mono-jetbrains">-</span>
-                </div>
-                <div class="info-box">
                   <strong>Dusun</strong>
                   <span id="info-dusun">-</span>
                 </div>
                 <div class="info-box">
-                  <strong>Kordus</strong>
+                  <strong>Koordinator</strong>
                   <span id="info-kordus">-</span>
                 </div>
                 <div class="info-box">
@@ -319,21 +323,24 @@
   }
 
   async function init() {
-    kaderId = new URLSearchParams(location.search).get('id');
-    if (!kaderId) { showPage('notfound'); return; }
+    const rawId = new URLSearchParams(location.search).get('id');
+    if (!rawId || !/^[a-f0-9-]{1,36}$/.test(rawId)) {
+      showPage('notfound');
+      return;
+    }
+    kaderId = rawId;
 
     try {
       kaderData = await KaderAPI.getById(kaderId);
       
       document.getElementById('breadcrumb-kader').textContent = `Kader ${kaderData.nomor} — ${kaderData.nama}`;
       document.getElementById('header-kader-nama').textContent = `Kader ${kaderData.nomor} — ${kaderData.nama}`;
-      document.getElementById('header-kader-info').textContent = `Lihat dan kelola ${kaderData.dusun || '-'} · Kordus ${kaderData.kordus || '-'}`;
+      document.getElementById('header-kader-info').textContent = `Lihat dan kelola ${kaderData.dusun || '-'} · Koordinator ${kaderData.kordus || '-'}`;
       
       document.getElementById('info-nomor').textContent = kaderData.nomor;
       document.getElementById('info-nama').textContent = kaderData.nama;
       document.getElementById('info-dusun').textContent = kaderData.dusun || '-';
       document.getElementById('info-kordus').textContent = kaderData.kordus || '-';
-      document.getElementById('info-target').textContent = kaderData.target_suara || '-';
       document.getElementById('btn-edit-kader').href = `/edit-kader?id=${kaderId}`;
       
       await loadAktivitasKader();
@@ -545,7 +552,13 @@
 
   // ─── Hapus Pemilih ────────────────────────────────
   async function hapusPemilih(pemilihId, nama) {
-    if (!confirm(`Hapus data pemilih ${nama}?`)) return;
+    const confirmDelete = await showAppConfirm(`Hapus data pemilih ${nama}?`, {
+      title: 'Hapus Pemilih',
+      confirmText: 'Hapus',
+      confirmClassName: 'btn-danger',
+      dangerNote: 'Data pemilih yang dihapus tidak bisa dikembalikan.'
+    });
+    if (!confirmDelete) return;
 
     try {
       const res = await fetchWithAuth(`/api/pemilih/${pemilihId}`, { method: 'DELETE' });
@@ -605,8 +618,13 @@
     const option = document.querySelector('input[name="delete-option"]:checked').value;
 
     if (option === 'all') {
-      const msg = `Hapus SEMUA data pemilih (${pemilihList.length} orang) dalam kader ini?\n\n⚠️ Ini tidak dapat dibatalkan!`;
-      if (!confirm(msg)) return;
+      const confirmDelete = await showAppConfirm(`Hapus SEMUA data pemilih (${pemilihList.length} orang) dalam kader ini?`, {
+        title: 'Hapus Semua Pemilih',
+        confirmText: 'Hapus Semua',
+        confirmClassName: 'btn-danger',
+        dangerNote: 'Seluruh data pemilih pada kader ini akan dihapus permanen.'
+      });
+      if (!confirmDelete) return;
 
       try {
         const res = await fetchWithAuth(`/api/kader/${kaderId}/pemilih/clear`, { method: 'DELETE' });
@@ -627,8 +645,13 @@
         return;
       }
 
-      const msg = `Hapus ${selectedForDelete.size} data pemilih yang dipilih?\n\n⚠️ Ini tidak dapat dibatalkan!`;
-      if (!confirm(msg)) return;
+      const confirmDelete = await showAppConfirm(`Hapus ${selectedForDelete.size} data pemilih yang dipilih?`, {
+        title: 'Hapus Pemilih Terpilih',
+        confirmText: 'Hapus Pilihan',
+        confirmClassName: 'btn-danger',
+        dangerNote: 'Data pemilih yang dipilih akan dihapus permanen.'
+      });
+      if (!confirmDelete) return;
 
       try {
         let deletedCount = 0;

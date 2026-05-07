@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kelola User Admin — Pendataan</title>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <script src="/js/auth.js"></script>
+</head>
+<body class="app-shell-page">
+
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Admin Panel</div>
+      <nav class="nav">
+        <a href="/admin-dashboard"><span><strong>Admin Dashboard</strong></span><span class="nav-pill">AD</span></a>
+        <a href="/admin-users" class="active"><span><strong>Kelola User</strong></span><span class="nav-pill">US</span></a>
+        <a href="/"><span><strong>Dashboard Utama</strong></span><span class="nav-pill">DB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Panel Admin</strong>
+          <span>Kelola user dan monitor aktivitas sistem. Hanya admin yang bisa akses halaman ini.</span>
+        </div>
+        <button id="logoutBtn" class="btn btn-outline" style="width:100%;margin-top:12px;">Logout</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Admin</div>
+        <div class="app-topbar-title">Kelola User</div>
+        <div class="app-topbar-subtitle">Tambah, edit, dan hapus user yang bisa login ke sistem.</div>
+      </div>
+      <div class="header-user-slot">
+        <a href="/" class="btn btn-outline btn-sm">← Kembali ke Dashboard Utama</a>
+      </div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container">
+        <div class="page-header page-header-card">
+          <div class="page-header-row">
+            <div>
+              <div class="breadcrumb"><a href="/">Dashboard</a> › <span>Kelola User</span></div>
+              <h1>Kelola User</h1>
+              <p>Buat user baru, ubah password, dan hapus user yang tidak aktif.</p>
+            </div>
+            <div class="page-actions">
+              <button id="btnTambahUser" class="btn btn-green btn-auto">+ Tambah User</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="alert-success" class="alert-success"></div>
+        <div id="alert-error" class="alert-error"></div>
+
+        <div class="card">
+          <div class="card-title"><div class="card-icon ci-blue">👥</div> Daftar User</div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Username</th>
+                  <th>Role</th>
+                  <th>Dibuat</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-users">
+                <tr><td colspan="7"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<!-- Modal Tambah/Edit User -->
+<div id="modal-user" class="app-dialog-overlay">
+  <div class="app-dialog">
+    <div class="app-dialog-header">
+      <h2 id="modal-title">Tambah User</h2>
+      <button class="app-dialog-close" onclick="closeModalUser()">✕</button>
+    </div>
+
+    <div id="modal-alert" class="alert"></div>
+
+    <div class="app-dialog-body">
+      <div class="form-group">
+        <label for="modal-username">Username <span class="required-marker">*</span></label>
+        <input type="text" id="modal-username" placeholder="username" autocomplete="off"/>
+      </div>
+
+      <div class="form-group">
+        <label for="modal-password">Password <span class="required-marker">*</span></label>
+        <input type="password" id="modal-password" placeholder="Minimal 6 karakter" autocomplete="off"/>
+      </div>
+
+      <div class="form-group">
+        <label for="modal-role">Role <span class="required-marker">*</span></label>
+        <select id="modal-role">
+          <option value="Kader">Kader</option>
+          <option value="Superadmin">Admin</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="app-dialog-footer">
+      <button class="btn btn-outline" onclick="closeModalUser()">Batal</button>
+      <button class="btn btn-green" id="btnSaveUser" onclick="saveUser()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/admin-users.js"></script>
+<script>
+  function showToast(msg, emoji='✅') {
+    const t = document.getElementById('toast');
+    t.textContent = `${emoji} ${msg}`;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    fetch('/api/logout', { method: 'POST' }).then(() => {
+      window.location.href = '/login.html';
+    });
+  });
+</script>
+</body>
+</html>

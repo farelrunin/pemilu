@@ -125,16 +125,32 @@ async function submitTambahPemilih() {
   const jenisKelamin = document.getElementById('inp-jk').value;
 
   hideAlerts();
-  if (!nama || !kaderId) { showError('Nama dan Kader wajib diisi!'); return; }
+  if (!nama || nama.length > 100 || !/^[a-zA-Z\s]+$/.test(nama)) {
+    showError('Nama harus diisi, maksimal 100 karakter, hanya huruf dan spasi!');
+    return;
+  }
+  if (!kaderId || !/^[a-f0-9-]{1,36}$/.test(kaderId)) {
+    showError('Kader harus dipilih dengan benar!');
+    return;
+  }
 
-  if (nik && !/^\d+$/.test(nik)) { showError('NIK harus berupa angka!'); return; }
+  if (nik && !/^\d+$/.test(nik)) {
+    showError('NIK harus berupa angka!');
+    return;
+  }
 
   if (!nik) {
-    const confirmSave = confirm('Data tanpa NIK akan disimpan dengan status "bermasalah" dan bisa dilengkapi nanti. Lanjutkan?');
+    const confirmSave = await showAppConfirm('Data tanpa NIK akan disimpan dengan status "bermasalah" dan bisa dilengkapi nanti. Lanjutkan?', {
+      title: 'Simpan Tanpa NIK',
+      confirmText: 'Tetap Simpan'
+    });
     if (!confirmSave) return;
   } else if (nik.length !== 16) {
     const kondisiDigit = nik.length < 16 ? 'kurang' : 'lebih';
-    const confirmSave = confirm(`NIK ${kondisiDigit} dari 16 digit (${nik.length} digit). Data akan disimpan dengan status "bermasalah" dan bisa diedit nanti. Lanjutkan?`);
+    const confirmSave = await showAppConfirm(`NIK ${kondisiDigit} dari 16 digit (${nik.length} digit). Data akan disimpan dengan status "bermasalah" dan bisa diedit nanti. Lanjutkan?`, {
+      title: 'Periksa NIK',
+      confirmText: 'Tetap Simpan'
+    });
     if (!confirmSave) return;
   }
 
@@ -178,11 +194,17 @@ async function submitEditPemilih() {
   if (nik && !/^\d+$/.test(nik)) { showError('NIK harus berupa angka!'); return; }
 
   if (!nik) {
-    const confirmSave = confirm('Data tanpa NIK akan tetap disimpan sebagai "bermasalah". Lanjutkan perubahan?');
+    const confirmSave = await showAppConfirm('Data tanpa NIK akan tetap disimpan sebagai "bermasalah". Lanjutkan perubahan?', {
+      title: 'Simpan Perubahan',
+      confirmText: 'Tetap Simpan'
+    });
     if (!confirmSave) return;
   } else if (nik.length !== 16) {
     const kondisiDigit = nik.length < 16 ? 'kurang' : 'lebih';
-    const confirmSave = confirm(`NIK ${kondisiDigit} dari 16 digit (${nik.length} digit). Data akan tetap disimpan sebagai "bermasalah". Lanjutkan perubahan?`);
+    const confirmSave = await showAppConfirm(`NIK ${kondisiDigit} dari 16 digit (${nik.length} digit). Data akan tetap disimpan sebagai "bermasalah". Lanjutkan perubahan?`, {
+      title: 'Periksa NIK',
+      confirmText: 'Tetap Simpan'
+    });
     if (!confirmSave) return;
   }
 

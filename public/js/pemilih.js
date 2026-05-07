@@ -66,7 +66,13 @@ const PemilihAPI = {
 };
 
 async function konfirmasiHapusPemilih(id, nama) {
-  if (!confirm(`Hapus data pemilih "${nama}"?`)) return;
+  const confirmDelete = await showAppConfirm(`Hapus data pemilih "${nama}"?`, {
+    title: 'Hapus Pemilih',
+    confirmText: 'Hapus',
+    confirmClassName: 'btn-danger',
+    dangerNote: 'Data pemilih yang dihapus tidak bisa dikembalikan.'
+  });
+  if (!confirmDelete) return;
   const res = await PemilihAPI.hapus(id);
   if (res.success) {
     showToast(`${nama} berhasil dihapus.`, '🗑️');

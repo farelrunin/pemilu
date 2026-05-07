@@ -13,7 +13,7 @@
   <aside class="app-sidebar">
     <div class="app-sidebar-panel">
       <a href="/" class="sidebar-brand">
-        <div class="logo-icon">DP</div>
+        <div class="logo-icon">🗳️</div>
         <div class="sidebar-brand-copy">
           <div class="logo-text">Data<span>Pilih</span></div>
           <div class="sidebar-brand-sub">Console Pendataan</div>
@@ -26,7 +26,15 @@
         <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
         <a href="/import" class="active"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
         <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
         <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/perbandingan-tps"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+        <a href="/statistik-tps"><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
       </nav>
 
       <div class="sidebar-section-label">Akses Cepat</div>
@@ -91,9 +99,17 @@
 
     <div class="form-group" style="margin-top:16px;">
       <label for="inp-kader">Kader Tujuan <span style="color:var(--danger);">*</span></label>
+      <input
+        type="text"
+        id="inp-kader-search"
+        placeholder="Cari nomor kader, nama kader, atau nama koordinator..."
+        autocomplete="off"
+        style="margin-bottom:10px;"
+      />
       <select id="inp-kader" title="Pilih kader">
         <option value="">— Pilih Kader —</option>
       </select>
+      <div id="kader-search-meta" class="hint" style="margin-top:8px;">Ketik untuk memfilter daftar kader.</div>
       <div class="hint">Semua data dari Excel akan didaftarkan ke kader ini.</div>
     </div>
 
@@ -193,6 +209,7 @@
 
   let selectedFile = null;
   let previewRows = [];
+  let kaderOptions = [];
   const excludedRows = new Set();
 
   const dropZone = document.getElementById('drop-zone');
@@ -203,6 +220,8 @@
   const resultWrap = document.getElementById('result-wrap');
   const alertSuccess = document.getElementById('alert-success');
   const alertError = document.getElementById('alert-error');
+  const kaderSearchInput = document.getElementById('inp-kader-search');
+  const kaderSearchMeta = document.getElementById('kader-search-meta');
 
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
@@ -240,6 +259,42 @@
       '"': '&quot;',
       "'": '&#39;'
     }[char]));
+  }
+
+  function formatKaderOption(kader) {
+    return `Kader ${kader.nomor} ” ${kader.nama} (${kader.namaKoordinator || kader.kordus || '-'})`;
+  }
+
+  function renderKaderOptions(filteredKaders, selectedId = '') {
+    const select = document.getElementById('inp-kader');
+    const activeValue = selectedId || select.value || '';
+
+    select.innerHTML = '<option value=""> Pilih Kader</option>' +
+      filteredKaders.map(kader => `
+        <option value="${kader.id}" ${kader.id === activeValue ? 'selected' : ''}>
+          ${formatKaderOption(kader)}
+        </option>
+      `).join('');
+
+    if (activeValue && !filteredKaders.some(kader => kader.id === activeValue)) {
+      select.value = '';
+    }
+
+    kaderSearchMeta.textContent = filteredKaders.length
+      ? `${filteredKaders.length} kader ditemukan.`
+      : 'Tidak ada kader yang cocok dengan pencarian.';
+
+    checkReady();
+  }
+
+  async function loadKaderOptions(keyword = '') {
+    try {
+      const kaders = await KaderAPI.getAll(keyword ? { q: keyword } : {});
+      kaderOptions = Array.isArray(kaders) ? kaders : [];
+      renderKaderOptions(kaderOptions);
+    } catch (error) {
+      kaderSearchMeta.textContent = 'Gagal memuat daftar kader.';
+    }
   }
 
   function buildImportFormData() {
@@ -453,7 +508,22 @@
   document.getElementById('inp-kader').addEventListener('change', () => {
     hideAlerts();
     resetPreviewState();
+    const selectedOption = document.getElementById('inp-kader').selectedOptions[0];
+    if (selectedOption && document.getElementById('inp-kader').value) {
+      kaderSearchInput.value = selectedOption.textContent.trim();
+    }
     checkReady();
+  });
+
+  kaderSearchInput.addEventListener('input', async (event) => {
+    await loadKaderOptions(event.target.value.trim());
+  });
+
+  kaderSearchInput.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      document.getElementById('inp-kader').focus();
+    }
   });
 
   async function previewImport() {
@@ -486,7 +556,11 @@
   async function confirmImport() {
     const kaderId = document.getElementById('inp-kader').value;
     if (!selectedFile || !kaderId) return;
-    if (!confirm('Lanjutkan import data yang lolos cross-check ke kader terpilih?')) return;
+    const lanjutImport = await showAppConfirm('Lanjutkan import data yang lolos cross-check ke kader terpilih?', {
+      title: 'Konfirmasi Import',
+      confirmText: 'Import Sekarang'
+    });
+    if (!lanjutImport) return;
 
     hideAlerts();
     setButtonLoading(btnConfirmImport, true, 'Mengimport...');
@@ -514,7 +588,7 @@
     }
   }
 
-  populateKaderSelect();
+  loadKaderOptions();
 </script>
 </body>
 </html>

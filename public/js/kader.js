@@ -4,8 +4,12 @@
 
 const KaderAPI = {
 
-  async getAll() {
-    const res = await fetchWithAuth('/api/kader');
+  async getAll(params = {}) {
+    const qs = new URLSearchParams();
+    if (params.q) qs.set('q', params.q);
+    if (params.koordinatorId) qs.set('koordinatorId', params.koordinatorId);
+    const query = qs.toString();
+    const res = await fetchWithAuth(`/api/kader${query ? `?${query}` : ''}`);
     return res.json();
   },
 
@@ -46,7 +50,7 @@ async function populateKaderSelect(selectId = 'inp-kader', selectedId = '') {
   sel.innerHTML = '<option value="">— Pilih Kader —</option>' +
     kaders.map(k =>
       `<option value="${k.id}" ${k.id === selectedId ? 'selected' : ''}>
-        Kader ${k.nomor} — ${k.nama}
+        Kader ${k.nomor} — ${k.nama} (${k.namaKoordinator || k.kordus || '-'})
       </option>`
     ).join('');
 }
@@ -70,6 +74,7 @@ function renderTabelKader(data, tbodyId = 'tbody-kader') {
       <td><span class="badge badge-green">${k.jumlahPemilih} pemilih</span></td>
       <td>
         <div class="gap-12">
+          <a href="/view-kader?id=${k.id}" class="btn btn-outline btn-xs" aria-label="Lihat detail kader ${k.nama}">👁️</a>
           <a href="/edit-kader?id=${k.id}" class="btn btn-outline btn-xs">✏️ Edit</a>
           <button class="btn btn-danger btn-xs" onclick="konfirmasiHapusKader('${k.id}','${k.nama}',${k.nomor})">🗑️</button>
         </div>
@@ -79,21 +84,35 @@ function renderTabelKader(data, tbodyId = 'tbody-kader') {
 }
 
 async function konfirmasiHapusKader(id, nama, nomor) {
-  // Dialog dengan 3 pilihan: Batal, Hapus Isi, Hapus Kader
-  const choice = prompt(
-    `Pilih aksi untuk Kader ${nomor} — ${nama}:\n\n` +
-    `1 = Hapus hanya isi kader (pemilih)\n` +
-    `2 = Hapus kader + semua pemilih\n` +
-    `0 atau Cancel = Batalkan\n\n` +
-    `Masukkan pilihan (0/1/2):`,
-    '0'
+  const choice = await showAppChoiceDialog(
+    `Pilih aksi untuk Kader ${nomor} - ${nama}.`,
+    [
+      {
+        value: '1',
+        label: 'Hapus isi kader',
+        description: 'Kader tetap ada, hanya data pemilih di dalamnya yang dihapus.',
+        className: 'btn-outline'
+      },
+      {
+        value: '2',
+        label: 'Hapus kader + semua pemilih',
+        description: 'Kader dan seluruh data pemilihnya dihapus permanen.',
+        className: 'btn-danger'
+      }
+    ],
+    { title: 'Aksi Hapus Kader' }
   );
 
-  if (!choice || choice === '0' || choice === 'Cancel') return;
+  if (!choice) return;
 
   if (choice === '1') {
-    // Hapus hanya isi kader (pemilih)
-    if (!confirm(`Hapus semua data pemilih dalam Kader ${nomor} — ${nama}?\n\nIni tidak dapat dibatalkan!`)) return;
+    const confirmDelete = await showAppConfirm(`Hapus semua data pemilih dalam Kader ${nomor} - ${nama}?`, {
+      title: 'Hapus Isi Kader',
+      confirmText: 'Hapus Isi',
+      confirmClassName: 'btn-danger',
+      dangerNote: 'Semua data pemilih dalam kader ini akan dihapus permanen.'
+    });
+    if (!confirmDelete) return;
     
     try {
       const res = await fetchWithAuth(`/api/kader/${id}/pemilih/clear`, { method: 'DELETE' });
@@ -109,12 +128,13 @@ async function konfirmasiHapusKader(id, nama, nomor) {
       showToast(e.message, '❌');
     }
   } else if (choice === '2') {
-    // Hapus kader + semua isi
-    if (!confirm(
-      `Hapus Kader ${nomor} — ${nama} + semua data pemilih (${parseInt(nomor)} orang)?\n\n` +
-      `⚠️ PERHATIAN: Data akan dihapus PERMANEN!\n\n` +
-      `Klik OK untuk melanjutkan, atau Cancel untuk batal.`
-    )) return;
+    const confirmDelete = await showAppConfirm(`Hapus Kader ${nomor} - ${nama} beserta semua data pemilihnya?`, {
+      title: 'Hapus Kader Permanen',
+      confirmText: 'Hapus Permanen',
+      confirmClassName: 'btn-danger',
+      dangerNote: 'Kader dan seluruh data pemilihnya akan dihapus permanen dan tidak bisa dikembalikan.'
+    });
+    if (!confirmDelete) return;
 
     try {
       const res = await KaderAPI.hapus(id);
