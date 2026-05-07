@@ -45,7 +45,7 @@ async function submitTambahKader() {
     showKaderError('Nama dusun harus diisi, maksimal 100 karakter, hanya huruf, angka, spasi, strip, titik, koma!');
     return;
   }
-  if (!koordinatorId || !/^[a-f0-9-]{1,36}$/.test(koordinatorId)) {
+  if (!koordinatorId || !/^[a-z0-9-]{1,36}$/i.test(koordinatorId)) {
     showKaderError('Koordinator harus dipilih dengan benar!');
     return;
   }

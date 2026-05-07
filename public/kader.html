@@ -215,7 +215,7 @@
       const safeNama = sanitizeText(k.nama || '');
       const safeNomor = sanitizeText(k.nomor || '');
       const safeDusun = sanitizeText(k.dusun || '');
-      const safeId = /^[a-f0-9-]+$/.test(k.id) ? k.id : ''; // Validate ID format
+      const safeId = /^[a-z0-9-]+$/i.test(k.id) ? k.id : ''; // Validate ID format
 
       const jumlahPemilih = Number(k.jumlahPemilih) || 0;
       const namaKoordinator = sanitizeText(k.namaKoordinator || k.kordus || '-');
