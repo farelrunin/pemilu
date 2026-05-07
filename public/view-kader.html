@@ -324,7 +324,7 @@
 
   async function init() {
     const rawId = new URLSearchParams(location.search).get('id');
-    if (!rawId || !/^[a-f0-9-]{1,36}$/.test(rawId)) {
+    if (!rawId || !/^[a-z0-9-]{1,36}$/i.test(rawId)) {
       showPage('notfound');
       return;
     }
