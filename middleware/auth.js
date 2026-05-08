@@ -35,10 +35,10 @@ function isSuperadmin(req, res, next) {
   next();
 }
 
-// ── isAdminKantor: Hanya Admin Kantor atau Superadmin ──
-function isAdminKantor(req, res, next) {
-  if (!req.user || (req.user.role !== 'AdminKantor' && req.user.role !== 'Superadmin')) {
-    return res.status(403).json({ error: 'Akses ditolak. Hanya Admin Kantor atau Superadmin.' });
+// ── isAdmin: Boleh Superadmin atau AdminKantor ──
+function isAdmin(req, res, next) {
+  if (!req.user || (req.user.role !== 'Superadmin' && req.user.role !== 'AdminKantor')) {
+    return res.status(403).json({ error: 'Akses ditolak. Hanya Admin atau Superadmin.' });
   }
   next();
 }
@@ -53,4 +53,4 @@ function generateToken(user) {
   );
 }
 
-module.exports = { verifyToken, isSuperadmin, generateToken, JWT_SECRET };
+module.exports = { verifyToken, isSuperadmin, isAdmin, generateToken, JWT_SECRET };

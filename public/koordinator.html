@@ -23,16 +23,16 @@
       <div class="sidebar-section-label">Navigasi Utama</div>
       <nav class="nav">
         <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
-        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
-        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/tambah-pemilih" class="admin-only"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import" class="admin-only"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
         <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
         <a href="/koordinator" class="active"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
-        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+        <a href="/log-duplikat" class="admin-only"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
       </nav>
 
       <div class="sidebar-section-label">Modul TPS</div>
       <nav class="nav">
-        <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/upload-tps" class="admin-only"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
         <a href="/perbandingan-tps"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
         <a href="/statistik-tps"><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
       </nav>
@@ -94,7 +94,7 @@
         </div>
 
         <div class="grid-2">
-          <div class="card superadmin-only">
+          <div class="card admin-only">
             <div class="card-title"><div class="card-icon ci-green">🧭</div> Tambah Koordinator</div>
             <div id="alert-success" class="alert-success"></div>
             <div id="alert-error" class="alert-error"></div>
@@ -230,7 +230,7 @@
         <td class="table-cell-small">${Number(item.jumlahDusun) || 0} dusun</td>
         <td class="table-cell-small">${formatDate(item.created_at)}</td>
         <td>
-          <div class="gap-12 superadmin-only">
+          <div class="gap-12 admin-only">
             <button class="btn btn-outline btn-xs" onclick="editKoordinator('${item.id}', decodeURIComponent('${encodeURIComponent(String(item.nama))}'))">✏️ Edit</button>
             <button class="btn btn-danger btn-xs" onclick="hapusKoordinator('${item.id}', decodeURIComponent('${encodeURIComponent(String(item.nama))}'), ${Number(item.jumlahKader) || 0})">🗑️ Hapus</button>
           </div>

@@ -12,9 +12,21 @@ if (!token && !isLoginPage) {
   window.location.href = '/login';
 } else if (token && isLoginPage) {
   // Sudah login tapi akses halaman login
-  // Jika Superadmin, bawa ke halaman admin khusus
-  const userRole = localStorage.getItem('userRole');
-    window.location.href = '/';
+  window.location.href = '/';
+} else if (token) {
+  // Cek otorisasi halaman (Client-side protection)
+  const restrictedPaths = [
+    '/tambah-pemilih', '/import', '/tambah-kader', '/edit-kader', 
+    '/edit-pemilih', '/upload-tps', '/kelola-tps', '/admin-dashboard', '/admin-users'
+  ];
+  const currentPath = window.location.pathname;
+  
+  if (restrictedPaths.some(path => currentPath.startsWith(path))) {
+    if (userRole === 'User' || userRole === 'Kader') {
+      console.warn('Unauthorized access attempt to:', currentPath);
+      window.location.href = '/?unauthorized=1';
+    }
+  }
 }
 
 // ── 2. Helper Fetch dengan Bearer Token ──
@@ -290,11 +302,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Kosmetik RBAC: Sembunyikan elemen sesuai role
-  if (userRole === 'Kader') {
-    // Sembunyikan semua tombol tambah, edit, hapus, dan import untuk User biasa
-    document.querySelectorAll('.superadmin-only, .admin-only, .editor-only').forEach(el => el.style.display = 'none');
+  if (userRole === 'User' || userRole === 'Kader') {
+    // Sembunyikan semua tombol tambah, edit, hapus, dan import untuk User/Kader
+    document.querySelectorAll('.superadmin-only, .admin-only, .editor-only').forEach(el => {
+      el.style.display = 'none';
+      el.remove(); // Hapus sekalian agar tidak bisa di-inspect dengan mudah
+    });
   } else if (userRole === 'AdminKantor') {
-    document.querySelectorAll('.superadmin-only').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.superadmin-only').forEach(el => {
+      el.style.display = 'none';
+      el.remove();
+    });
   }
 
   // Pastikan bila user klik back setelah logout, mereka langsung diarahkan login lagi

@@ -52,8 +52,16 @@ function renderUsers() {
 
     const td3 = document.createElement('td');
     const badge = document.createElement('span');
-    badge.className = u.role === 'Superadmin' ? 'badge badge-orange' : 'badge badge-blue';
-    badge.textContent = u.role === 'Superadmin' ? 'Admin' : 'User';
+    let roleClass = 'badge-blue';
+    let roleLabel = u.role;
+    
+    if (u.role === 'Superadmin') { roleClass = 'badge-orange'; roleLabel = 'Superadmin'; }
+    else if (u.role === 'AdminKantor') { roleClass = 'badge-green'; roleLabel = 'Admin Kantor'; }
+    else if (u.role === 'Kader') { roleClass = 'badge-blue'; roleLabel = 'Kader'; }
+    else if (u.role === 'User') { roleClass = 'badge-gray'; roleLabel = 'User (Read-only)'; }
+    
+    badge.className = 'badge ' + roleClass;
+    badge.textContent = roleLabel;
     td3.appendChild(badge);
     tr.appendChild(td3);
 
@@ -86,7 +94,7 @@ function renderUsers() {
 }
 
 // ── Modal Functions ───────────────────────
-function openModalUser(id = null, username = '', role = 'Kader') {
+function openModalUser(id = null, username = '', role = 'User') {
   currentEditId = id;
   document.getElementById('modal-title').textContent = id ? 'Edit Password User' : 'Tambah User Baru';
   document.getElementById('modal-username').value = username;

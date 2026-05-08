@@ -9,7 +9,7 @@ const multer   = require('multer');
 const XLSX     = require('xlsx');
 const bcrypt   = require('bcryptjs');
 const { query, testConnection } = require('./db');
-const { verifyToken, isSuperadmin, generateToken } = require('./middleware/auth');
+const { verifyToken, isSuperadmin, isAdmin, generateToken } = require('./middleware/auth');
 
 const app    = express();
 const PORT   = process.env.PORT || 3000;
@@ -587,7 +587,8 @@ app.post('/api/auth/register', verifyToken, isSuperadmin, async (req, res) => {
   try {
     const { username, password, role, idKader } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Username dan password wajib diisi' });
-    if (!['Superadmin', 'Kader'].includes(role)) return res.status(400).json({ error: 'Role harus Superadmin atau Kader' });
+    const validRoles = ['Superadmin', 'AdminKantor', 'Kader', 'User'];
+    if (!validRoles.includes(role)) return res.status(400).json({ error: `Role harus salah satu dari: ${validRoles.join(', ')}` });
     if (role === 'Kader' && !idKader) return res.status(400).json({ error: 'Kader harus dipilih untuk role Kader' });
     if (password.length < 6) return res.status(400).json({ error: 'Password minimal 6 karakter' });
 
@@ -653,7 +654,7 @@ app.get('/api/koordinator', verifyToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/koordinator', verifyToken, isSuperadmin, async (req, res) => {
+app.post('/api/koordinator', verifyToken, isAdmin, async (req, res) => {
   try {
     const nama = String(req.body.nama || '').trim();
     if (!nama) return res.status(400).json({ error: 'Nama koordinator wajib diisi' });
@@ -674,7 +675,7 @@ app.post('/api/koordinator', verifyToken, isSuperadmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.put('/api/koordinator/:id', verifyToken, isSuperadmin, async (req, res) => {
+app.put('/api/koordinator/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     const nama = String(req.body.nama || '').trim();
     if (!nama) return res.status(400).json({ error: 'Nama koordinator wajib diisi' });
@@ -693,7 +694,7 @@ app.put('/api/koordinator/:id', verifyToken, isSuperadmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/koordinator/:id', verifyToken, isSuperadmin, async (req, res) => {
+app.delete('/api/koordinator/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     const exists = await query('SELECT id FROM koordinator WHERE id = ? LIMIT 1', [req.params.id]);
     if (!exists.length) return res.status(404).json({ error: 'Koordinator tidak ditemukan' });
@@ -760,7 +761,7 @@ app.get('/api/kader/:id', verifyToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/kader', verifyToken, isSuperadmin, async (req, res) => {
+app.post('/api/kader', verifyToken, isAdmin, async (req, res) => {
   try {
     const { nama, nomor, dusun } = req.body;
     if (!nama || !nomor || !dusun) return res.status(400).json({ error: 'Nama, nomor, dusun, dan koordinator wajib diisi' });
@@ -783,7 +784,7 @@ app.post('/api/kader', verifyToken, isSuperadmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.put('/api/kader/:id', verifyToken, isSuperadmin, async (req, res) => {
+app.put('/api/kader/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     const { nama, nomor, dusun } = req.body;
     if (!nama || !nomor || !dusun) return res.status(400).json({ error: 'Nama, nomor, dusun, dan koordinator wajib diisi' });
@@ -805,7 +806,7 @@ app.put('/api/kader/:id', verifyToken, isSuperadmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/kader/:id', verifyToken, isSuperadmin, async (req, res) => {
+app.delete('/api/kader/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     const { deleteAction } = req.body || {}; // 'delete' untuk hapus pemilih, 'keep' untuk pindah ke kader lain
     
@@ -921,7 +922,7 @@ app.get('/api/kader/:id/aktivitas', verifyToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/kader/:id/pemilih/clear', verifyToken, isSuperadmin, async (req, res) => {
+app.delete('/api/kader/:id/pemilih/clear', verifyToken, isAdmin, async (req, res) => {
   try {
     const kaderId = req.params.id;
     
@@ -1040,7 +1041,7 @@ app.get('/api/pemilih/:id', verifyToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/pemilih', verifyToken, async (req, res) => {
+app.post('/api/pemilih', verifyToken, isAdmin, async (req, res) => {
   try {
     const { nama, nik, kaderId, tanggalLahir, jenisKelamin } = req.body;
     if (!nama || !kaderId) return res.status(400).json({ error: 'Nama dan Kader wajib diisi' });
@@ -1129,7 +1130,7 @@ app.post('/api/pemilih', verifyToken, async (req, res) => {
   }
 });
 
-app.put('/api/pemilih/:id', verifyToken, async (req, res) => {
+app.put('/api/pemilih/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     const { nama, nik, kaderId, tanggalLahir, jenisKelamin } = req.body;
     if (!nama || !kaderId) return res.status(400).json({ error: 'Nama dan Kader wajib diisi' });
@@ -1166,7 +1167,7 @@ app.put('/api/pemilih/:id', verifyToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/pemilih/:id', verifyToken, isSuperadmin, async (req, res) => {
+app.delete('/api/pemilih/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     const pemilih = await query('SELECT nik FROM pemilih WHERE id = ?', [req.params.id]);
     if (!pemilih.length) return res.status(404).json({ error: 'Pemilih tidak ditemukan' });
@@ -1323,7 +1324,7 @@ async function analyzeImportRows(rows) {
   return hasil;
 }
 
-app.post('/api/pemilih/import/preview', verifyToken, upload.single('file'), async (req, res) => {
+app.post('/api/pemilih/import/preview', verifyToken, isAdmin, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'File tidak ditemukan' });
     const kaderId = req.body.kaderId;
@@ -1353,7 +1354,7 @@ app.post('/api/pemilih/import/preview', verifyToken, upload.single('file'), asyn
   }
 });
 
-app.post('/api/pemilih/import', verifyToken, upload.single('file'), async (req, res) => {
+app.post('/api/pemilih/import', verifyToken, isAdmin, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'File tidak ditemukan' });
     const kaderId = req.body.kaderId;
@@ -1491,7 +1492,7 @@ app.post('/api/pemilih/import', verifyToken, upload.single('file'), async (req, 
 
 // ══════ API LOG DUPLIKAT ═══════════════════════════════
 
-app.get('/api/log-duplikat', verifyToken, isSuperadmin, async (req, res) => {
+app.get('/api/log-duplikat', verifyToken, isAdmin, async (req, res) => {
   try {
     await cleanupDuplicateLogs();
 
@@ -1544,7 +1545,7 @@ app.get('/api/log-duplikat', verifyToken, isSuperadmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/log-duplikat/statistik', verifyToken, isSuperadmin, async (req, res) => {
+app.get('/api/log-duplikat/statistik', verifyToken, isAdmin, async (req, res) => {
   try {
     await cleanupDuplicateLogs();
 
@@ -1727,7 +1728,7 @@ async function refreshTPSComparisonIfNeeded(namaTps) {
 }
 
 // 1️⃣ Upload data TPS dari Excel
-app.post('/api/tps/upload', verifyToken, isSuperadmin, upload.single('file'), async (req, res) => {
+app.post('/api/tps/upload', verifyToken, isAdmin, upload.single('file'), async (req, res) => {
   try {
     await ensureTPSComparisonSchema();
     if (!req.file) return res.status(400).json({ error: 'File tidak ditemukan' });
@@ -1812,7 +1813,7 @@ app.post('/api/tps/upload', verifyToken, isSuperadmin, upload.single('file'), as
 });
 
 // 2️⃣ List TPS yang sudah di-upload
-app.get('/api/tps/list', verifyToken, isSuperadmin, async (req, res) => {
+app.get('/api/tps/list', verifyToken, isAdmin, async (req, res) => {
   try {
     const { page, limit } = req.query;
     const pg = Math.max(1, parseInt(page) || 1);
@@ -1853,7 +1854,7 @@ app.get('/api/tps/list', verifyToken, isSuperadmin, async (req, res) => {
 });
 
 // 2b️⃣ Detail data TPS mentah
-app.get('/api/tps/:nama_tps/data', verifyToken, isSuperadmin, async (req, res) => {
+app.get('/api/tps/:nama_tps/data', verifyToken, isAdmin, async (req, res) => {
   try {
     const namaTps = req.params.nama_tps;
     const pg = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -1891,7 +1892,7 @@ app.get('/api/tps/:nama_tps/data', verifyToken, isSuperadmin, async (req, res) =
 });
 
 // 3️⃣ Trigger perbandingan data TPS dengan pemilih lokal
-app.post('/api/tps/:nama_tps/perbandingan', verifyToken, isSuperadmin, async (req, res) => {
+app.post('/api/tps/:nama_tps/perbandingan', verifyToken, isAdmin, async (req, res) => {
   try {
     const namaTps = req.params.nama_tps;
     const result = await runTPSComparison(namaTps);
@@ -1905,7 +1906,7 @@ app.post('/api/tps/:nama_tps/perbandingan', verifyToken, isSuperadmin, async (re
 });
 
 // 3b️⃣ Update satu baris TPS
-app.put('/api/tps/data/:id', verifyToken, isSuperadmin, async (req, res) => {
+app.put('/api/tps/data/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     await ensureTPSComparisonSchema();
     const id = parseInt(req.params.id, 10);
@@ -1942,7 +1943,7 @@ app.put('/api/tps/data/:id', verifyToken, isSuperadmin, async (req, res) => {
 });
 
 // 3c️⃣ Hapus satu baris TPS
-app.delete('/api/tps/data/:id', verifyToken, isSuperadmin, async (req, res) => {
+app.delete('/api/tps/data/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'ID data TPS tidak valid' });
@@ -1962,7 +1963,7 @@ app.delete('/api/tps/data/:id', verifyToken, isSuperadmin, async (req, res) => {
 });
 
 // 3d️⃣ Hapus satu TPS penuh
-app.delete('/api/tps/:nama_tps', verifyToken, isSuperadmin, async (req, res) => {
+app.delete('/api/tps/:nama_tps', verifyToken, isAdmin, async (req, res) => {
   try {
     const namaTps = req.params.nama_tps;
     const [countRow] = await query(
@@ -1981,7 +1982,7 @@ app.delete('/api/tps/:nama_tps', verifyToken, isSuperadmin, async (req, res) => 
 });
 
 // 4️⃣ List hasil perbandingan TPS
-app.get('/api/tps/:nama_tps/hasil', verifyToken, isSuperadmin, async (req, res) => {
+app.get('/api/tps/:nama_tps/hasil', verifyToken, isAdmin, async (req, res) => {
   try {
     const namaTps = req.params.nama_tps;
     const { page, limit, status, sort } = req.query;
@@ -2038,7 +2039,7 @@ app.get('/api/tps/:nama_tps/hasil', verifyToken, isSuperadmin, async (req, res) 
 });
 
 // 5️⃣ Statistik keseluruhan TPS
-app.get('/api/tps/statistik', verifyToken, isSuperadmin, async (req, res) => {
+app.get('/api/tps/statistik', verifyToken, isAdmin, async (req, res) => {
   try {
     const [totalTps] = await query(`
       SELECT COUNT(DISTINCT nama_tps) AS total FROM data_tps
@@ -2085,14 +2086,8 @@ app.get('/api/tps/statistik', verifyToken, isSuperadmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ══════ API ADMIN (Manage User) ════════════════════════
-// Middleware: Check apakah user adalah admin
-function isAdmin(req, res, next) {
-  if (!req.user || req.user.role !== 'Superadmin') {
-    return res.status(403).json({ error: 'Akses ditolak. Hanya admin yang bisa akses.' });
-  }
-  next();
-}
+// ── API ADMIN (Manage User) ────────────────────────
+// Note: isAdmin and isSuperadmin are imported from ./middleware/auth
 
 // Check admin status
 app.get('/api/admin/check', verifyToken, isAdmin, (req, res) => {
@@ -2125,7 +2120,7 @@ app.post('/api/admin/users', verifyToken, isAdmin, async (req, res) => {
 
     const id = genId();
     const hashedPassword = await bcrypt.hash(password, 12);
-    const finalRole = ['Superadmin', 'Kader'].includes(role) ? role : 'Kader';
+    const finalRole = ['Superadmin', 'AdminKantor', 'Kader', 'User'].includes(role) ? role : 'User';
     
     await query(
       'INSERT INTO users (id, username, password_hash, role, created_at) VALUES (?, ?, ?, ?, NOW())',
@@ -2195,7 +2190,7 @@ app.get('/kelola-tps',          (req, res) => res.sendFile(path.join(__dirname, 
 app.get('/perbandingan-tps',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'perbandingan-tps.html')));
 app.get('/statistik-tps',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'statistik-tps.html')));
 
-// ── Ensure role enum includes AdminKantor (for backward-compatibility) ──
+// ── Ensure role enum includes AdminKantor and User ──
 async function ensureRoleEnum() {
   try {
     const [row] = await query(
@@ -2205,11 +2200,11 @@ async function ensureRoleEnum() {
     );
     if (!row || !row.COLUMN_TYPE) return;
 
-    // If AdminKantor is missing, alter enum to include it
-    if (!row.COLUMN_TYPE.includes('AdminKantor')) {
-      console.log('🔧 Menambahkan role AdminKantor ke enum users.role');
+    // If AdminKantor or User is missing, alter enum
+    if (!row.COLUMN_TYPE.includes('AdminKantor') || !row.COLUMN_TYPE.includes('User')) {
+      console.log('🔧 Memperbarui enum users.role (menambah AdminKantor dan User)');
       await query(
-        "ALTER TABLE users MODIFY COLUMN role ENUM('Superadmin','AdminKantor','Kader') NOT NULL DEFAULT 'Kader'"
+        "ALTER TABLE users MODIFY COLUMN role ENUM('Superadmin','AdminKantor','Kader','User') NOT NULL DEFAULT 'User'"
       );
     }
   } catch (err) {
