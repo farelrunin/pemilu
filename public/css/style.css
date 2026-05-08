@@ -1644,3 +1644,19 @@ tr.row-dup td { background-color: var(--danger-bg) !important; color: var(--dang
     padding: 24px 22px;
   }
 }
+
+/* ── Role Based Access Control (RBAC) ── */
+/* Sembunyikan elemen administratif untuk role User dan Kader */
+body.role-user .admin-only,
+body.role-user .superadmin-only,
+body.role-user .editor-only,
+body.role-kader .admin-only,
+body.role-kader .superadmin-only,
+body.role-kader .editor-only {
+  display: none !important;
+}
+
+/* Sembunyikan elemen khusus Superadmin untuk role AdminKantor */
+body.role-adminkantor .superadmin-only {
+  display: none !important;
+}

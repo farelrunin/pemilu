@@ -260,7 +260,7 @@
 
       const td7 = document.createElement('td');
       const div = document.createElement('div');
-      div.className = 'gap-12 admin-only';
+      div.className = 'gap-12';
 
       if (safeId) {
         const a1 = document.createElement('a');
@@ -272,13 +272,13 @@
 
         const a2 = document.createElement('a');
         a2.href = `/edit-kader?id=${encodeURIComponent(safeId)}`;
-        a2.className = 'btn btn-outline btn-xs';
+        a2.className = 'btn btn-outline btn-xs admin-only';
         a2.setAttribute('aria-label', `Edit Kader ${safeNomor} - ${safeNama}`);
         a2.textContent = '✏️ Edit';
         div.appendChild(a2);
 
         const button = document.createElement('button');
-        button.className = 'btn btn-danger btn-xs';
+        button.className = 'btn btn-danger btn-xs admin-only';
         button.setAttribute('aria-label', `Hapus Kader ${safeNomor} - ${safeNama}`);
         button.textContent = '🗑️ Hapus';
         button.addEventListener('click', () => konfirmasiHapusKader(safeId, safeNama, safeNomor));

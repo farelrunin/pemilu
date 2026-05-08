@@ -301,12 +301,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Kosmetik RBAC: Sembunyikan elemen sesuai role
+  // Tambahkan class role ke body untuk CSS-based RBAC
+  if (userRole) {
+    const roleClass = 'role-' + userRole.toLowerCase().replace(/\s+/g, '-');
+    document.body.classList.add(roleClass);
+    console.log('RBAC Initialized for role:', userRole, 'with class:', roleClass);
+  }
+
+  // Kosmetik RBAC: Sembunyikan elemen sesuai role (Legacy fallback)
   if (userRole === 'User' || userRole === 'Kader') {
-    // Sembunyikan semua tombol tambah, edit, hapus, dan import untuk User/Kader
     document.querySelectorAll('.superadmin-only, .admin-only, .editor-only').forEach(el => {
       el.style.display = 'none';
-      el.remove(); // Hapus sekalian agar tidak bisa di-inspect dengan mudah
+      el.remove();
     });
   } else if (userRole === 'AdminKantor') {
     document.querySelectorAll('.superadmin-only').forEach(el => {
