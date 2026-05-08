@@ -28,6 +28,8 @@ async function submitTambahKader() {
   const nama = document.getElementById('kader-nama').value.trim();
   const nomor = document.getElementById('kader-nomor').value;
   const dusun = document.getElementById('kader-dusun').value.trim();
+  const rt = document.getElementById('kader-rt').value.trim();
+  const rw = document.getElementById('kader-rw').value.trim();
   const koordinatorId = document.getElementById('kader-koordinator').value;
 
   hideKaderAlerts();
@@ -50,7 +52,7 @@ async function submitTambahKader() {
     return;
   }
 
-  const res = await KaderAPI.tambah({ nama, nomor, dusun, koordinatorId });
+  const res = await KaderAPI.tambah({ nama, nomor, dusun, rt, rw, koordinatorId });
   if (res.error) {
     if (String(res.error).toLowerCase().includes('terdaftar')) {
       await isiNomorKaderOtomatis();
@@ -63,6 +65,8 @@ async function submitTambahKader() {
   document.getElementById('kader-nama').value = '';
   document.getElementById('kader-nomor').value = '';
   document.getElementById('kader-dusun').value = '';
+  document.getElementById('kader-rt').value = '';
+  document.getElementById('kader-rw').value = '';
   document.getElementById('kader-koordinator').value = '';
 
   await isiNomorKaderOtomatis();
@@ -75,6 +79,8 @@ async function submitEditKader() {
   const nama = document.getElementById('kader-nama').value.trim();
   const nomor = document.getElementById('kader-nomor').value;
   const dusun = document.getElementById('kader-dusun').value.trim();
+  const rt = document.getElementById('kader-rt').value.trim();
+  const rw = document.getElementById('kader-rw').value.trim();
   const koordinatorId = document.getElementById('kader-koordinator').value;
 
   hideKaderAlerts();
@@ -83,7 +89,7 @@ async function submitEditKader() {
     return;
   }
 
-  const res = await KaderAPI.edit(id, { nama, nomor, dusun, koordinatorId });
+  const res = await KaderAPI.edit(id, { nama, nomor, dusun, rt, rw, koordinatorId });
   if (res.error) {
     showKaderError(res.error);
     return;

@@ -115,6 +115,17 @@
               </div>
             </div>
 
+            <div class="form-row">
+              <div class="form-group form-group-flex-1">
+                <label for="inp-rt">RT</label>
+                <input type="text" id="inp-rt" placeholder="000" maxlength="10" autocomplete="off"/>
+              </div>
+              <div class="form-group form-group-flex-1">
+                <label for="inp-rw">RW</label>
+                <input type="text" id="inp-rw" placeholder="000" maxlength="10" autocomplete="off"/>
+              </div>
+            </div>
+
             <div class="form-group">
               <label for="inp-kader">Kader <span class="required-marker">*</span></label>
               <select id="inp-kader" title="Pilih kader"><option value="">- Pilih Kader -</option></select>
@@ -164,6 +175,8 @@
     document.getElementById('inp-nik').value      = data.nik;
     document.getElementById('inp-tgl-lahir').value = data.tanggal_lahir ? data.tanggal_lahir.substring(0,10) : '';
     document.getElementById('inp-jk').value       = data.jenis_kelamin || '';
+    document.getElementById('inp-rt').value       = data.rt || '';
+    document.getElementById('inp-rw').value       = data.rw || '';
     if (data.umur != null) document.getElementById('display-umur').textContent = data.umur + ' tahun';
     await populateKaderSelect('inp-kader', data.kader_id);
 

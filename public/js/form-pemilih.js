@@ -123,6 +123,8 @@ async function submitTambahPemilih() {
   const kaderId      = document.getElementById('inp-kader').value;
   const tanggalLahir = document.getElementById('inp-tgl-lahir').value;
   const jenisKelamin = document.getElementById('inp-jk').value;
+  const rt           = document.getElementById('inp-rt') ? document.getElementById('inp-rt').value.trim() : '';
+  const rw           = document.getElementById('inp-rw') ? document.getElementById('inp-rw').value.trim() : '';
 
   hideAlerts();
   if (!nama || nama.length > 100 || !/^[a-zA-Z\s]+$/.test(nama)) {
@@ -158,7 +160,7 @@ async function submitTambahPemilih() {
   lockSubmitButton();
 
   try {
-    const res = await PemilihAPI.tambah({ nama, nik, kaderId, tanggalLahir, jenisKelamin });
+    const res = await PemilihAPI.tambah({ nama, nik, kaderId, tanggalLahir, jenisKelamin, rt, rw });
 
     if (res.error) {
       showError(res.error);
@@ -187,6 +189,8 @@ async function submitEditPemilih() {
   const kaderId      = document.getElementById('inp-kader').value;
   const tanggalLahir = document.getElementById('inp-tgl-lahir').value;
   const jenisKelamin = document.getElementById('inp-jk').value;
+  const rt           = document.getElementById('inp-rt') ? document.getElementById('inp-rt').value.trim() : '';
+  const rw           = document.getElementById('inp-rw') ? document.getElementById('inp-rw').value.trim() : '';
 
   hideAlerts();
   if (!nama || !kaderId) { showError('Nama dan Kader wajib diisi!'); return; }
@@ -211,7 +215,7 @@ async function submitEditPemilih() {
   lockSubmitButton();
 
   try {
-    const res = await PemilihAPI.edit(id, { nama, nik, kaderId, tanggalLahir, jenisKelamin });
+    const res = await PemilihAPI.edit(id, { nama, nik, kaderId, tanggalLahir, jenisKelamin, rt, rw });
     if (res.error) { showError(res.error); unlockSubmitButton(); return; }
 
     showSuccess('Data berhasil diperbarui!');
@@ -225,7 +229,7 @@ async function submitEditPemilih() {
 
 // ── Helpers ───────────────────────────────────────────
 function resetFormPemilih() {
-  ['inp-nama','inp-nik','inp-tgl-lahir'].forEach(id => {
+  ['inp-nama','inp-nik','inp-tgl-lahir','inp-rt','inp-rw'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });

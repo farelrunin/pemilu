@@ -418,6 +418,10 @@ async function ensureTPSComparisonSchema() {
     }
 
     await ensureColumn('pemilih', 'status', 'status VARCHAR(50) DEFAULT NULL AFTER jenis_kelamin');
+    await ensureColumn('pemilih', 'rt', 'rt VARCHAR(10) DEFAULT NULL AFTER status');
+    await ensureColumn('pemilih', 'rw', 'rw VARCHAR(10) DEFAULT NULL AFTER rt');
+    await ensureColumn('kader', 'rt', 'rt VARCHAR(10) DEFAULT NULL AFTER kordus');
+    await ensureColumn('kader', 'rw', 'rw VARCHAR(10) DEFAULT NULL AFTER rt');
   } catch (err) {
     console.warn('Gagal memastikan skema perbandingan TPS:', err.message);
   }
@@ -732,7 +736,7 @@ app.get('/api/kader', verifyToken, async (req, res) => {
     }
 
     const rows = await query(`
-      SELECT k.id, k.nama, k.nomor, k.dusun, k.kordus, k.target_suara, k.created_at, k.koordinator_id,
+      SELECT k.id, k.nama, k.nomor, k.dusun, k.kordus, k.rt, k.rw, k.target_suara, k.created_at, k.koordinator_id,
              COALESCE(ko.nama, NULLIF(k.kordus, '')) AS namaKoordinator,
              (
                SELECT COUNT(*)
@@ -763,7 +767,7 @@ app.get('/api/kader/:id', verifyToken, async (req, res) => {
 
 app.post('/api/kader', verifyToken, isAdmin, async (req, res) => {
   try {
-    const { nama, nomor, dusun } = req.body;
+    const { nama, nomor, dusun, rt, rw } = req.body;
     if (!nama || !nomor || !dusun) return res.status(400).json({ error: 'Nama, nomor, dusun, dan koordinator wajib diisi' });
 
     const koordinator = await resolveKoordinatorInput(req.body);
@@ -772,8 +776,8 @@ app.post('/api/kader', verifyToken, isAdmin, async (req, res) => {
     const dup = await query('SELECT id FROM kader WHERE nomor = ?', [parseInt(nomor)]);
     if (dup.length) return res.status(400).json({ error: `Kader ${nomor} sudah terdaftar` });
     const id = genId();
-    await query('INSERT INTO kader (id, nama, nomor, dusun, kordus, koordinator_id) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, nama.trim(), parseInt(nomor), dusun.trim(), koordinator.nama, koordinator.id]);
+    await query('INSERT INTO kader (id, nama, nomor, dusun, kordus, rt, rw, koordinator_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [id, nama.trim(), parseInt(nomor), dusun.trim(), koordinator.nama, rt || null, rw || null, koordinator.id]);
     const [kader] = await query(`
       SELECT k.*, COALESCE(ko.nama, NULLIF(k.kordus, '')) AS namaKoordinator
       FROM kader k
@@ -786,7 +790,7 @@ app.post('/api/kader', verifyToken, isAdmin, async (req, res) => {
 
 app.put('/api/kader/:id', verifyToken, isAdmin, async (req, res) => {
   try {
-    const { nama, nomor, dusun } = req.body;
+    const { nama, nomor, dusun, rt, rw } = req.body;
     if (!nama || !nomor || !dusun) return res.status(400).json({ error: 'Nama, nomor, dusun, dan koordinator wajib diisi' });
 
     const koordinator = await resolveKoordinatorInput(req.body);
@@ -794,8 +798,8 @@ app.put('/api/kader/:id', verifyToken, isAdmin, async (req, res) => {
 
     const dup = await query('SELECT id FROM kader WHERE nomor = ? AND id != ?', [parseInt(nomor), req.params.id]);
     if (dup.length) return res.status(400).json({ error: `Nomor kader ${nomor} sudah dipakai` });
-    await query('UPDATE kader SET nama = ?, nomor = ?, dusun = ?, kordus = ?, koordinator_id = ? WHERE id = ?',
-      [nama.trim(), parseInt(nomor), dusun.trim(), koordinator.nama, koordinator.id, req.params.id]);
+    await query('UPDATE kader SET nama = ?, nomor = ?, dusun = ?, kordus = ?, rt = ?, rw = ?, koordinator_id = ? WHERE id = ?',
+      [nama.trim(), parseInt(nomor), dusun.trim(), koordinator.nama, rt || null, rw || null, koordinator.id, req.params.id]);
     const [kader] = await query(`
       SELECT k.*, COALESCE(ko.nama, NULLIF(k.kordus, '')) AS namaKoordinator
       FROM kader k
@@ -1102,16 +1106,16 @@ app.post('/api/pemilih', verifyToken, isAdmin, async (req, res) => {
     
     try {
       await query(
-        'INSERT INTO pemilih (id, nama, nik, tanggal_lahir, jenis_kelamin, kader_id, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [id, nama.trim(), normalizedNik, tanggalLahir || null, jenisKelamin || null, kaderId, finalStatus]
+        'INSERT INTO pemilih (id, nama, nik, tanggal_lahir, jenis_kelamin, kader_id, status, rt, rw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [id, nama.trim(), normalizedNik, tanggalLahir || null, jenisKelamin || null, kaderId, finalStatus, rt || null, rw || null]
       );
     } catch (insertError) {
       // Jika error (misal: tanggal invalid), coba insert lagi dengan tanggal_lahir = NULL dan status = 'bermasalah'
       if (insertError.code === 'ER_TRUNCATED_WRONG_VALUE' || insertError.message.includes('Incorrect')) {
         finalStatus = 'tanggal_invalid';
         await query(
-          'INSERT INTO pemilih (id, nama, nik, tanggal_lahir, jenis_kelamin, kader_id, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [id, nama.trim(), normalizedNik, null, jenisKelamin || null, kaderId, finalStatus]
+          'INSERT INTO pemilih (id, nama, nik, tanggal_lahir, jenis_kelamin, kader_id, status, rt, rw) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [id, nama.trim(), normalizedNik, null, jenisKelamin || null, kaderId, finalStatus, rt || null, rw || null]
         );
       } else {
         throw insertError;
@@ -1132,7 +1136,7 @@ app.post('/api/pemilih', verifyToken, isAdmin, async (req, res) => {
 
 app.put('/api/pemilih/:id', verifyToken, isAdmin, async (req, res) => {
   try {
-    const { nama, nik, kaderId, tanggalLahir, jenisKelamin } = req.body;
+    const { nama, nik, kaderId, tanggalLahir, jenisKelamin, rt, rw } = req.body;
     if (!nama || !kaderId) return res.status(400).json({ error: 'Nama dan Kader wajib diisi' });
     const normalizedNik = normalizeNIK(nik);
 
@@ -1152,8 +1156,8 @@ app.put('/api/pemilih/:id', verifyToken, isAdmin, async (req, res) => {
     if (nikDup.length) return res.status(400).json({ error: `NIK sudah dipakai oleh ${nikDup[0].nama} (${nikDup[0].namaKader})` });
 
     await query(
-      'UPDATE pemilih SET nama = ?, nik = ?, kader_id = ?, tanggal_lahir = ?, jenis_kelamin = ?, status = ? WHERE id = ?',
-      [nama.trim(), normalizedNik, kaderId, tanggalLahir || null, jenisKelamin || null, status, req.params.id]
+      'UPDATE pemilih SET nama = ?, nik = ?, kader_id = ?, tanggal_lahir = ?, jenis_kelamin = ?, status = ?, rt = ?, rw = ? WHERE id = ?',
+      [nama.trim(), normalizedNik, kaderId, tanggalLahir || null, jenisKelamin || null, status, rt || null, rw || null, req.params.id]
     );
     if ((pemilihLama[0].nik || null) !== normalizedNik) {
       await cleanupDuplicateLogs([pemilihLama[0].nik]);
@@ -1593,9 +1597,11 @@ async function runTPSComparison(namaTps) {
   }
 
   const pemilihLokal = await query(`
-    SELECT p.id, p.nama, p.jenis_kelamin,
+    SELECT p.id, p.nama, p.jenis_kelamin, 
+           COALESCE(p.rt, k.rt) AS rt,
+           COALESCE(p.rw, k.rw) AS rw,
            TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS usia,
-           k.dusun, k.kordus, k.rt
+           k.dusun, k.kordus
     FROM pemilih p
     LEFT JOIN kader k ON k.id = p.kader_id
     WHERE p.jenis_kelamin IS NOT NULL AND p.tanggal_lahir IS NOT NULL
