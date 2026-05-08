@@ -138,7 +138,7 @@
     </div>
   </div>
 
-  <div class="grid-4 dashboard-stat-grid">
+  <div class="grid-5 dashboard-stat-grid">
     <a href="/?view=clear#data-pemilih" class="stat-card stat-card-link stat-card-total">
       <div class="sc-label">Total Pemilih Clear</div>
       <div class="sc-value sc-blue" id="stat-total">…</div>
@@ -153,6 +153,11 @@
       <div class="sc-label">⚠️ Data Bermasalah</div>
       <div class="sc-value sc-value-warning" id="stat-bermasalah">…</div>
       <div class="sc-sub">NIK tidak valid</div>
+    </a>
+    <a href="/?view=underage#data-pemilih" class="stat-card stat-card-link stat-card-underage">
+      <div class="sc-label">🔞 Belum Cukup Umur</div>
+      <div class="sc-value" style="color:#6366f1" id="stat-underage">…</div>
+      <div class="sc-sub">usia di bawah 17 thn</div>
     </a>
     <a href="/log-duplikat" class="stat-card dup-card stat-card-link stat-card-danger">
       <div class="sc-label">Percobaan Duplikat</div>
@@ -355,14 +360,16 @@
     if (!svg || !legend) return;
 
     const valid = Number(statRes.clear ?? statRes.total ?? 0) || 0;
-    const masalah = Number(statRes.bermasalah ?? 0) || 0;
+    const underage = Number(statRes.underage ?? 0) || 0;
+    const masalah = Math.max(0, Number(statRes.bermasalah ?? 0) - underage);
     const duplikat = Number(statRes.percobaanDuplikat ?? 0) || 0;
-    const totalAktivitas = valid + masalah + duplikat;
+    const totalAktivitas = valid + underage + masalah + duplikat;
     const totalKategori = Math.max(totalAktivitas, 1);
     const radius = 72;
     const circumference = 2 * Math.PI * radius;
     const segments = [
       { label: 'Data Clear', value: valid, color: 'var(--accent)', swatchClass: 'donut-swatch-accent' },
+      { label: 'Underage (🔞)', value: underage, color: '#6366f1', swatchClass: 'donut-swatch-underage' },
       { label: 'Butuh Cek', value: masalah, color: 'var(--warning)', swatchClass: 'donut-swatch-warning' },
       { label: 'Percobaan Duplikat', value: duplikat, color: 'var(--danger)', swatchClass: 'donut-swatch-danger' }
     ];
@@ -514,7 +521,7 @@
   let selectedKaderId = '';
   let selectedStatusFilter = (() => {
     const view = new URLSearchParams(window.location.search).get('view');
-    return view === 'bermasalah' || view === 'clear' ? view : '';
+    return view === 'bermasalah' || view === 'clear' || view === 'underage' ? view : '';
   })();
   let currentPage     = 1;
   let currentLimit    = 50;
@@ -549,6 +556,9 @@
     const text = document.getElementById('active-filter-text');
     if (selectedStatusFilter === 'bermasalah') {
       text.textContent = 'Sedang menampilkan hanya data bermasalah.';
+      note.style.display = 'flex';
+    } else if (selectedStatusFilter === 'underage') {
+      text.textContent = 'Sedang menampilkan hanya data Belum Cukup Umur (🔞).';
       note.style.display = 'flex';
     } else if (selectedStatusFilter === 'clear') {
       text.textContent = 'Sedang menampilkan hanya data clear.';
@@ -598,8 +608,8 @@
         </div></td></tr>`;
     } else {
       tbody.innerHTML = data.map((p, i) => {
-        const statusIcon = p.status === 'NIK_INVALID' ? '⚠️' : '';
-        const statusClass = p.status === 'NIK_INVALID' ? 'row-invalid' : '';
+        const statusIcon = p.status === 'NIK_INVALID' ? '⚠️' : (p.status === 'BELUM_CUKUP_UMUR' ? '🔞' : '');
+        const statusClass = (p.status === 'NIK_INVALID' || p.status === 'BELUM_CUKUP_UMUR') ? 'row-invalid' : '';
         const jenisKelamin = p.jenis_kelamin === 'P'
           ? '<span class="badge badge-pink">Perempuan</span>'
           : p.jenis_kelamin === 'L'
@@ -713,6 +723,7 @@
     document.getElementById('stat-total').textContent   = totalClear;
     document.getElementById('stat-kader').textContent   = kaders.length;
     document.getElementById('stat-bermasalah').textContent = statRes.bermasalah || 0;
+    document.getElementById('stat-underage').textContent   = statRes.underage || 0;
     document.getElementById('stat-dup').textContent     = statRes.percobaanDuplikat || 0;
     document.getElementById('hero-total').textContent   = formatNum(totalClear);
     document.getElementById('hero-kader').textContent   = formatNum(kaders.length);

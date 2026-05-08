@@ -55,7 +55,16 @@ function normalizeNIK(value) {
 }
 
 function getNIKStatus(nik) {
-  return /^\d{16}$/.test(nik || '') ? null : 'NIK_INVALID';
+  if (!/^\d{16}$/.test(nik || '')) return 'NIK_INVALID';
+  
+  const parsed = parseNIK(nik);
+  if (parsed) {
+    const age = hitungUmur(parsed.tanggalLahir);
+    // Syarat memilih adalah minimal 17 tahun
+    if (age !== null && age < 17) return 'BELUM_CUKUP_UMUR';
+  }
+  
+  return null;
 }
 
 function normalizeSpreadsheetKey(key) {
@@ -262,10 +271,14 @@ function computeNameSimilarity(sourceName, candidateName) {
 function computeAgeSignal(tpsAge, pemilihAge) {
   if (tpsAge == null || pemilihAge == null) return 0;
   const diff = Math.abs(Number(tpsAge) - Number(pemilihAge));
+  
+  // Data TPS seringkali data tahun lalu atau tahun sebelumnya.
+  // Kita beri toleransi lebih tinggi.
   if (diff === 0) return 100;
-  if (diff <= 1) return 85;
-  if (diff <= 2) return 70;
-  if (diff <= 4) return 45;
+  if (diff <= 1) return 100; // Toleransi data tahun lalu
+  if (diff <= 2) return 95;  // Sangat mungkin data 2 tahun lalu
+  if (diff <= 3) return 85;  // Masih masuk akal untuk data lama / typo kecil
+  if (diff <= 5) return 60;  
   return 0;
 }
 
@@ -964,6 +977,8 @@ app.get('/api/pemilih', verifyToken, async (req, res) => {
     if (q)        { where += ' AND (p.nama LIKE ? OR p.nik LIKE ?)'; params.push(`%${q}%`, `%${q}%`); }
     if (statusFilter === 'bermasalah') {
       where += ' AND p.status IS NOT NULL';
+    } else if (statusFilter === 'underage') {
+      where += " AND p.status = 'BELUM_CUKUP_UMUR'";
     } else if (statusFilter === 'clear') {
       where += ' AND p.status IS NULL';
     }
@@ -1000,6 +1015,7 @@ app.get('/api/pemilih/statistik', verifyToken, async (req, res) => {
 
     const [totalSemua] = await query('SELECT COUNT(*) AS n FROM pemilih');
     const [bermasalah] = await query('SELECT COUNT(*) AS n FROM pemilih WHERE status IS NOT NULL');
+    const [underage]   = await query("SELECT COUNT(*) AS n FROM pemilih WHERE status = 'BELUM_CUKUP_UMUR'");
     const clear = Math.max((totalSemua.n || 0) - (bermasalah.n || 0), 0);
 
     // Be tolerant terhadap beberapa versi skema log_duplikat (dengan/ tanpa jumlah_percobaan)
@@ -1016,6 +1032,7 @@ app.get('/api/pemilih/statistik', verifyToken, async (req, res) => {
       clear,
       totalSemua: totalSemua.n,
       bermasalah: bermasalah.n,
+      underage: underage.n,
       percobaanDuplikat,
       entryDuplikat: logRows.n
     });

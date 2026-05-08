@@ -896,6 +896,7 @@ header {
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
 
 /* ── Stat cards (Informative layout) ── */
 .stat-card {
@@ -947,6 +948,10 @@ header {
 .stat-card-danger {
   background: linear-gradient(180deg, #f7eeee, #f1e5e5);
   border-left-color: #bb6a6a;
+}
+.stat-card-underage {
+  background: linear-gradient(180deg, #f0f2f8, #e7ebf4);
+  border-left-color: #6366f1;
 }
 
 .dashboard-hero {
