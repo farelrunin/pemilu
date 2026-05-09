@@ -1836,7 +1836,7 @@ app.post('/api/tps/upload', verifyToken, isAdmin, upload.single('file'), async (
 });
 
 // 2️⃣ List TPS yang sudah di-upload
-app.get('/api/tps/list', verifyToken, isAdmin, async (req, res) => {
+app.get('/api/tps/list', verifyToken, async (req, res) => {
   try {
     const { page, limit } = req.query;
     const pg = Math.max(1, parseInt(page) || 1);
@@ -1877,7 +1877,7 @@ app.get('/api/tps/list', verifyToken, isAdmin, async (req, res) => {
 });
 
 // 2b️⃣ Detail data TPS mentah
-app.get('/api/tps/:nama_tps/data', verifyToken, isAdmin, async (req, res) => {
+app.get('/api/tps/:nama_tps/data', verifyToken, async (req, res) => {
   try {
     const namaTps = req.params.nama_tps;
     const pg = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -2005,7 +2005,7 @@ app.delete('/api/tps/:nama_tps', verifyToken, isAdmin, async (req, res) => {
 });
 
 // 4️⃣ List hasil perbandingan TPS
-app.get('/api/tps/:nama_tps/hasil', verifyToken, isAdmin, async (req, res) => {
+app.get('/api/tps/:nama_tps/hasil', verifyToken, async (req, res) => {
   try {
     const namaTps = req.params.nama_tps;
     const { page, limit, status, sort } = req.query;
@@ -2062,7 +2062,7 @@ app.get('/api/tps/:nama_tps/hasil', verifyToken, isAdmin, async (req, res) => {
 });
 
 // 5️⃣ Statistik keseluruhan TPS
-app.get('/api/tps/statistik', verifyToken, isAdmin, async (req, res) => {
+app.get('/api/tps/statistik', verifyToken, async (req, res) => {
   try {
     const [totalTps] = await query(`
       SELECT COUNT(DISTINCT nama_tps) AS total FROM data_tps

@@ -128,7 +128,17 @@
 
             <div class="form-group">
               <label for="inp-kader">Kader <span class="required-marker">*</span></label>
-              <select id="inp-kader" title="Pilih kader"><option value="">- Pilih Kader -</option></select>
+              <input
+                type="text"
+                id="inp-kader-search"
+                placeholder="Cari nomor, nama kader, atau koordinator..."
+                autocomplete="off"
+                style="margin-bottom:8px;"
+              />
+              <select id="inp-kader" title="Pilih kader">
+                <option value="">- Pilih Kader -</option>
+              </select>
+              <div id="kader-search-meta" class="hint" style="margin-top:4px;">Ketik untuk memfilter daftar kader.</div>
             </div>
 
             <div class="gap-12 gap-margin-top-8">
@@ -164,8 +174,7 @@
     if (!id) { showPage('notfound'); return; }
 
     const [data] = await Promise.all([
-      PemilihAPI.getById(id),
-      populateKaderSelect('inp-kader')
+      PemilihAPI.getById(id)
     ]);
 
     if (data.error) { showPage('notfound'); return; }
@@ -178,7 +187,7 @@
     document.getElementById('inp-rt').value       = data.rt || '';
     document.getElementById('inp-rw').value       = data.rw || '';
     if (data.umur != null) document.getElementById('display-umur').textContent = data.umur + ' tahun';
-    await populateKaderSelect('inp-kader', data.kader_id);
+    await initKaderSearchableSelect({ initialId: data.kader_id });
 
     showPage('form');
   }

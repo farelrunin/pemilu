@@ -17,7 +17,7 @@ if (!token && !isLoginPage) {
   // Cek otorisasi halaman (Client-side protection)
   const restrictedPaths = [
     '/tambah-pemilih', '/import', '/tambah-kader', '/edit-kader', 
-    '/edit-pemilih', '/upload-tps', '/kelola-tps', '/admin-dashboard', '/admin-users'
+    '/edit-pemilih', '/upload-tps', '/admin-dashboard', '/admin-users'
   ];
   const currentPath = window.location.pathname;
   

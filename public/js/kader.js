@@ -152,3 +152,74 @@ async function konfirmasiHapusKader(id, nama, nomor) {
     showToast('Pilihan tidak valid', '⚠️');
   }
 }
+
+// ── Searchable Select Kader (Reusable) ──────────────
+async function initKaderSearchableSelect(config = {}) {
+  const {
+    searchInputId = 'inp-kader-search',
+    selectId      = 'inp-kader',
+    metaId        = 'kader-search-meta',
+    initialId     = ''
+  } = config;
+
+  const searchInput = document.getElementById(searchInputId);
+  const select      = document.getElementById(selectId);
+  const meta        = document.getElementById(metaId);
+
+  if (!searchInput || !select) return;
+
+  function formatKaderOption(k) {
+    return `Kader ${k.nomor} — ${k.nama} (${k.namaKoordinator || k.kordus || '-'})`;
+  }
+
+  function renderOptions(kaders, selectedId = '') {
+    const activeValue = selectedId || select.value || '';
+    select.innerHTML = '<option value="">— Pilih Kader —</option>' +
+      kaders.map(k => `
+        <option value="${k.id}" ${k.id === activeValue ? 'selected' : ''}>
+          ${formatKaderOption(k)}
+        </option>
+      `).join('');
+
+    if (meta) {
+      meta.textContent = kaders.length
+        ? `${kaders.length} kader ditemukan.`
+        : 'Tidak ada kader yang cocok.';
+    }
+  }
+
+  async function loadAndRender(keyword = '', selectedId = '') {
+    try {
+      const kaders = await KaderAPI.getAll(keyword ? { q: keyword } : {});
+      renderOptions(kaders, selectedId);
+      return kaders;
+    } catch (err) {
+      if (meta) meta.textContent = 'Gagal memuat daftar kader.';
+      return [];
+    }
+  }
+
+  // Event: Input search
+  let searchTimeout = null;
+  searchInput.addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      loadAndRender(e.target.value.trim());
+    }, 200);
+  });
+
+  // Event: Select change (update search field)
+  select.addEventListener('change', () => {
+    const opt = select.selectedOptions[0];
+    if (opt && select.value) {
+      searchInput.value = opt.textContent.trim();
+    }
+  });
+
+  // Initial load
+  const initialKaders = await loadAndRender('', initialId);
+  if (initialId) {
+    const found = initialKaders.find(k => k.id === initialId);
+    if (found) searchInput.value = formatKaderOption(found);
+  }
+}

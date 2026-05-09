@@ -127,9 +127,17 @@
 
           <div class="form-group">
             <label for="inp-kader">Kader yang Mendatakan <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              id="inp-kader-search"
+              placeholder="Cari nomor, nama kader, atau koordinator..."
+              autocomplete="off"
+              style="margin-bottom:8px;"
+            />
             <select id="inp-kader" title="Pilih kader">
               <option value="">- Pilih Kader -</option>
             </select>
+            <div id="kader-search-meta" class="hint" style="margin-top:4px;">Ketik untuk memfilter daftar kader.</div>
           </div>
 
           <div class="gap-12 section-actions-8">
@@ -176,7 +184,7 @@
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  populateKaderSelect();
+  initKaderSearchableSelect();
 </script>
 </body>
 </html>

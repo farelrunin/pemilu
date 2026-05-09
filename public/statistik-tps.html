@@ -71,7 +71,7 @@
           <h1>Statistik TPS</h1>
           <p>Halaman ini merangkum progress pencocokan seluruh TPS agar kamu bisa cepat melihat TPS terbaik, rata-rata coverage, dan titik yang perlu dibenahi.</p>
           <div class="tps-link-row">
-            <a href="/upload-tps" class="btn btn-outline">Kembali ke Upload</a>
+            <a href="/upload-tps" class="btn btn-outline admin-only">Kembali ke Upload</a>
             <a href="/perbandingan-tps" class="btn btn-outline">Lihat Detail Perbandingan</a>
           </div>
         </div>
@@ -168,8 +168,8 @@
     const perluDicekTotal = data.ringkasan.total_perlu_dicek_seluruh;
     const tidakCocokTotal = data.ringkasan.total_tidak_cocok_seluruh;
 
-    const html = '<a href="/upload-tps" class="stat-card stat-card-link primary"><div class="number">' + data.total_tps + '</div><div class="label">TPS Diupload</div></a>' +
-      '<a href="/upload-tps" class="stat-card stat-card-link"><div class="number">' + total + '</div><div class="label">Total Data TPS</div></a>' +
+    const html = '<a href="/upload-tps" class="stat-card stat-card-link primary admin-only"><div class="number">' + data.total_tps + '</div><div class="label">TPS Diupload</div></a>' +
+      '<a href="/upload-tps" class="stat-card stat-card-link admin-only"><div class="number">' + total + '</div><div class="label">Total Data TPS</div></a>' +
       '<a href="' + buildComparisonLink({ status: 'COCOK' }) + '" class="stat-card stat-card-link success"><div class="number">' + cocokTotal + '</div><div class="label">COCOK</div></a>' +
       '<a href="' + buildComparisonLink({ status: 'PERLU_DICEK' }) + '" class="stat-card stat-card-link warning"><div class="number">' + perluDicekTotal + '</div><div class="label">PERLU DICEK</div></a>' +
       '<a href="' + buildComparisonLink({ status: 'TIDAK_COCOK' }) + '" class="stat-card stat-card-link danger"><div class="number">' + tidakCocokTotal + '</div><div class="label">TIDAK COCOK</div></a>';
