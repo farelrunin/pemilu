@@ -116,7 +116,7 @@
               </div>
               <div class="gap-12 section-actions-top">
                 <a href="/kader" class="btn btn-outline btn-flex-fill-center">Kembali</a>
-                <a id="btn-edit-kader" href="#" class="btn btn-primary btn-flex-fill-center">Edit Kader</a>
+                <a id="btn-edit-kader" href="#" class="btn btn-primary btn-flex-fill-center admin-only">Edit Kader</a>
               </div>
             </div>
 
@@ -131,7 +131,7 @@
                 </div>
                 <div class="gap-8">
                   <button class="btn btn-outline btn-sm btn-nowrap" onclick="exportAuditCSV()">Export Audit CSV</button>
-                  <button class="btn btn-danger btn-sm btn-nowrap" onclick="openBulkDeleteModal()" title="Hapus beberapa atau semua data pemilih">Hapus Isi</button>
+                  <button class="btn btn-danger btn-sm btn-nowrap admin-only" onclick="openBulkDeleteModal()" title="Hapus beberapa atau semua data pemilih">Hapus Isi</button>
                 </div>
               </div>
 
@@ -144,7 +144,7 @@
                       <th>Status</th>
                       <th>Detail</th>
                       <th>Waktu</th>
-                      <th>Aksi</th>
+                      <th class="admin-only">Aksi</th>
                     </tr>
                   </thead>
                   <tbody id="tbody-pemilih">
@@ -741,7 +741,7 @@
           <td>${statusBadge}</td>
           <td class="audit-cell-detail">${detailText}</td>
           <td class="audit-cell-time">${formatDateTime(item.waktu_input || item.created_at)}</td>
-          <td>${actionButtons}</td>
+          <td class="admin-only">${actionButtons}</td>
         </tr>
       `;
     }).join('');
