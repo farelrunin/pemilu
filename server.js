@@ -1915,7 +1915,7 @@ app.get('/api/tps/:nama_tps/data', verifyToken, async (req, res) => {
 });
 
 // 3️⃣ Trigger perbandingan data TPS dengan pemilih lokal
-app.post('/api/tps/:nama_tps/perbandingan', verifyToken, isAdmin, async (req, res) => {
+app.post('/api/tps/:nama_tps/perbandingan', verifyToken, async (req, res) => {
   try {
     const namaTps = req.params.nama_tps;
     const result = await runTPSComparison(namaTps);
