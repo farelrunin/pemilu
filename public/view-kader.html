@@ -332,34 +332,51 @@
 
     try {
       kaderData = await KaderAPI.getById(kaderId);
+      if (kaderData.error) {
+        console.warn('Kader fetch failed:', kaderData.error);
+        showPage('notfound');
+        return;
+      }
       
       document.getElementById('breadcrumb-kader').textContent = `Kader ${kaderData.nomor} — ${kaderData.nama}`;
       document.getElementById('header-kader-nama').textContent = `Kader ${kaderData.nomor} — ${kaderData.nama}`;
-      document.getElementById('header-kader-info').textContent = `Lihat dan kelola ${kaderData.dusun || '-'} · Koordinator ${kaderData.kordus || '-'}`;
+      document.getElementById('header-kader-info').textContent = `Lihat dan kelola ${kaderData.dusun || '-'} · Koordinator ${kaderData.namaKoordinator || kaderData.kordus || '-'}`;
       
       document.getElementById('info-nomor').textContent = kaderData.nomor;
       document.getElementById('info-nama').textContent = kaderData.nama;
       document.getElementById('info-dusun').textContent = kaderData.dusun || '-';
-      document.getElementById('info-kordus').textContent = kaderData.kordus || '-';
+      document.getElementById('info-kordus').textContent = kaderData.namaKoordinator || kaderData.kordus || '-';
       document.getElementById('btn-edit-kader').href = `/edit-kader?id=${kaderId}`;
       
       await loadAktivitasKader();
       showPage('content');
     } catch (e) {
+      console.error('Initialization error:', e);
       showPage('notfound');
     }
   }
 
   async function loadAktivitasKader() {
-    const res = await fetchWithAuth(`/api/kader/${kaderId}/aktivitas`);
-    const payload = await res.json();
-    pemilihList = payload.pemilih || [];
-    duplikatList = payload.duplikat || [];
-    riwayatList = payload.riwayat || [];
-    filteredRiwayat = riwayatList;
-    filteredPemilih = riwayatList;
-    renderAktivitasSummary(payload.summary || {});
-    renderPemilihTable();
+    try {
+      const res = await fetchWithAuth(`/api/kader/${kaderId}/aktivitas`);
+      const payload = await res.json();
+      
+      if (payload.error) {
+        showToast(payload.error, '❌');
+        return;
+      }
+
+      pemilihList = payload.pemilih || [];
+      duplikatList = payload.duplikat || [];
+      riwayatList = payload.riwayat || [];
+      filteredRiwayat = riwayatList;
+      filteredPemilih = riwayatList;
+      renderAktivitasSummary(payload.summary || {});
+      renderPemilihTable();
+    } catch (e) {
+      console.error('Load activities error:', e);
+      showToast('Gagal memuat aktivitas kader', '❌');
+    }
   }
 
   function renderPemilihTable() {
