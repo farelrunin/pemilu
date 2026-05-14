@@ -23,16 +23,16 @@
       <div class="sidebar-section-label">Navigasi Utama</div>
       <nav class="nav">
         <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
-        <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
-        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/tambah-pemilih" class="admin-only"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import" class="admin-only"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
         <a href="/kader" class="active"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
         <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
-        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+        <a href="/log-duplikat" class="admin-only"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
       </nav>
 
       <div class="sidebar-section-label">Modul TPS</div>
       <nav class="nav">
-        <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/upload-tps" class="admin-only"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
         <a href="/perbandingan-tps"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
         <a href="/statistik-tps"><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
       </nav>
@@ -365,8 +365,12 @@
   function renderPemilihTable() {
     const tbody = document.getElementById('tbody-pemilih');
     const totalAktivitas = Number(aktivitasSummary?.totalAktivitas || 0);
-    document.getElementById('pemilih-count').textContent = `${formatNum(filteredRiwayat.length)} / ${formatNum(riwayatList.length)} baris audit • ${formatNum(totalAktivitas)} aktivitas`;
-    
+    const userRole = localStorage.getItem('userRole');
+    const isAdmin = userRole === 'Superadmin' || userRole === 'AdminKantor';
+
+    document.getElementById('pemilih-count').textContent =
+      `${formatNum(filteredRiwayat.length)} / ${formatNum(riwayatList.length)} baris audit | ${formatNum(totalAktivitas)} aktivitas`;
+
     if (filteredRiwayat.length === 0) {
       tbody.innerHTML = `<tr><td colspan="6">
         <div class="empty audit-empty">
@@ -377,23 +381,52 @@
       return;
     }
 
-    tbody.innerHTML = filteredRiwayat.map(p => {
-      const jkText = p.jenis_kelamin === 'L' ? '♂️ Laki' : p.jenis_kelamin === 'P' ? '♀️ Perem' : '-';
+    tbody.innerHTML = filteredRiwayat.map(item => {
+      const isDuplikat = item.jenis_entry === 'duplikat';
+      const jkText = item.jenis_kelamin === 'L' ? 'Laki-laki' : item.jenis_kelamin === 'P' ? 'Perempuan' : '-';
+      
+      const statusBadge = isDuplikat
+        ? `<span class="badge badge-red">Duplikat x${formatNum(item.jumlah_percobaan || 1)}</span>`
+        : item.status
+          ? '<span class="badge badge-orange">Butuh Cek</span>'
+          : '<span class="badge badge-green">Data Masuk</span>';
+
+      const detailText = isDuplikat
+        ? (item.catatan || '-')
+        : [
+            `Tgl lahir: ${formatTanggal(item.tanggal_lahir)}`,
+            `Umur: ${item.umur !== null ? `${item.umur} thn` : '-'}`,
+            `JK: ${jkText}`
+          ].join(' | ');
+
+      let actionButtons = '';
+      if (isAdmin) {
+        actionButtons = isDuplikat
+          ? `<a href="/log-duplikat" class="btn btn-outline btn-xs">Lihat Log</a>`
+          : `<div class="gap-8">
+              <button class="btn btn-outline btn-xs" onclick="openEditPemilihModal('${item.id}')">Edit</button>
+              <button class="btn btn-outline btn-xs" onclick="openPindahModal('${item.id}')">Pindah</button>
+              <button class="btn btn-danger btn-xs" onclick="hapusPemilih('${item.id}','${item.nama}')">Hapus</button>
+            </div>`;
+      } else {
+        // Non-admin version
+        actionButtons = isDuplikat 
+          ? `<span class="text-muted" style="font-size:11px;">Audit Manual</span>`
+          : `<span class="text-muted" style="font-size:11px;">Read-only</span>`;
+      }
+
       return `
-      <tr class="audit-row">
-        <td class="audit-cell-nik">${p.nik || '-'}</td>
-        <td class="audit-cell-name">${p.nama}</td>
-        <td class="audit-cell-date">${p.tanggal_lahir ? new Date(p.tanggal_lahir).toLocaleDateString('id-ID') : '-'}</td>
-        <td class="audit-cell-center audit-cell-small">${p.umur !== null ? p.umur + ' thn' : '-'}</td>
-        <td class="audit-cell-center">${jkText}</td>
-        <td>
-          <div class="gap-8">
-            <button class="btn btn-outline btn-xs" onclick="openEditPemilihModal('${p.id}')">✏️</button>
-            <button class="btn btn-outline btn-xs" onclick="openPindahModal('${p.id}')">🔄</button>
-            <button class="btn btn-danger btn-xs" onclick="hapusPemilih('${p.id}','${p.nama}')">🗑️</button>
-          </div>
-        </td>
-      </tr>
+        <tr class="audit-row ${isDuplikat ? 'audit-row-dup' : item.status ? 'audit-row-warning' : ''}">
+          <td class="audit-cell-nik">${item.nik || '-'}</td>
+          <td>
+            <div class="audit-cell-name">${item.nama || '-'}</div>
+            <div class="audit-cell-sub">${isDuplikat ? 'Log percobaan duplikat' : 'Data pemilih kader'}</div>
+          </td>
+          <td>${statusBadge}</td>
+          <td class="audit-cell-detail">${detailText}</td>
+          <td class="audit-cell-time">${formatDateTime(item.waktu_input || item.created_at)}</td>
+          <td class="admin-only">${actionButtons}</td>
+        </tr>
       `;
     }).join('');
   }
@@ -405,21 +438,27 @@
   }
 
   // ─── Search ────────────────────────────────────────
-  document.getElementById('search-pemilih').addEventListener('input', function(e) {
-    const q = e.target.value.toLowerCase().trim();
-    if (!q) {
-      filteredPemilih = pemilihList;
-    } else {
-      filteredPemilih = pemilihList.filter(p =>
-        p.nama.toLowerCase().includes(q) || (p.nik || '').includes(q)
-      );
-    }
-    renderPemilihTable();
-  });
+  function setupSearch() {
+    const searchInput = document.getElementById('search-pemilih');
+    if (!searchInput) return;
+    searchInput.addEventListener('input', function(e) {
+      const q = e.target.value.toLowerCase().trim();
+      if (!q) {
+        filteredRiwayat = riwayatList;
+      } else {
+        filteredRiwayat = riwayatList.filter(item =>
+          (item.nama || '').toLowerCase().includes(q) ||
+          (item.nik || '').includes(q) ||
+          (item.catatan || '').toLowerCase().includes(q)
+        );
+      }
+      renderPemilihTable();
+    });
+  }
 
   // ─── Edit Pemilih Modal ────────────────────────────
   async function openEditPemilihModal(pemilihId) {
-    const p = pemilihList.find(x => x.id === pemilihId);
+    const p = riwayatList.find(x => x.id === pemilihId && x.jenis_entry === 'pemilih');
     if (!p) return;
 
     currentEditPemilihId = pemilihId;
@@ -443,58 +482,30 @@
   }
 
   async function savePemilihEdit() {
-    const nik = document.getElementById('modal-nik').value.trim();
     const nama = document.getElementById('modal-nama').value.trim();
+    const nik = document.getElementById('modal-nik').value.trim();
     const tglLahir = document.getElementById('modal-tgl-lahir').value;
     const jk = document.getElementById('modal-jk').value;
 
-    if (!nama) {
-      showErrorModal('Nama harus diisi');
-      return;
-    }
-
-    if (nik && !/^\d+$/.test(nik)) {
-      showErrorModal('NIK harus berupa angka');
-      return;
-    }
+    if (!nama) { showToast('Nama harus diisi', '⚠️'); return; }
 
     try {
       const res = await fetchWithAuth(`/api/pemilih/${currentEditPemilihId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nama,
-          nik,
-          kaderId,
-          tanggalLahir: tglLahir || null,
-          jenisKelamin: jk || null
-        })
+        body: JSON.stringify({ nama, nik, kaderId, tanggalLahir: tglLahir || null, jenisKelamin: jk || null })
       });
       const result = await res.json();
-      if (result.error) {
-        showErrorModal(result.error);
-        return;
-      }
+      if (result.error) { showToast(result.error, '❌'); return; }
       showToast('Data pemilih berhasil diperbarui', '✅');
       closePemilihModal();
-      await loadPemilihKader();
-    } catch (e) {
-      showErrorModal(e.message);
-    }
-  }
-
-  function showErrorModal(msg) {
-    document.getElementById('alert-error-modal').textContent = msg;
-    document.getElementById('alert-error-modal').style.display = 'block';
+      await loadAktivitasKader();
+    } catch (e) { showToast(e.message, '❌'); }
   }
 
   // ─── Pindah Pemilih Modal ──────────────────────────
   let currentPindahPemilihId = null;
-
   async function openPindahModal(pemilihId) {
-    const p = pemilihList.find(x => x.id === pemilihId);
-    if (!p) return;
-
     currentPindahPemilihId = pemilihId;
     const kaders = await KaderAPI.getAll();
     const selectEl = document.getElementById('modal-kader-target');
@@ -502,7 +513,6 @@
       kaders.filter(k => k.id !== kaderId).map(k =>
         `<option value="${k.id}">Kader ${k.nomor} — ${k.nama}</option>`
       ).join('');
-    
     document.getElementById('modal-pindah-pemilih').style.display = 'flex';
   }
 
@@ -513,41 +523,20 @@
 
   async function savePemilihPindah() {
     const targetKaderId = document.getElementById('modal-kader-target').value;
-    if (!targetKaderId) {
-      showToast('Pilih kader tujuan', '⚠️');
-      return;
-    }
-
+    if (!targetKaderId) { showToast('Pilih kader tujuan', '⚠️'); return; }
     try {
-      // Ambil data pemilih terlebih dahulu untuk mendapatkan field lainnya
-      const pemilih = pemilihList.find(p => p.id === currentPindahPemilihId);
-      if (!pemilih) {
-        showToast('Data pemilih tidak ditemukan', '❌');
-        return;
-      }
-
+      const pemilih = riwayatList.find(p => p.id === currentPindahPemilihId && p.jenis_entry === 'pemilih');
       const res = await fetchWithAuth(`/api/pemilih/${currentPindahPemilihId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nama: pemilih.nama,
-          nik: pemilih.nik,
-          kaderId: targetKaderId,
-          tanggalLahir: pemilih.tanggal_lahir,
-          jenisKelamin: pemilih.jenis_kelamin
-        })
+        body: JSON.stringify({ ...pemilih, kaderId: targetKaderId })
       });
       const result = await res.json();
-      if (result.error) {
-        showToast(result.error, '❌');
-        return;
-      }
+      if (result.error) { showToast(result.error, '❌'); return; }
       showToast('Pemilih berhasil dipindahkan', '🔄');
       closePindahModal();
-      await loadPemilihKader();
-    } catch (e) {
-      showToast(e.message, '❌');
-    }
+      await loadAktivitasKader();
+    } catch (e) { showToast(e.message, '❌'); }
   }
 
   // ─── Hapus Pemilih ────────────────────────────────
@@ -555,257 +544,88 @@
     const confirmDelete = await showAppConfirm(`Hapus data pemilih ${nama}?`, {
       title: 'Hapus Pemilih',
       confirmText: 'Hapus',
-      confirmClassName: 'btn-danger',
-      dangerNote: 'Data pemilih yang dihapus tidak bisa dikembalikan.'
+      confirmClassName: 'btn-danger'
     });
     if (!confirmDelete) return;
-
     try {
       const res = await fetchWithAuth(`/api/pemilih/${pemilihId}`, { method: 'DELETE' });
       const result = await res.json();
-      if (result.error) {
-        showToast(result.error, '❌');
-        return;
-      }
+      if (result.error) { showToast(result.error, '❌'); return; }
       showToast(`${nama} dihapus dari kader`, '🗑️');
-      await loadPemilihKader();
-    } catch (e) {
-      showToast(e.message, '❌');
-    }
+      await loadAktivitasKader();
+    } catch (e) { showToast(e.message, '❌'); }
   }
 
-  // ─── Bulk Delete Modal ─────────────────────────────
-  let selectedForDelete = new Set();
-
+  // ─── Bulk Delete ──────────────────────────────────
   function openBulkDeleteModal() {
-    if (pemilihList.length === 0) {
-      showToast('Tidak ada data pemilih untuk dihapus', '⚠️');
-      return;
-    }
-
-    selectedForDelete.clear();
+    const pemilihHanya = riwayatList.filter(r => r.jenis_entry === 'pemilih');
+    if (!pemilihHanya.length) { showToast('Tidak ada data pemilih', '⚠️'); return; }
     document.getElementById('modal-bulk-delete').style.display = 'flex';
-    renderBulkDeleteOptions();
-  }
-
-  function closeBulkDeleteModal() {
-    document.getElementById('modal-bulk-delete').style.display = 'none';
-    selectedForDelete.clear();
-  }
-
-  function renderBulkDeleteOptions() {
     const listContainer = document.getElementById('pemilih-list-delete');
-    listContainer.innerHTML = pemilihList.map(p => `
+    listContainer.innerHTML = pemilihHanya.map(p => `
       <label class="delete-item">
-        <input type="checkbox" value="${p.id}" onchange="toggleSelectForDelete(this)"/>
-        <span class="delete-item-main">
-          <strong>${p.nama}</strong><br/>
-          <span class="delete-item-sub">NIK: ${p.nik || '-'}</span>
-        </span>
+        <input type="checkbox" value="${p.id}" class="bulk-chk"/>
+        <span class="delete-item-main"><strong>${p.nama}</strong><br/><small>NIK: ${p.nik || '-'}</small></span>
       </label>
     `).join('');
   }
 
-  function toggleSelectForDelete(checkbox) {
-    if (checkbox.checked) {
-      selectedForDelete.add(checkbox.value);
-    } else {
-      selectedForDelete.delete(checkbox.value);
-    }
-  }
+  function closeBulkDeleteModal() { document.getElementById('modal-bulk-delete').style.display = 'none'; }
 
   async function confirmBulkDelete() {
     const option = document.querySelector('input[name="delete-option"]:checked').value;
-
     if (option === 'all') {
-      const confirmDelete = await showAppConfirm(`Hapus SEMUA data pemilih (${pemilihList.length} orang) dalam kader ini?`, {
-        title: 'Hapus Semua Pemilih',
-        confirmText: 'Hapus Semua',
-        confirmClassName: 'btn-danger',
-        dangerNote: 'Seluruh data pemilih pada kader ini akan dihapus permanen.'
-      });
+      const confirmDelete = await showAppConfirm('Hapus SEMUA data pemilih dalam kader ini?', { title: 'Hapus Semua', confirmClassName: 'btn-danger' });
       if (!confirmDelete) return;
-
       try {
-        const res = await fetchWithAuth(`/api/kader/${kaderId}/pemilih/clear`, { method: 'DELETE' });
-        const result = await res.json();
-        if (result.error) {
-          showToast(result.error, '❌');
-          return;
-        }
-        showToast(`${result.deletedCount || pemilihList.length} data pemilih dihapus`, '🗑️');
+        await fetchWithAuth(`/api/kader/${kaderId}/pemilih/clear`, { method: 'DELETE' });
+        showToast('Semua data pemilih dihapus', '🗑️');
         closeBulkDeleteModal();
-        await loadPemilihKader();
-      } catch (e) {
-        showToast(e.message, '❌');
-      }
-    } else if (option === 'selected') {
-      if (selectedForDelete.size === 0) {
-        showToast('Pilih minimal 1 pemilih untuk dihapus', '⚠️');
-        return;
-      }
-
-      const confirmDelete = await showAppConfirm(`Hapus ${selectedForDelete.size} data pemilih yang dipilih?`, {
-        title: 'Hapus Pemilih Terpilih',
-        confirmText: 'Hapus Pilihan',
-        confirmClassName: 'btn-danger',
-        dangerNote: 'Data pemilih yang dipilih akan dihapus permanen.'
-      });
+        await loadAktivitasKader();
+      } catch (e) { showToast(e.message, '❌'); }
+    } else {
+      const chks = document.querySelectorAll('.bulk-chk:checked');
+      if (!chks.length) { showToast('Pilih minimal 1', '⚠️'); return; }
+      const confirmDelete = await showAppConfirm(`Hapus ${chks.length} data pemilih?`, { title: 'Hapus Pilihan', confirmClassName: 'btn-danger' });
       if (!confirmDelete) return;
-
-      try {
-        let deletedCount = 0;
-        for (const pemilihId of selectedForDelete) {
-          const res = await fetchWithAuth(`/api/pemilih/${pemilihId}`, { method: 'DELETE' });
-          const result = await res.json();
-          if (!result.error) deletedCount++;
-        }
-        showToast(`${deletedCount} data pemilih dihapus`, '🗑️');
-        closeBulkDeleteModal();
-        await loadPemilihKader();
-      } catch (e) {
-        showToast(e.message, '❌');
-      }
+      for (const chk of chks) { await fetchWithAuth(`/api/pemilih/${chk.value}`, { method: 'DELETE' }); }
+      showToast(`${chks.length} data pemilih dihapus`, '🗑️');
+      closeBulkDeleteModal();
+      await loadAktivitasKader();
     }
   }
 
-  // Tampilkan/sembunyikan list checkbox saat radio button berubah
-  document.addEventListener('change', function(e) {
-    if (e.target.name === 'delete-option') {
-      const listContainer = document.getElementById('pemilih-list-delete');
-      listContainer.style.display = e.target.value === 'selected' ? 'block' : 'none';
-    }
-  });
-
-  // Close modal ketika klik di luar
-  window.addEventListener('click', function(e) {
-    const modalEdit = document.getElementById('modal-edit-pemilih');
-    const modalPindah = document.getElementById('modal-pindah-pemilih');
-    const modalDelete = document.getElementById('modal-bulk-delete');
-    if (e.target === modalEdit) closePemilihModal();
-    if (e.target === modalPindah) closePindahModal();
-    if (e.target === modalDelete) closeBulkDeleteModal();
-  });
-
-  init();
-</script>
-<script>
-  window.loadPemilihKader = loadAktivitasKader;
-
-  renderPemilihTable = function () {
-    const tbody = document.getElementById('tbody-pemilih');
-    const totalAktivitas = Number(aktivitasSummary?.totalAktivitas || 0);
-    document.getElementById('pemilih-count').textContent =
-      `${formatNum(filteredRiwayat.length)} / ${formatNum(riwayatList.length)} baris audit | ${formatNum(totalAktivitas)} aktivitas`;
-
-    if (!filteredRiwayat.length) {
-      tbody.innerHTML = `<tr><td colspan="6">
-        <div class="empty audit-empty">
-          <div class="empty-icon">Audit</div>
-          <p>Tidak ada data yang cocok untuk ditampilkan pada audit kader ini.</p>
-        </div>
-      </td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = filteredRiwayat.map(item => {
-      const isDuplikat = item.jenis_entry === 'duplikat';
-      const jkText = item.jenis_kelamin === 'L' ? 'Laki-laki' : item.jenis_kelamin === 'P' ? 'Perempuan' : '-';
-      const statusBadge = isDuplikat
-        ? `<span class="badge badge-red">Duplikat x${formatNum(item.jumlah_percobaan || 1)}</span>`
-        : item.status
-          ? '<span class="badge badge-orange">Butuh Cek</span>'
-          : '<span class="badge badge-green">Data Masuk</span>';
-      const detailText = isDuplikat
-        ? (item.catatan || '-')
-        : [
-            `Tgl lahir: ${formatTanggal(item.tanggal_lahir)}`,
-            `Umur: ${item.umur !== null ? `${item.umur} thn` : '-'}`,
-            `JK: ${jkText}`
-          ].join(' | ');
-      const actionButtons = isDuplikat
-        ? `<a href="/log-duplikat" class="btn btn-outline btn-xs">Lihat Log</a>`
-        : `<div class="gap-8">
-            <button class="btn btn-outline btn-xs" onclick="openEditPemilihModal('${item.id}')">Edit</button>
-            <button class="btn btn-outline btn-xs" onclick="openPindahModal('${item.id}')">Pindah</button>
-            <button class="btn btn-danger btn-xs" onclick="hapusPemilih('${item.id}','${item.nama}')">Hapus</button>
-          </div>`;
-
-      return `
-        <tr class="audit-row ${isDuplikat ? 'audit-row-dup' : item.status ? 'audit-row-warning' : ''}">
-          <td class="audit-cell-nik">${item.nik || '-'}</td>
-          <td>
-            <div class="audit-cell-name">${item.nama || '-'}</div>
-            <div class="audit-cell-sub">${isDuplikat ? 'Log percobaan duplikat' : 'Data pemilih kader'}</div>
-          </td>
-          <td>${statusBadge}</td>
-          <td class="audit-cell-detail">${detailText}</td>
-          <td class="audit-cell-time">${formatDateTime(item.waktu_input || item.created_at)}</td>
-          <td class="admin-only">${actionButtons}</td>
-        </tr>
-      `;
-    }).join('');
-  };
-
-  exportAuditCSV = function () {
-    if (!riwayatList.length) {
-      showToast('Tidak ada data audit untuk diekspor', '!');
-      return;
-    }
-
-    const headers = ['Jenis Entry', 'Status', 'NIK', 'Nama', 'Tanggal Lahir', 'Umur', 'Jenis Kelamin', 'Jumlah Percobaan', 'Catatan Audit', 'Waktu Input'];
+  function exportAuditCSV() {
+    if (!riwayatList.length) { showToast('Tidak ada data audit', '!'); return; }
+    const headers = ['Jenis Entry', 'Status', 'NIK', 'Nama', 'Umur', 'Catatan Audit', 'Waktu'];
     const rows = riwayatList.map(item => [
-      item.jenis_entry === 'duplikat' ? 'Log Duplikat' : 'Data Pemilih',
-      item.label_status || '-',
-      item.nik || '',
-      `"${String(item.nama || '').replace(/"/g, '""')}"`,
-      item.tanggal_lahir || '',
-      item.umur ?? '',
-      item.jenis_kelamin || '',
-      item.jumlah_percobaan || '',
-      `"${String(item.catatan || '').replace(/"/g, '""')}"`,
-      item.waktu_input || item.created_at || ''
+      item.jenis_entry, item.label_status, item.nik || '', item.nama, item.umur || '', item.catatan, item.waktu_input
     ]);
-
     const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `audit-kader-${kaderData?.nomor || 'detail'}-${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `audit-kader-${kaderData?.nomor || 'detail'}.csv`;
     a.click();
-    URL.revokeObjectURL(url);
-    showToast('Audit kader berhasil diekspor', 'OK');
-  };
+    showToast('Audit diekspor', 'OK');
+  }
 
-  (function bindAuditSearch() {
-    const oldInput = document.getElementById('search-pemilih');
-    if (!oldInput || !oldInput.parentNode) return;
-
-    const newInput = oldInput.cloneNode(true);
-    oldInput.parentNode.replaceChild(newInput, oldInput);
-    newInput.addEventListener('input', function (e) {
-      const q = e.target.value.toLowerCase().trim();
-      if (!q) {
-        filteredRiwayat = riwayatList;
-      } else {
-        filteredRiwayat = riwayatList.filter(item =>
-          (item.nama || '').toLowerCase().includes(q) ||
-          (item.nik || '').includes(q) ||
-          (item.catatan || '').toLowerCase().includes(q) ||
-          (item.label_status || '').toLowerCase().includes(q)
-        );
-      }
-      renderPemilihTable();
-    });
-  })();
-
-  Promise.resolve().then(() => {
-    if (riwayatList.length) {
-      filteredRiwayat = riwayatList;
-      renderPemilihTable();
+  document.addEventListener('change', e => {
+    if (e.target.name === 'delete-option') {
+      const listContainer = document.getElementById('pemilih-list-delete');
+      if (listContainer) listContainer.style.display = e.target.value === 'selected' ? 'block' : 'none';
     }
   });
+
+  window.addEventListener('click', e => {
+    if (e.target.classList.contains('modal-overlay')) {
+      closePemilihModal(); closePindahModal(); closeBulkDeleteModal();
+    }
+  });
+
+  setupSearch();
+  init();
 </script>
 </body>
 </html>
