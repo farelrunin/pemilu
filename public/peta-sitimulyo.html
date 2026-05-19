@@ -556,6 +556,7 @@
             <table class="result-table" id="votersDetailTable" style="display: none;">
               <thead>
                 <tr>
+                  <th>No.</th>
                   <th>Nama di TPS</th>
                   <th>Gender</th>
                   <th>Usia TPS</th>
@@ -821,7 +822,7 @@
     const printBtn = document.getElementById('btnPrintVoters');
     const rtSelect = document.getElementById('rtSelectFilter');
 
-    tbody.innerHTML = '<tr><td colspan="8" class="loading-state"><span class="loading"></span> Memuat daftar pemilih...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="loading-state"><span class="loading"></span> Memuat daftar pemilih...</td></tr>';
     table.style.display = 'table';
     pagination.style.display = 'none';
     if (printBtn) printBtn.style.display = 'none';
@@ -861,18 +862,21 @@
       }
 
       if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="8" class="loading-state">Tidak ada rincian pemilih hasil perbandingan di Dusun ${dusunName} untuk TPS terpilih ini.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="loading-state">Tidak ada rincian pemilih hasil perbandingan di Dusun ${dusunName} untuk TPS terpilih ini.</td></tr>`;
         return;
       }
 
-      tbody.innerHTML = filtered.map(item => {
+      tbody.innerHTML = filtered.map((item, index) => {
         let statusClass = 'tidak-cocok';
         let chipClass = 'danger';
         if (item.status_cocok === 'COCOK') { statusClass = 'cocok'; chipClass = 'success'; }
         else if (item.status_cocok === 'PERLU_DICEK') { statusClass = 'perlu_dicek'; chipClass = 'warning'; }
 
+        const rowNum = (page - 1) * limit + index + 1;
+
         return `
           <tr class="${statusClass}">
+            <td style="text-align: center; color: var(--text3); font-weight: 500;">${rowNum}</td>
             <td><strong>${item.nama_tps}</strong></td>
             <td>${item.jk_tps || '-'}</td>
             <td>${item.usia_tps || '-'} tahun</td>
