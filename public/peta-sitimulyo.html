@@ -715,29 +715,16 @@
     titleSpan.textContent = `— Dusun ${dusunName}`;
 
     try {
-      // First, get all comparison data from server
-      let url = `/api/tps/${encodeURIComponent(currentTpsFilter || 'SITIMULYO')}/hasil?page=${page}&limit=10`;
-      // Note: If no specific TPS select filter, we fallback to 'SITIMULYO' or search across TPS.
-      // Since '/api/tps/:tps/hasil' requires tps, we dynamically resolve or fetch accordingly.
-      
       const tpsToFetch = currentTpsFilter || (tpsSelect.options[1] ? tpsSelect.options[1].value : 'SITIMULYO');
       
-      url = `/api/tps/${encodeURIComponent(tpsToFetch)}/hasil?page=${page}&limit=20`;
+      const url = `/api/tps/${encodeURIComponent(tpsToFetch)}/hasil?dusun=${encodeURIComponent(dusunName)}&page=${page}&limit=20`;
       
       const response = await fetch(url, {
         headers: { 'Authorization': 'Bearer ' + getToken() }
       });
       const res = await response.json();
       
-      // Filter clientside to only match the selected Dusun
-      const allResults = res.data || [];
-      const filtered = allResults.filter(item => {
-        // Match either tps dusun or pemilih dusun
-        const tpsDusun = String(item.dusun_tps || '').toLowerCase().trim();
-        const pemilihDusun = String(item.dusun_pemilih || '').toLowerCase().trim();
-        const target = dusunName.toLowerCase().trim();
-        return tpsDusun === target || pemilihDusun === target;
-      });
+      const filtered = res.data || [];
 
       if (!filtered.length) {
         tbody.innerHTML = `<tr><td colspan="8" class="loading-state">Tidak ada rincian pemilih hasil perbandingan di Dusun ${dusunName} untuk TPS terpilih ini.</td></tr>`;
@@ -764,9 +751,6 @@
         `;
       }).join('');
 
-      // Simple pagination logic for filtered data
-      const total = res.pagination.total;
-      const limit = res.pagination.limit;
       const totalPages = res.pagination.totalPages;
 
       if (totalPages > 1) {

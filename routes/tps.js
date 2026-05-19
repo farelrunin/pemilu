@@ -541,31 +541,92 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 25;
     const offset = (page - 1) * limit;
+    const { dusun } = req.query;
 
     const tps = req.params.nama_tps;
+    const countParams = [tps];
+    let countQueryStr = `
+      SELECT COUNT(*) AS total FROM (
+        SELECT 
+               CASE 
+                 WHEN TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, '')) = '' THEN 'Sitimulyo'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) = 'sitimulyo' THEN 'Sitimulyo'
+                 ELSE TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun))
+               END AS resolved_dusun
+        FROM hasil_perbandingan hp
+        JOIN data_tps dt ON dt.id = hp.data_tps_id
+        LEFT JOIN pemilih p ON p.id = hp.pemilih_id
+        LEFT JOIN kader k ON k.id = p.kader_id
+        LEFT JOIN (
+          SELECT rt, rw, MAX(dusun) AS dusun
+          FROM (
+            SELECT COALESCE(p_sub.rt, k_sub.rt) AS rt, COALESCE(p_sub.rw, k_sub.rw) AS rw, k_sub.dusun
+            FROM pemilih p_sub
+            JOIN kader k_sub ON k_sub.id = p_sub.kader_id
+            UNION ALL
+            SELECT rt, rw, dusun
+            FROM kader
+          ) AS combined
+          WHERE rt IS NOT NULL AND rt <> ''
+          GROUP BY rt, rw
+        ) AS rt_mapping ON rt_mapping.rt = dt.rt AND rt_mapping.rw = dt.rw
+        WHERE dt.nama_tps = ?
+      ) AS t
+      WHERE 1=1
+    `;
 
-    const [totalRow] = await query(`
-      SELECT COUNT(*) AS total 
-      FROM hasil_perbandingan hp
-      JOIN data_tps dt ON dt.id = hp.data_tps_id
-      WHERE dt.nama_tps = ?
-    `, [tps]);
+    if (dusun) {
+      countQueryStr += ` AND LOWER(t.resolved_dusun) = LOWER(?)`;
+      countParams.push(String(dusun).trim());
+    }
+
+    const [totalRow] = await query(countQueryStr, countParams);
     const total = totalRow?.total || 0;
 
-    const list = await query(`
-      SELECT hp.id, hp.pemilih_id, dt.nama AS nama_tps, dt.jenis_kelamin AS jk_tps, dt.usia AS usia_tps, dt.dusun AS dusun_tps, dt.rt AS rt_tps, dt.rw AS rw_tps,
-             hp.status_cocok, hp.skor_total, hp.catatan,
-             p.nama AS nama_pemilih, p.nik,
-             k.dusun AS dusun_pemilih, k.kordus, k.rt AS rt_pemilih,
-             CONCAT('Kader ', k.nomor, ' — ', k.nama) AS nama_kader
-      FROM hasil_perbandingan hp
-      JOIN data_tps dt ON dt.id = hp.data_tps_id
-      LEFT JOIN pemilih p ON p.id = hp.pemilih_id
-      LEFT JOIN kader k ON k.id = p.kader_id
-      WHERE dt.nama_tps = ?
-      ORDER BY hp.skor_total DESC, dt.nama ASC
-      LIMIT ? OFFSET ?
-    `, [tps, limit, offset]);
+    const selectParams = [tps];
+    let selectQueryStr = `
+      SELECT * FROM (
+        SELECT hp.id, hp.pemilih_id, dt.nama AS nama_tps, dt.jenis_kelamin AS jk_tps, dt.usia AS usia_tps, dt.dusun AS dusun_tps, dt.rt AS rt_tps, dt.rw AS rw_tps,
+               hp.status_cocok, hp.skor_total, hp.catatan,
+               p.nama AS nama_pemilih, p.nik,
+               k.dusun AS dusun_pemilih, k.kordus, k.rt AS rt_pemilih,
+               CONCAT('Kader ', k.nomor, ' — ', k.nama) AS nama_kader,
+               CASE 
+                 WHEN TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, '')) = '' THEN 'Sitimulyo'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) = 'sitimulyo' THEN 'Sitimulyo'
+                 ELSE TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun))
+               END AS resolved_dusun
+        FROM hasil_perbandingan hp
+        JOIN data_tps dt ON dt.id = hp.data_tps_id
+        LEFT JOIN pemilih p ON p.id = hp.pemilih_id
+        LEFT JOIN kader k ON k.id = p.kader_id
+        LEFT JOIN (
+          SELECT rt, rw, MAX(dusun) AS dusun
+          FROM (
+            SELECT COALESCE(p_sub.rt, k_sub.rt) AS rt, COALESCE(p_sub.rw, k_sub.rw) AS rw, k_sub.dusun
+            FROM pemilih p_sub
+            JOIN kader k_sub ON k_sub.id = p_sub.kader_id
+            UNION ALL
+            SELECT rt, rw, dusun
+            FROM kader
+          ) AS combined
+          WHERE rt IS NOT NULL AND rt <> ''
+          GROUP BY rt, rw
+        ) AS rt_mapping ON rt_mapping.rt = dt.rt AND rt_mapping.rw = dt.rw
+        WHERE dt.nama_tps = ?
+      ) AS t
+      WHERE 1=1
+    `;
+
+    if (dusun) {
+      selectQueryStr += ` AND LOWER(t.resolved_dusun) = LOWER(?)`;
+      selectParams.push(String(dusun).trim());
+    }
+
+    selectQueryStr += ` ORDER BY t.skor_total DESC, t.nama_tps ASC LIMIT ? OFFSET ?`;
+    selectParams.push(limit, offset);
+
+    const list = await query(selectQueryStr, selectParams);
 
     res.json({
       status: 'success',
