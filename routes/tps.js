@@ -646,26 +646,39 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
 // 9️⃣ KPI Dashboard - Ringkasan Statistik TPS terbandingkan secara akumulatif
 router.get('/statistik', verifyToken, async (req, res) => {
   try {
-    const [stats] = await query(`
+    // 1. Get ringkasan
+    const [ringkasanStats] = await query(`
       SELECT 
-        COUNT(DISTINCT dt.nama_tps) AS total_file_tps,
+        COUNT(DISTINCT dt.nama_tps) AS total_tps,
         COUNT(dt.id) AS total_pemilih_tps,
-        COUNT(CASE WHEN hp.status_cocok = 'COCOK' THEN 1 END) AS cocok,
-        COUNT(CASE WHEN hp.status_cocok = 'PERLU_DICEK' THEN 1 END) AS perlu_dicek,
-        COUNT(CASE WHEN hp.status_cocok = 'TIDAK_COCOK' OR hp.status_cocok IS NULL THEN 1 END) AS tidak_cocok
+        COUNT(CASE WHEN hp.status_cocok = 'COCOK' THEN 1 END) AS total_cocok_seluruh,
+        COUNT(CASE WHEN hp.status_cocok = 'PERLU_DICEK' THEN 1 END) AS total_perlu_dicek_seluruh,
+        COUNT(CASE WHEN hp.status_cocok = 'TIDAK_COCOK' OR hp.status_cocok IS NULL THEN 1 END) AS total_tidak_cocok_seluruh
       FROM data_tps dt
       LEFT JOIN hasil_perbandingan hp ON hp.data_tps_id = dt.id
     `);
 
-    const persentase_cocok = stats.total_pemilih_tps ? Math.round((stats.cocok / stats.total_pemilih_tps) * 100) : 0;
-    const persentase_optimal = stats.total_pemilih_tps ? Math.round(((stats.cocok + stats.perlu_dicek) / stats.total_pemilih_tps) * 100) : 0;
+    // 2. Get perbandingan per TPS
+    const perbandinganList = await query(`
+      SELECT 
+        dt.nama_tps,
+        COUNT(dt.id) AS total,
+        COUNT(CASE WHEN hp.status_cocok = 'COCOK' THEN 1 END) AS cocok,
+        COUNT(CASE WHEN hp.status_cocok = 'PERLU_DICEK' THEN 1 END) AS perlu_dicek,
+        COUNT(CASE WHEN hp.status_cocok = 'TIDAK_COCOK' OR hp.status_cocok IS NULL THEN 1 END) AS tidak_cocok,
+        ROUND(COUNT(CASE WHEN hp.status_cocok = 'COCOK' THEN 1 END) / COUNT(dt.id) * 100, 2) AS persentase_cocok
+      FROM data_tps dt
+      LEFT JOIN hasil_perbandingan hp ON hp.data_tps_id = dt.id
+      GROUP BY dt.nama_tps
+      ORDER BY dt.nama_tps ASC
+    `);
 
     res.json({
       status: 'success',
       data: {
-        ...stats,
-        persentase_cocok,
-        persentase_optimal
+        total_tps: ringkasanStats.total_tps || 0,
+        ringkasan: ringkasanStats,
+        perbandingan: perbandinganList || []
       }
     });
   } catch (e) {
