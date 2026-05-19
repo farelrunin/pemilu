@@ -2123,7 +2123,10 @@ app.get('/api/tps/statistik-dusun', verifyToken, async (req, res) => {
 
     const data = await query(`
       SELECT 
-        TRIM(dt.dusun) AS dusun,
+        CASE 
+          WHEN TRIM(COALESCE(dt.dusun, '')) = '' THEN 'Sitimulyo'
+          ELSE TRIM(dt.dusun)
+        END AS dusun,
         COUNT(dt.id) AS total_pemilih_tps,
         COUNT(CASE WHEN hp.status_cocok = 'COCOK' THEN 1 END) AS cocok,
         COUNT(CASE WHEN hp.status_cocok = 'PERLU_DICEK' THEN 1 END) AS perlu_dicek,
@@ -2133,8 +2136,11 @@ app.get('/api/tps/statistik-dusun', verifyToken, async (req, res) => {
       FROM data_tps dt
       LEFT JOIN hasil_perbandingan hp ON hp.data_tps_id = dt.id
       ${where}
-      AND TRIM(COALESCE(dt.dusun, '')) <> ''
-      GROUP BY TRIM(dt.dusun)
+      GROUP BY 
+        CASE 
+          WHEN TRIM(COALESCE(dt.dusun, '')) = '' THEN 'Sitimulyo'
+          ELSE TRIM(dt.dusun)
+        END
       ORDER BY persentase_cocok DESC
     `, params);
 
