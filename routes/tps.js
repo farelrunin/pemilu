@@ -7,22 +7,6 @@ const { verifyToken, isAdmin } = require('../middleware/auth');
 
 const upload = multer({ dest: 'uploads/', limits: { fileSize: 10 * 1024 * 1024 } });
 
-// TEMPORARY SCHEMA DEBUG ENDPOINT
-router.get('/debug-db', async (req, res) => {
-  try {
-    const pemilihCols = await query('DESCRIBE pemilih');
-    const kaderCols = await query('DESCRIBE kader');
-    const dataTpsCols = await query('DESCRIBE data_tps');
-    res.json({
-      pemilih: pemilihCols,
-      kader: kaderCols,
-      data_tps: dataTpsCols
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // ── SIMILARITY ENGINE & SPREADSHEET HELPERS ────────────────────────
 
 function normalizeMatchText(value) {
@@ -589,18 +573,11 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
         LEFT JOIN pemilih p ON p.id = hp.pemilih_id
         LEFT JOIN kader k ON k.id = p.kader_id
         LEFT JOIN (
-          SELECT rt, rw, MAX(dusun) AS dusun
-          FROM (
-            SELECT COALESCE(p_sub.rt, k_sub.rt) AS rt, COALESCE(p_sub.rw, k_sub.rw) AS rw, k_sub.dusun
-            FROM pemilih p_sub
-            JOIN kader k_sub ON k_sub.id = p_sub.kader_id
-            UNION ALL
-            SELECT rt, rw, dusun
-            FROM kader
-          ) AS combined
+          SELECT rt, MAX(dusun) AS dusun
+          FROM kader
           WHERE rt IS NOT NULL AND rt <> ''
-          GROUP BY rt, rw
-        ) AS rt_mapping ON rt_mapping.rt = dt.rt AND rt_mapping.rw = dt.rw
+          GROUP BY rt
+        ) AS rt_mapping ON rt_mapping.rt = dt.rt
         ${isAllTps ? '' : 'WHERE dt.nama_tps = ?'}
       ) AS t
       WHERE 1=1
@@ -645,18 +622,11 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
          LEFT JOIN pemilih p ON p.id = hp.pemilih_id
          LEFT JOIN kader k ON k.id = p.kader_id
          LEFT JOIN (
-           SELECT rt, rw, MAX(dusun) AS dusun
-           FROM (
-             SELECT COALESCE(p_sub.rt, k_sub.rt) AS rt, COALESCE(p_sub.rw, k_sub.rw) AS rw, k_sub.dusun
-             FROM pemilih p_sub
-             JOIN kader k_sub ON k_sub.id = p_sub.kader_id
-             UNION ALL
-             SELECT rt, rw, dusun
-             FROM kader
-           ) AS combined
-           WHERE rt IS NOT NULL AND rt <> ''
-           GROUP BY rt, rw
-         ) AS rt_mapping ON rt_mapping.rt = dt.rt AND rt_mapping.rw = dt.rw
+            SELECT rt, MAX(dusun) AS dusun
+            FROM kader
+            WHERE rt IS NOT NULL AND rt <> ''
+            GROUP BY rt
+          ) AS rt_mapping ON rt_mapping.rt = dt.rt
          ${isAllTps ? '' : 'WHERE dt.nama_tps = ?'}
        ) AS t
        WHERE 1=1
@@ -777,18 +747,11 @@ router.get('/statistik-dusun', verifyToken, async (req, res) => {
       LEFT JOIN pemilih p ON p.id = hp.pemilih_id
       LEFT JOIN kader k ON k.id = p.kader_id
       LEFT JOIN (
-        SELECT rt, rw, MAX(dusun) AS dusun
-        FROM (
-          SELECT COALESCE(p_sub.rt, k_sub.rt) AS rt, COALESCE(p_sub.rw, k_sub.rw) AS rw, k_sub.dusun
-          FROM pemilih p_sub
-          JOIN kader k_sub ON k_sub.id = p_sub.kader_id
-          UNION ALL
-          SELECT rt, rw, dusun
-          FROM kader
-        ) AS combined
+        SELECT rt, MAX(dusun) AS dusun
+        FROM kader
         WHERE rt IS NOT NULL AND rt <> ''
-        GROUP BY rt, rw
-      ) AS rt_mapping ON rt_mapping.rt = dt.rt AND rt_mapping.rw = dt.rw
+        GROUP BY rt
+      ) AS rt_mapping ON rt_mapping.rt = dt.rt
       ${where}
       GROUP BY 
         CASE 
