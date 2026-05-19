@@ -9,13 +9,37 @@
   <style>
     /* Print Friendly Stylesheet */
     @media print {
-      /* Sembunyikan elemen navigasi, sidebar, peta, topbar, dan pagination saat cetak */
-      .app-sidebar, .app-topbar, .page-header, .filters, .map-dashboard-grid, .map-tooltip,
-      #btnPrintVoters, #voterTableIntro, #votersPagination, .pagination, #rtSelectFilter {
+      @page {
+        size: portrait;
+        margin: 10mm 8mm;
+      }
+
+      /* Sembunyikan SEMUA elemen sidebar, topbar, peta, legenda, filter, KPI panel, tombol cetak/filter, dan pagination */
+      .app-sidebar, 
+      .app-topbar, 
+      .page-header, 
+      .filters, 
+      .map-dashboard-grid, 
+      .tps-kpi-stack,
+      .legend-card,
+      .map-card,
+      .card:not(#detailVotersSection),
+      .map-tooltip,
+      #btnPrintVoters, 
+      #voterTableIntro, 
+      #votersPagination, 
+      .pagination, 
+      #rtSelectFilter {
         display: none !important;
       }
       
-      /* Reset layout wrappers agar bersifat flow (block) normal bukan flex/grid */
+      /* Reset layout wrappers agar bersifat flow normal dan bersih */
+      html, body {
+        background: #fff !important;
+        color: #000 !important;
+        font-family: 'Inter', system-ui, sans-serif !important;
+      }
+
       .app-shell, .app-main, .app-main-body, .container {
         display: block !important;
         margin: 0 !important;
@@ -28,6 +52,7 @@
         background: transparent !important;
       }
 
+      /* Layout Khusus untuk Container Tabel */
       #detailVotersSection {
         display: block !important;
         width: 100% !important;
@@ -35,8 +60,19 @@
         padding: 0 !important;
         box-shadow: none !important;
         border: none !important;
-        background: white !important;
-        color: black !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+
+      #detailVotersSection .section-title {
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+        border-bottom: 2px solid #333 !important;
+        padding-bottom: 8px !important;
+        margin-bottom: 12px !important;
+        width: 100% !important;
+        display: block !important;
       }
       
       #detailVotersSection * {
@@ -45,25 +81,31 @@
       
       .table-container {
         overflow: visible !important;
+        width: 100% !important;
       }
       
       table.result-table {
         width: 100% !important;
         border-collapse: collapse !important;
-        background: white !important;
-        color: black !important;
+        background: #fff !important;
+        color: #000 !important;
       }
       
       table.result-table th, table.result-table td {
-        border: 1px solid #ccc !important;
-        padding: 6px 10px !important;
-        color: black !important;
-        font-size: 11px !important;
+        border: 1px solid #333 !important;
+        padding: 6px 6px !important;
+        color: #000 !important;
+        font-size: 9.5px !important;
+        text-align: left !important;
+        line-height: 1.2 !important;
       }
       
       table.result-table th {
         background-color: #f2f2f2 !important;
+        color: #000 !important;
         font-weight: bold !important;
+        text-transform: uppercase !important;
+        font-size: 9px !important;
       }
       
       table.result-table tr {
@@ -71,18 +113,24 @@
         page-break-inside: avoid !important;
       }
       
+      /* Reset Chip status untuk cetak agar terlihat kontras hitam-putih */
       .tps-chip {
-        border: 1px solid #999 !important;
-        color: black !important;
+        border: 1px solid #333 !important;
+        color: #000 !important;
         background: transparent !important;
-        padding: 2px 6px !important;
+        padding: 1px 4px !important;
+        font-size: 8px !important;
+        font-weight: bold !important;
+        border-radius: 4px !important;
+        display: inline-block !important;
       }
       
       strong {
-        color: black !important;
+        color: #000 !important;
       }
+
       .tps-link-match {
-        color: black !important;
+        color: #000 !important;
         text-decoration: none !important;
         font-weight: bold !important;
       }
