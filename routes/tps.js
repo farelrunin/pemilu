@@ -551,7 +551,7 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
     
     let countQueryStr = `
       SELECT COUNT(*) AS total FROM (
-        SELECT 
+        SELECT dt.rt AS rt_tps, dt.rw AS rw_tps,
                CASE 
                  WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('', 'sitimulyo') THEN 'Sitimulyo'
                  WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
@@ -656,6 +656,53 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
 
     const list = await query(selectQueryStr, selectParams);
 
+    // Get unique RTs for this dusun to populate select dropdown dynamically
+    let rtList = [];
+    if (dusun) {
+      const rtQuery = `
+        SELECT DISTINCT dt.rt 
+        FROM hasil_perbandingan hp
+        JOIN data_tps dt ON dt.id = hp.data_tps_id
+        LEFT JOIN pemilih p ON p.id = hp.pemilih_id
+        LEFT JOIN kader k ON k.id = p.kader_id
+        LEFT JOIN (
+          SELECT rt, MAX(dusun) AS dusun
+          FROM kader
+          WHERE rt IS NOT NULL AND rt <> ''
+          GROUP BY rt
+        ) AS rt_mapping ON rt_mapping.rt = dt.rt
+        WHERE 1=1
+        ${isAllTps ? '' : 'AND dt.nama_tps = ?'}
+        AND LOWER(
+          CASE 
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('', 'sitimulyo') THEN 'Sitimulyo'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'Banyakan 2'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan 3', 'banyakan iii') THEN 'Banyakan 3'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'Cepoko'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'Kuden'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'Karang Gayam'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'Karang Ploso'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'Pager Gunung 1'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
+            WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
+            ELSE TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun))
+          END
+        ) = LOWER(?)
+        ORDER BY CAST(NULLIF(dt.rt, '') AS UNSIGNED) ASC, dt.rt ASC
+      `;
+      const rtParams = [];
+      if (!isAllTps) rtParams.push(tps);
+      rtParams.push(String(dusun).trim());
+      
+      const rtRows = await query(rtQuery, rtParams);
+      rtList = rtRows
+        .map(r => r.rt)
+        .filter(rtVal => rtVal !== null && rtVal !== undefined && String(rtVal).trim() !== '');
+    }
+
     res.json({
       status: 'success',
       data: list,
@@ -664,7 +711,8 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
         limit,
         total,
         totalPages: Math.ceil(total / limit)
-      }
+      },
+      availableRTs: rtList
     });
   } catch (e) {
     res.status(500).json({ error: e.message });

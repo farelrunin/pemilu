@@ -840,6 +840,19 @@
 
       if (printBtn && filtered.length) printBtn.style.display = 'inline-block';
       if (rtSelect) rtSelect.style.display = 'inline-block';
+      
+      // Populate RT select dynamically with only existing RTs for this selected dusun
+      if (!rtVal && res.availableRTs) {
+        let selectHtml = '<option value="">Semua RT</option>';
+        res.availableRTs.forEach(rtOption => {
+          if (rtOption && String(rtOption).trim() !== '') {
+            selectHtml += `<option value="${rtOption}">RT ${rtOption}</option>`;
+          }
+        });
+        if (rtSelect) {
+          rtSelect.innerHTML = selectHtml;
+        }
+      }
 
       if (!filtered.length) {
         tbody.innerHTML = `<tr><td colspan="8" class="loading-state">Tidak ada rincian pemilih hasil perbandingan di Dusun ${dusunName} untuk TPS terpilih ini.</td></tr>`;
