@@ -549,8 +549,19 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
       SELECT COUNT(*) AS total FROM (
         SELECT 
                CASE 
-                 WHEN TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, '')) = '' THEN 'Sitimulyo'
-                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) = 'sitimulyo' THEN 'Sitimulyo'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('', 'sitimulyo') THEN 'Sitimulyo'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'Banyakan 2'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan 3', 'banyakan iii') THEN 'Banyakan 3'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'Cepoko'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'Kuden'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'Karang Gayam'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'Karang Ploso'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'Pager Gunung 1'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
                  ELSE TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun))
                END AS resolved_dusun
         FROM hasil_perbandingan hp
@@ -592,8 +603,19 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
                k.dusun AS dusun_pemilih, k.kordus, k.rt AS rt_pemilih,
                CONCAT('Kader ', k.nomor, ' — ', k.nama) AS nama_kader,
                CASE 
-                 WHEN TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, '')) = '' THEN 'Sitimulyo'
-                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) = 'sitimulyo' THEN 'Sitimulyo'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('', 'sitimulyo') THEN 'Sitimulyo'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'Banyakan 2'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan 3', 'banyakan iii') THEN 'Banyakan 3'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'Cepoko'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'Kuden'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'Karang Gayam'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'Karang Ploso'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'Pager Gunung 1'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
                  ELSE TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun))
                END AS resolved_dusun
         FROM hasil_perbandingan hp
@@ -701,8 +723,19 @@ router.get('/statistik-dusun', verifyToken, async (req, res) => {
     const data = await query(`
       SELECT 
         CASE 
-          WHEN TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, '')) = '' THEN 'Sitimulyo'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) = 'sitimulyo' THEN 'Sitimulyo'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('', 'sitimulyo') THEN 'Sitimulyo'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'Banyakan 2'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan 3', 'banyakan iii') THEN 'Banyakan 3'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'Cepoko'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'Kuden'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'Karang Gayam'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'Karang Ploso'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'Pager Gunung 1'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
           ELSE TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun))
         END AS dusun,
         COUNT(dt.id) AS total_pemilih_tps,
@@ -731,8 +764,19 @@ router.get('/statistik-dusun', verifyToken, async (req, res) => {
       ${where}
       GROUP BY 
         CASE 
-          WHEN TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, '')) = '' THEN 'Sitimulyo'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) = 'sitimulyo' THEN 'Sitimulyo'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('', 'sitimulyo') THEN 'Sitimulyo'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'Banyakan 2'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan 3', 'banyakan iii') THEN 'Banyakan 3'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'Cepoko'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'Kuden'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'Karang Gayam'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'Karang Ploso'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'Pager Gunung 1'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
           ELSE TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun))
         END
       ORDER BY persentase_cocok DESC
