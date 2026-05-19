@@ -5,7 +5,7 @@
 
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { query, testConnection } = require('./db');
+const { query, testConnection } = require('../db');
 
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);

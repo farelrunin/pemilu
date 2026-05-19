@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peta Wilayah Sitimulyo - Pemilu</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/tps-pages.css">
+  <style>
+    /* Styling Peta Premium & Glassmorphism */
+    .map-dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      margin-top: 20px;
+    }
+    
+    @media (max-width: 960px) {
+      .map-dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .map-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      min-height: 600px;
+    }
+
+    .svg-map-container {
+      width: 100%;
+      max-width: 480px;
+      height: auto;
+      aspect-ratio: 600 / 950;
+    }
+
+    /* SVG Dusun Polygons styling */
+    .dusun-polygon {
+      fill: rgba(188, 205, 221, 0.15);
+      stroke: var(--border);
+      stroke-width: 2.5;
+      stroke-linejoin: round;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .dusun-polygon:hover {
+      stroke: var(--accent);
+      stroke-width: 4;
+      filter: drop-shadow(0 0 12px var(--accent));
+      transform: scale(1.02);
+      transform-origin: center;
+      z-index: 10;
+    }
+
+    .dusun-label {
+      fill: var(--text);
+      font-size: 11px;
+      font-weight: 700;
+      text-anchor: middle;
+      pointer-events: none;
+      user-select: none;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
+    }
+
+    /* Map Legend */
+    .legend-card {
+      margin-top: 16px;
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      width: 100%;
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Interactive List in Side Panel */
+    .dusun-list-container {
+      max-height: 520px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .dusun-list-item {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dusun-list-item:hover,
+    .dusun-list-item.active {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      transform: translateX(4px);
+    }
+
+    .dusun-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dusun-list-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .dusun-list-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .dusun-mini-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(0,0,0,0.15);
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.02);
+    }
+
+    .dusun-mini-stat-label {
+      color: var(--text3);
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .dusun-mini-stat-value {
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Tooltip */
+    .map-tooltip {
+      position: absolute;
+      background: rgba(18, 24, 36, 0.95);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      pointer-events: none;
+      z-index: 1000;
+      display: none;
+      box-shadow: var(--shadow);
+      min-width: 200px;
+      color: var(--text);
+    }
+
+    .map-tooltip-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+      color: var(--accent);
+    }
+
+    .map-tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .map-tooltip-val {
+      font-weight: 700;
+    }
+
+    /* Filters topbar style overrides */
+    .map-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .btn-reset-filter {
+      padding: 8px 14px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body class="app-shell-page">
+<div class="app-shell">
+  <!-- APP SIDEBAR -->
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih" class="admin-only"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import" class="admin-only"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
+        <a href="/log-duplikat" class="admin-only"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+      <a href="/upload-tps" class="admin-only "><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+      <a href="/perbandingan-tps" class=""><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+      <a href="/statistik-tps" class=""><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
+      <a href="/peta-sitimulyo" class="active"><span><strong>Peta Wilayah</strong></span><span class="nav-pill">PW</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Radar Wilayah</strong>
+          <span>Pantau jangkauan kampanye pemenangan per Dusun secara visual dan real-time.</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- APP MAIN -->
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Peta Wilayah</div>
+        <div class="app-topbar-title">Peta Profil Wilayah Kelurahan Sitimulyo</div>
+        <div class="app-topbar-subtitle">Analisis spasial jangkauan pemilih berdasarkan data perbandingan TPS per Dusun.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container">
+        <!-- HEADER CARD -->
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › <a href="/upload-tps">Modul TPS</a> › <span>Peta Wilayah</span>
+          </div>
+          <h1>Radar Spasial Dusun</h1>
+          <p>Visualisasi kecocokan pemilih lokal Anda terhadap daftar pemilih resmi TPS di setiap dusun. Membantu Anda langsung menemukan wilayah basis dan wilayah lemah secara visual.</p>
+        </div>
+
+        <!-- SELECT FILTERS -->
+        <div class="filters">
+          <div class="filter-group">
+            <label for="tpsSelect">Pilih File TPS</label>
+            <select id="tpsSelect" class="sort-select">
+              <option value="">Semua TPS Tergabung</option>
+            </select>
+          </div>
+          <button id="btnResetFilter" class="btn btn-secondary btn-reset-filter">Reset Wilayah</button>
+        </div>
+
+        <!-- MAIN GRID MAP & STATS -->
+        <div class="map-dashboard-grid">
+          <!-- LEFT CARD: MAP VISUAL -->
+          <div class="map-card" id="mapCard">
+            <div class="section-title" style="align-self: flex-start; width: 100%;">Peta Spasial Sitimulyo</div>
+            
+            <div class="svg-map-container">
+              <svg viewBox="0 0 600 950" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <!-- Gondobari-Somokaton -->
+                <polygon id="dusun-gondobari-somokaton" class="dusun-polygon" points="120,40 280,40 260,120 100,120" />
+                <text x="190" y="90" class="dusun-label">Gondobari-Somokaton</text>
+
+                <!-- Babadan -->
+                <polygon id="dusun-babadan" class="dusun-polygon" points="280,40 460,40 430,120 260,120" />
+                <text x="360" y="90" class="dusun-label">Babadan</text>
+
+                <!-- Madugondo -->
+                <polygon id="dusun-madugondo" class="dusun-polygon" points="100,120 260,120 240,200 80,200" />
+                <text x="170" y="170" class="dusun-label">Madugondo</text>
+
+                <!-- Karang Anom -->
+                <polygon id="dusun-karang-anom" class="dusun-polygon" points="260,120 430,120 400,200 240,200" />
+                <text x="330" y="170" class="dusun-label">Karang Anom</text>
+
+                <!-- Karang Tengah -->
+                <polygon id="dusun-karang-tengah" class="dusun-polygon" points="240,200 400,200 370,280 220,280" />
+                <text x="320" y="250" class="dusun-label">Karang Tengah</text>
+
+                <!-- Somokaton -->
+                <polygon id="dusun-somokaton" class="dusun-polygon" points="80,200 240,200 220,280 60,280" />
+                <text x="150" y="250" class="dusun-label">Somokaton</text>
+
+                <!-- Karang Gayam -->
+                <polygon id="dusun-karang-gayam" class="dusun-polygon" points="60,280 220,280 200,360 40,360" />
+                <text x="130" y="330" class="dusun-label">Karang Gayam</text>
+
+                <!-- Nglengis -->
+                <polygon id="dusun-nglengis" class="dusun-polygon" points="220,280 370,280 340,360 200,360" />
+                <text x="290" y="330" class="dusun-label">Nglengis</text>
+
+                <!-- Mojosari -->
+                <polygon id="dusun-mojosari" class="dusun-polygon" points="200,360 340,360 320,440 180,440" />
+                <text x="270" y="410" class="dusun-label">Mojosari</text>
+
+                <!-- Karang Ploso -->
+                <polygon id="dusun-karang-ploso" class="dusun-polygon" points="180,440 320,440 300,520 160,520" />
+                <text x="250" y="490" class="dusun-label">Karang Ploso</text>
+
+                <!-- Pager Gunung 1 -->
+                <polygon id="dusun-pager-gunung-1" class="dusun-polygon" points="160,520 300,520 280,620 140,620" />
+                <text x="220" y="580" class="dusun-label">Pager Gunung 1</text>
+
+                <!-- Pager Gunung 2 -->
+                <polygon id="dusun-pager-gunung-2" class="dusun-polygon" points="140,620 280,620 260,720 120,720" />
+                <text x="200" y="680" class="dusun-label">Pager Gunung 2</text>
+
+                <!-- Nganyang -->
+                <polygon id="dusun-nganyang" class="dusun-polygon" points="100,440 180,440 160,520 140,620 60,580 80,500" />
+                <text x="120" y="540" class="dusun-label">Nganyang</text>
+
+                <!-- Banyakan 1 -->
+                <polygon id="dusun-banyakan-1" class="dusun-polygon" points="60,580 140,620 120,700 40,660" />
+                <text x="90" y="650" class="dusun-label">Banyakan 1</text>
+
+                <!-- Banyakan 2 -->
+                <polygon id="dusun-banyakan-2" class="dusun-polygon" points="40,660 120,700 100,780 20,740" />
+                <text x="70" y="730" class="dusun-label">Banyakan 2</text>
+
+                <!-- Banyakan 3 -->
+                <polygon id="dusun-banyakan-3" class="dusun-polygon" points="20,740 100,780 80,860 10,820" />
+                <text x="50" y="810" class="dusun-label">Banyakan 3</text>
+
+                <!-- Ngablak -->
+                <polygon id="dusun-ngablak" class="dusun-polygon" points="10,820 80,860 60,940 1,900" />
+                <text x="40" y="890" class="dusun-label">Ngablak</text>
+
+                <!-- Ngampon -->
+                <polygon id="dusun-ngampon" class="dusun-polygon" points="40,420 120,420 100,500 20,500" />
+                <text x="70" y="470" class="dusun-label">Ngampon</text>
+
+                <!-- Padangan -->
+                <polygon id="dusun-padangan" class="dusun-polygon" points="20,340 100,340 120,420 40,420" />
+                <text x="70" y="390" class="dusun-label">Padangan</text>
+
+                <!-- Cepokojajar -->
+                <polygon id="dusun-cepokojajar" class="dusun-polygon" points="1,260 80,260 100,340 20,340" />
+                <text x="50" y="310" class="dusun-label">Cepokojajar</text>
+
+                <!-- Kuden -->
+                <polygon id="dusun-kuden" class="dusun-polygon" points="80,260 160,260 180,340 100,340" />
+                <text x="130" y="310" class="dusun-label">Kuden</text>
+
+                <!-- Monggang -->
+                <polygon id="dusun-monggang" class="dusun-polygon" points="160,260 240,260 200,360 180,340" />
+                <text x="200" y="310" class="dusun-label">Monggang</text>
+              </svg>
+            </div>
+
+            <!-- LEGEND SCALE -->
+            <div class="legend-card">
+              <div class="legend-item">
+                <div class="legend-color" style="background: rgba(187, 106, 106, 0.85);"></div>
+                <span>Lemah (&lt;50%)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: rgba(198, 146, 70, 0.85);"></div>
+                <span>Perebutan (50-79%)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: rgba(79, 139, 118, 0.85);"></div>
+                <span>Basis Kuat (&ge;80%)</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: rgba(188, 205, 221, 0.15);"></div>
+                <span>Tidak Ada Data</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT CARD: DUSUN DETAILS LIST & KPI PANEL -->
+          <div class="tps-kpi-stack">
+            <!-- TARGET KPI WILAYAH -->
+            <div class="card" style="margin-bottom: 0;">
+              <div class="section-title">Detail Wilayah Terpilih</div>
+              <div id="selectedDusunPanel">
+                <div class="tps-stat-callout" style="background: rgba(255,255,255,0.01); border-style: dashed;">
+                  <div class="tps-stat-callout-value" style="font-size: 22px; color: var(--text3);">Pilih Wilayah di Peta</div>
+                  <div class="tps-stat-callout-copy">Arahkan kursor atau klik wilayah dusun di peta untuk melihat performa statistik secara detail.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DUSUN ACCORDION LIST -->
+            <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column; flex: 1;">
+              <div class="section-title">Semua Dusun Sitimulyo</div>
+              <div class="dusun-list-container" id="dusunListContainer">
+                <div class="loading-state"><span class="loading"></span> Memuat data spasial...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAILS VOTE LIST BELOW MAP -->
+        <div class="card" style="margin-top: 24px;" id="detailVotersSection">
+          <div class="section-title">Daftar Hasil Perbandingan TPS <span id="voterTableDusunTitle"></span></div>
+          <p id="voterTableIntro">Klik salah satu Dusun pada peta untuk melihat daftar detail nama-nama pemilih di dusun tersebut.</p>
+          <div class="table-container">
+            <table class="result-table" id="votersDetailTable" style="display: none;">
+              <thead>
+                <tr>
+                  <th>Nama di TPS</th>
+                  <th>Gender</th>
+                  <th>Usia TPS</th>
+                  <th>Alamat TPS</th>
+                  <th>RT/RW</th>
+                  <th>Match di Database</th>
+                  <th>Status Cocok</th>
+                  <th>Skor</th>
+                </tr>
+              </thead>
+              <tbody id="votersDetailBody"></tbody>
+            </table>
+          </div>
+          <!-- Pagination -->
+          <div class="pagination" id="votersPagination" style="display: none;"></div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- FLOATING TOOLTIP FOR MAP HOVER -->
+<div class="map-tooltip" id="mapTooltip"></div>
+
+<script src="/js/auth.js"></script>
+<script>
+  let dusunStatsData = [];
+  let selectedDusunName = null;
+  let currentTpsFilter = "";
+  
+  // NIK & name mapping variations mapping
+  const dusunMapping = {
+    'babadan': 'dusun-babadan',
+    'karang anom': 'dusun-karang-anom',
+    'karanganom': 'dusun-karang-anom',
+    'karang tengah': 'dusun-karang-tengah',
+    'karangtengah': 'dusun-karang-tengah',
+    'nglengis': 'dusun-nglengis',
+    'mojosari': 'dusun-mojosari',
+    'karang ploso': 'dusun-karang-ploso',
+    'karangploso': 'dusun-karang-ploso',
+    'pager gunung 1': 'dusun-pager-gunung-1',
+    'pager gunung 2': 'dusun-pager-gunung-2',
+    'pagergunung 1': 'dusun-pager-gunung-1',
+    'pagergunung 2': 'dusun-pager-gunung-2',
+    'nganyang': 'dusun-nganyang',
+    'banyakan 1': 'dusun-banyakan-1',
+    'banyakan 2': 'dusun-banyakan-2',
+    'banyakan 3': 'dusun-banyakan-3',
+    'banyakan': 'dusun-banyakan-1',
+    'ngablak': 'dusun-ngablak',
+    'ngampon': 'dusun-ngampon',
+    'padangan': 'dusun-padangan',
+    'cepokojajar': 'dusun-cepokojajar',
+    'kuden': 'dusun-kuden',
+    'monggang': 'dusun-monggang',
+    'somokaton': 'dusun-somokaton',
+    'madugondo': 'dusun-madugondo',
+    'gondobari somokaton': 'dusun-gondobari-somokaton',
+    'gondobari-somokaton': 'dusun-gondobari-somokaton',
+    'gondobari': 'dusun-gondobari-somokaton',
+    'karang gayam': 'dusun-karang-gayam',
+    'karanggayam': 'dusun-karang-gayam',
+    'sitimulyo': 'dusun-karang-gayam' // Fallback to center for Sitimulyo
+  };
+
+  const mapTooltip = document.getElementById('mapTooltip');
+  const selectedDusunPanel = document.getElementById('selectedDusunPanel');
+  const tpsSelect = document.getElementById('tpsSelect');
+
+  async function loadTpsList() {
+    try {
+      const response = await fetch('/api/tps/list?limit=100', {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const res = await response.json();
+      if (res.data) {
+        tpsSelect.innerHTML = '<option value="">Semua TPS Tergabung</option>' +
+          res.data.map(t => `<option value="${t.nama_tps}">${t.nama_tps} (${t.total_data} orang)</option>`).join('');
+      }
+    } catch (err) {
+      console.error('Error load TPS list:', err);
+    }
+  }
+
+  async function loadDusunStats() {
+    try {
+      const url = `/api/tps/statistik-dusun` + (currentTpsFilter ? `?tps=${encodeURIComponent(currentTpsFilter)}` : '');
+      const response = await fetch(url, {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const res = await response.json();
+      dusunStatsData = res.data || [];
+      
+      resetMapPolygonsColors();
+      renderMapData();
+      renderDusunList();
+      
+      if (selectedDusunName) {
+        highlightDusun(selectedDusunName);
+      }
+    } catch (err) {
+      console.error('Error load Dusun stats:', err);
+    }
+  }
+
+  function resetMapPolygonsColors() {
+    document.querySelectorAll('.dusun-polygon').forEach(poly => {
+      poly.style.fill = 'rgba(188, 205, 221, 0.15)'; // Default
+    });
+  }
+
+  function renderMapData() {
+    dusunStatsData.forEach(item => {
+      const dusunKey = item.dusun.toLowerCase().trim();
+      const elementId = dusunMapping[dusunKey];
+      if (elementId) {
+        const poly = document.getElementById(elementId);
+        if (poly) {
+          const coverage = item.persentase_cocok;
+          let color = '';
+          if (coverage < 50) {
+            // Lemah (Merah)
+            color = `rgba(187, 106, 106, ${0.4 + (coverage / 100)})`;
+          } else if (coverage < 80) {
+            // Perebutan (Kuning)
+            color = `rgba(198, 146, 70, ${0.4 + ((coverage - 50) / 100)})`;
+          } else {
+            // Basis (Hijau)
+            color = `rgba(79, 139, 118, ${0.4 + ((coverage - 80) / 40)})`;
+          }
+          poly.style.fill = color;
+        }
+      }
+    });
+  }
+
+  function renderDusunList() {
+    const listContainer = document.getElementById('dusunListContainer');
+    if (!dusunStatsData.length) {
+      listContainer.innerHTML = '<div class="loading-state">Tidak ada data TPS yang di-upload atau dibandingkan. Silakan upload file TPS di modul import.</div>';
+      return;
+    }
+
+    listContainer.innerHTML = dusunStatsData.map(item => {
+      const isSelected = selectedDusunName && selectedDusunName.toLowerCase() === item.dusun.toLowerCase();
+      let chipClass = 'danger';
+      if (item.persentase_cocok >= 80) chipClass = 'success';
+      else if (item.persentase_cocok >= 50) chipClass = 'warning';
+      
+      return `
+        <div class="dusun-list-item ${isSelected ? 'active' : ''}" onclick="selectDusun('${item.dusun}')" id="dusun-item-${item.dusun.replace(/\s+/g, '-')}">
+          <div class="dusun-list-header">
+            <span class="dusun-list-title">${item.dusun}</span>
+            <span class="tps-chip ${chipClass}">${item.persentase_cocok}% Cocok</span>
+          </div>
+          <div class="dusun-list-stats">
+            <div class="dusun-mini-stat">
+              <span class="dusun-mini-stat-label">Total TPS</span>
+              <span class="dusun-mini-stat-value">${item.total_pemilih_tps}</span>
+            </div>
+            <div class="dusun-mini-stat">
+              <span class="dusun-mini-stat-label">Cocok</span>
+              <span class="dusun-mini-stat-value" style="color: var(--success);">${item.cocok}</span>
+            </div>
+            <div class="dusun-mini-stat">
+              <span class="dusun-mini-stat-label">Lemah</span>
+              <span class="dusun-mini-stat-value" style="color: var(--danger);">${item.tidak_cocok}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function selectDusun(dusunName) {
+    selectedDusunName = dusunName;
+    highlightDusun(dusunName);
+    
+    // Highlight list item
+    document.querySelectorAll('.dusun-list-item').forEach(item => item.classList.remove('active'));
+    const listItem = document.getElementById(`dusun-item-${dusunName.replace(/\s+/g, '-')}`);
+    if (listItem) {
+      listItem.classList.add('active');
+      listItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Load detailed table
+    loadDetailedVoters(dusunName, 1);
+  }
+
+  function highlightDusun(dusunName) {
+    // Reset all polygon outlines
+    document.querySelectorAll('.dusun-polygon').forEach(poly => {
+      poly.style.stroke = 'var(--border)';
+      poly.style.strokeWidth = '2.5';
+    });
+
+    const dusunKey = dusunName.toLowerCase().trim();
+    const elementId = dusunMapping[dusunKey];
+    if (elementId) {
+      const poly = document.getElementById(elementId);
+      if (poly) {
+        poly.style.stroke = 'var(--accent)';
+        poly.style.strokeWidth = '5';
+      }
+    }
+
+    // Render detailed KPI card
+    const item = dusunStatsData.find(d => d.dusun.toLowerCase() === dusunName.toLowerCase());
+    if (item) {
+      let cardClass = 'danger';
+      let title = '🔴 WILAYAH LEMAH';
+      let recom = 'Kirim kader tambahan dan penetrasi campaign secara personal door-to-door karena jangkauan pemilih sangat minim.';
+      
+      if (item.persentase_cocok >= 80) {
+        cardClass = 'success';
+        title = '🟢 BASIS AMAN';
+        recom = 'Pertahankan intensitas komunikasi, pastikan logistik kampanye tersalurkan, dan kawal kehadiran pemilih ke TPS saat hari H.';
+      } else if (item.persentase_cocok >= 50) {
+        cardClass = 'warning';
+        title = '🟡 WILAYAH PEREBUTAN';
+        recom = 'Segera verifikasi data "PERLU DICEK" karena ada typo minor. Tingkatkan penetrasi kampanye tipis agar menjadi basis hijau.';
+      }
+
+      selectedDusunPanel.innerHTML = `
+        <div class="tps-stat-callout ${cardClass}">
+          <div class="tps-stat-callout-label" style="font-weight:800; font-size:13px; margin-bottom:8px;">${title}</div>
+          <div class="tps-stat-callout-value" style="font-size: 26px;">${item.dusun}</div>
+          <div style="font-size:14px; font-weight:700; margin-top:4px;">Coverage: ${item.persentase_cocok}% (${item.cocok} dari ${item.total_pemilih_tps} Pemilih TPS)</div>
+          <div class="tps-inline-meta" style="margin-top:12px;">
+            <span class="tps-chip cocok">✓ Cocok: ${item.cocok}</span>
+            <span class="tps-chip warning">⚠ Perlu Cek: ${item.perlu_dicek}</span>
+            <span class="tps-chip danger">✗ Lemah: ${item.tidak_cocok}</span>
+          </div>
+          <div class="tps-note-box" style="margin-top: 16px; background: rgba(0,0,0,0.1); border-color: rgba(255,255,255,0.05);">
+            <strong>Rekomendasi Taktis:</strong>
+            <span style="font-size: 13px; line-height: 1.4;">${recom}</span>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // LOAD DETAILED VOTERS BY DUSUN WITH PAGINATION
+  async function loadDetailedVoters(dusunName, page = 1) {
+    const table = document.getElementById('votersDetailTable');
+    const tbody = document.getElementById('votersDetailBody');
+    const pagination = document.getElementById('votersPagination');
+    const titleSpan = document.getElementById('voterTableDusunTitle');
+    const intro = document.getElementById('voterTableIntro');
+
+    tbody.innerHTML = '<tr><td colspan="8" class="loading-state"><span class="loading"></span> Memuat daftar pemilih...</td></tr>';
+    table.style.display = 'table';
+    pagination.style.display = 'none';
+    intro.style.display = 'none';
+    titleSpan.textContent = `— Dusun ${dusunName}`;
+
+    try {
+      // First, get all comparison data from server
+      let url = `/api/tps/${encodeURIComponent(currentTpsFilter || 'SITIMULYO')}/hasil?page=${page}&limit=10`;
+      // Note: If no specific TPS select filter, we fallback to 'SITIMULYO' or search across TPS.
+      // Since '/api/tps/:tps/hasil' requires tps, we dynamically resolve or fetch accordingly.
+      
+      const tpsToFetch = currentTpsFilter || (tpsSelect.options[1] ? tpsSelect.options[1].value : 'SITIMULYO');
+      
+      url = `/api/tps/${encodeURIComponent(tpsToFetch)}/hasil?page=${page}&limit=20`;
+      
+      const response = await fetch(url, {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const res = await response.json();
+      
+      // Filter clientside to only match the selected Dusun
+      const allResults = res.data || [];
+      const filtered = allResults.filter(item => {
+        // Match either tps dusun or pemilih dusun
+        const tpsDusun = String(item.dusun_tps || '').toLowerCase().trim();
+        const pemilihDusun = String(item.dusun_pemilih || '').toLowerCase().trim();
+        const target = dusunName.toLowerCase().trim();
+        return tpsDusun === target || pemilihDusun === target;
+      });
+
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="loading-state">Tidak ada rincian pemilih hasil perbandingan di Dusun ${dusunName} untuk TPS terpilih ini.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => {
+        let statusClass = 'tidak-cocok';
+        let chipClass = 'danger';
+        if (item.status_cocok === 'COCOK') { statusClass = 'cocok'; chipClass = 'success'; }
+        else if (item.status_cocok === 'PERLU_DICEK') { statusClass = 'perlu_dicek'; chipClass = 'warning'; }
+
+        return `
+          <tr class="${statusClass}">
+            <td><strong>${item.nama_tps}</strong></td>
+            <td>${item.jk_tps || '-'}</td>
+            <td>${item.usia_tps || '-'} tahun</td>
+            <td>${item.alamat_tps || '-'}</td>
+            <td>RT ${item.rt_tps || '00'} / RW ${item.rw_tps || '00'}</td>
+            <td>${item.nama_pemilih ? `<strong>${item.nama_pemilih}</strong>` : '<span style="color:var(--text3);">Tidak ada match</span>'}</td>
+            <td><span class="tps-chip ${chipClass}">${item.status_cocok}</span></td>
+            <td><strong>${Math.round(item.skor_total)}%</strong></td>
+          </tr>
+        `;
+      }).join('');
+
+      // Simple pagination logic for filtered data
+      const total = res.pagination.total;
+      const limit = res.pagination.limit;
+      const totalPages = res.pagination.totalPages;
+
+      if (totalPages > 1) {
+        pagination.style.display = 'flex';
+        let pagesHtml = '';
+        for (let i = 1; i <= totalPages; i++) {
+          pagesHtml += `<button class="${i === page ? 'active' : ''}" onclick="loadDetailedVoters('${dusunName}', ${i})">${i}</button>`;
+        }
+        pagination.innerHTML = pagesHtml;
+      }
+    } catch (err) {
+      console.error('Error load detailed voters:', err);
+      tbody.innerHTML = `<tr><td colspan="8" class="loading-state" style="color: var(--danger);">Gagal mengambil rincian data. Pastikan data TPS sudah dibandingkan terlebih dahulu di menu Perbandingan TPS.</td></tr>`;
+    }
+  }
+
+  // MAP POLYGON INTERACTION EVENT LISTENERS
+  document.querySelectorAll('.dusun-polygon').forEach(poly => {
+    // Hover Tooltip
+    poly.addEventListener('mousemove', (e) => {
+      const elementId = poly.getAttribute('id');
+      // Find matching dusun stats
+      const dusunEntry = Object.entries(dusunMapping).find(([key, val]) => val === elementId);
+      if (dusunEntry) {
+        const dusunName = dusunEntry[0];
+        const stats = dusunStatsData.find(d => d.dusun.toLowerCase().trim() === dusunName);
+        
+        mapTooltip.style.display = 'block';
+        mapTooltip.style.left = (e.pageX + 15) + 'px';
+        mapTooltip.style.top = (e.pageY + 15) + 'px';
+        
+        if (stats) {
+          mapTooltip.innerHTML = `
+            <div class="map-tooltip-title">${stats.dusun}</div>
+            <div class="map-tooltip-row"><span>Total Pemilih TPS:</span><span class="map-tooltip-val">${stats.total_pemilih_tps}</span></div>
+            <div class="map-tooltip-row"><span style="color:var(--success);">✓ Cocok:</span><span class="map-tooltip-val" style="color:var(--success);">${stats.cocok}</span></div>
+            <div class="map-tooltip-row"><span style="color:var(--warning);">⚠ Perlu Cek:</span><span class="map-tooltip-val" style="color:var(--warning);">${stats.perlu_dicek}</span></div>
+            <div class="map-tooltip-row"><span style="color:var(--danger);">✗ Lemah:</span><span class="map-tooltip-val" style="color:var(--danger);">${stats.tidak_cocok}</span></div>
+            <div class="map-tooltip-row" style="margin-top:8px; font-weight:700; border-top:1px dashed rgba(255,255,255,0.1); padding-top:4px;">
+              <span>Coverage:</span><span style="color:var(--accent);">${stats.persentase_cocok}%</span>
+            </div>
+          `;
+        } else {
+          // Capitalize first letter of words
+          const formattedName = dusunName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+          mapTooltip.innerHTML = `
+            <div class="map-tooltip-title">${formattedName}</div>
+            <div class="map-tooltip-row"><span style="color:var(--text3);">Belum ada data pemilih</span></div>
+          `;
+        }
+      }
+    });
+
+    poly.addEventListener('mouseleave', () => {
+      mapTooltip.style.display = 'none';
+    });
+
+    // Click Selector
+    poly.addEventListener('click', () => {
+      const elementId = poly.getAttribute('id');
+      const dusunEntry = Object.entries(dusunMapping).find(([key, val]) => val === elementId);
+      if (dusunEntry) {
+        const dusunName = dusunEntry[0];
+        // Capitalize words
+        const formattedName = dusunName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        selectDusun(formattedName);
+      }
+    });
+  });
+
+  // FILTERS EVENT HANDLERS
+  tpsSelect.addEventListener('change', (e) => {
+    currentTpsFilter = e.target.value;
+    loadDusunStats();
+  });
+
+  document.getElementById('btnResetFilter').addEventListener('click', () => {
+    selectedDusunName = null;
+    resetMapPolygonsColors();
+    renderMapData();
+    
+    selectedDusunPanel.innerHTML = `
+      <div class="tps-stat-callout" style="background: rgba(255,255,255,0.01); border-style: dashed;">
+        <div class="tps-stat-callout-value" style="font-size: 22px; color: var(--text3);">Pilih Wilayah di Peta</div>
+        <div class="tps-stat-callout-copy">Arahkan kursor atau klik wilayah dusun di peta untuk melihat performa statistik secara detail.</div>
+      </div>
+    `;
+
+    document.querySelectorAll('.dusun-list-item').forEach(item => item.classList.remove('active'));
+    document.getElementById('votersDetailTable').style.display = 'none';
+    document.getElementById('votersPagination').style.display = 'none';
+    document.getElementById('voterTableIntro').style.display = 'block';
+    document.getElementById('voterTableDusunTitle').textContent = '';
+  });
+
+  window.addEventListener('load', async () => {
+    loadUserInfo();
+    await loadTpsList();
+    await loadDusunStats();
+  });
+</script>
+</body>
+</html>

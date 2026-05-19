@@ -2109,6 +2109,44 @@ app.get('/api/tps/statistik', verifyToken, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// 5b️⃣ Statistik per dusun untuk peta wilayah
+app.get('/api/tps/statistik-dusun', verifyToken, async (req, res) => {
+  try {
+    const { tps } = req.query;
+    let where = 'WHERE 1=1';
+    const params = [];
+    
+    if (tps) {
+      where += ' AND dt.nama_tps = ?';
+      params.push(tps);
+    }
+
+    const data = await query(`
+      SELECT 
+        TRIM(dt.dusun) AS dusun,
+        COUNT(dt.id) AS total_pemilih_tps,
+        COUNT(CASE WHEN hp.status_cocok = 'COCOK' THEN 1 END) AS cocok,
+        COUNT(CASE WHEN hp.status_cocok = 'PERLU_DICEK' THEN 1 END) AS perlu_dicek,
+        COUNT(CASE WHEN hp.status_cocok = 'TIDAK_COCOK' OR hp.status_cocok IS NULL THEN 1 END) AS tidak_cocok,
+        ROUND(COUNT(CASE WHEN hp.status_cocok = 'COCOK' THEN 1 END) / COUNT(dt.id) * 100, 2) AS persentase_cocok,
+        ROUND(COUNT(CASE WHEN hp.status_cocok IN ('COCOK', 'PERLU_DICEK') THEN 1 END) / COUNT(dt.id) * 100, 2) AS persentase_optimal
+      FROM data_tps dt
+      LEFT JOIN hasil_perbandingan hp ON hp.data_tps_id = dt.id
+      ${where}
+      AND TRIM(COALESCE(dt.dusun, '')) <> ''
+      GROUP BY TRIM(dt.dusun)
+      ORDER BY persentase_cocok DESC
+    `, params);
+
+    res.json({
+      status: 'success',
+      data
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── API ADMIN (Manage User) ────────────────────────
 // Note: isAdmin and isSuperadmin are imported from ./middleware/auth
 
@@ -2212,6 +2250,7 @@ app.get('/upload-tps',          (req, res) => res.sendFile(path.join(__dirname, 
 app.get('/kelola-tps',          (req, res) => res.sendFile(path.join(__dirname, 'public', 'kelola-tps.html')));
 app.get('/perbandingan-tps',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'perbandingan-tps.html')));
 app.get('/statistik-tps',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'statistik-tps.html')));
+app.get('/peta-sitimulyo',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'peta-sitimulyo.html')));
 
 // ── Ensure role enum includes AdminKantor and User ──
 async function ensureRoleEnum() {

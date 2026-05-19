@@ -1,6 +1,6 @@
 
 require('dotenv').config();
-const { query, testConnection } = require('./db');
+const { query, testConnection } = require('../db');
 
 async function checkKader() {
     try {

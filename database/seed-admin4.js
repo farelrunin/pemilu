@@ -5,7 +5,7 @@
 
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { query, testConnection } = require('./db');
+const { query, testConnection } = require('../db');
 
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
@@ -14,8 +14,8 @@ function genId() {
 async function seed() {
   await testConnection();
 
-  const username = 'andra';
-  const password = 'andraadminsitimulyo0002'; // Ganti setelah login pertama!
+  const username = 'fariz';
+  const password = 'farizadminsitimulyo0002'; // Ganti setelah login pertama!
   const role = 'Superadmin';
 
   // Cek apakah sudah ada

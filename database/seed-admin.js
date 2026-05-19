@@ -5,7 +5,7 @@
 
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { query, testConnection } = require('./db');
+const { query, testConnection } = require('../db');
 
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
@@ -14,9 +14,9 @@ function genId() {
 async function seed() {
   await testConnection();
 
-  const username = 'fariz';
-  const password = 'farizadminsitimulyo0002'; // Ganti setelah login pertama!
-  const role = 'Superadmin';
+  const username = 'admin';
+  const password = 'admin123'; // Ganti setelah login pertama!
+  const role     = 'Superadmin';
 
   // Cek apakah sudah ada
   const existing = await query('SELECT id FROM users WHERE username = ?', [username]);
@@ -26,7 +26,7 @@ async function seed() {
   }
 
   const hash = await bcrypt.hash(password, 12);
-  const id = genId();
+  const id   = genId();
 
   await query(
     'INSERT INTO users (id, username, password_hash, role) VALUES (?, ?, ?, ?)',

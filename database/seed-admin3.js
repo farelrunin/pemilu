@@ -1,21 +1,27 @@
-// create-test-user.js — Buat akun user biasa untuk testing
+// ════════════════════════════════════════
+//  seed-admin.js — Buat akun Superadmin default
+//  Jalankan sekali: node seed-admin.js
+// ════════════════════════════════════════
+
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { query, testConnection } = require('./db');
+const { query, testConnection } = require('../db');
 
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
 }
 
-async function create() {
+async function seed() {
   await testConnection();
-  const username = 'testuser';
-  const password = 'testuser123';
-  const role = 'Kader';
 
+  const username = 'andra';
+  const password = 'andraadminsitimulyo0002'; // Ganti setelah login pertama!
+  const role = 'Superadmin';
+
+  // Cek apakah sudah ada
   const existing = await query('SELECT id FROM users WHERE username = ?', [username]);
   if (existing.length) {
-    console.log(`⚠️ User "${username}" sudah ada.`);
+    console.log(`⚠️  User "${username}" sudah ada. Tidak perlu seed ulang.`);
     process.exit(0);
   }
 
@@ -29,18 +35,15 @@ async function create() {
 
   console.log('');
   console.log('═══════════════════════════════════════');
-  console.log('  ✅ Akun User Biasa berhasil dibuat!');
+  console.log('  ✅ Akun Superadmin berhasil dibuat!');
   console.log('═══════════════════════════════════════');
   console.log(`  Username : ${username}`);
   console.log(`  Password : ${password}`);
   console.log(`  Role     : ${role}`);
   console.log('');
-  console.log('  Gunakan akun ini untuk testing tampilan user biasa.');
+  console.log('  ⚠️  GANTI PASSWORD setelah login pertama!');
   console.log('═══════════════════════════════════════');
   process.exit(0);
 }
 
-create().catch(e => {
-  console.error('❌ Gagal:', e.message);
-  process.exit(1);
-});
+seed().catch(e => { console.error('❌ Gagal:', e.message); process.exit(1); });

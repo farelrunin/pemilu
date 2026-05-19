@@ -1,7 +1,7 @@
 // reset-farel-admin.js — Reset akun farel ke kredensial awal
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
-const { query, testConnection } = require('./db');
+const { query, testConnection } = require('../db');
 
 async function reset() {
   await testConnection();
