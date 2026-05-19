@@ -651,7 +651,13 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
        selectParams.push(String(dusun).trim());
     }
 
-    selectQueryStr += ` ORDER BY t.skor_total DESC, t.nama_tps ASC LIMIT ? OFFSET ?`;
+    selectQueryStr += ` ORDER BY 
+      CAST(NULLIF(t.rt_tps, '') AS UNSIGNED) ASC, 
+      t.rt_tps ASC,
+      CAST(NULLIF(t.rw_tps, '') AS UNSIGNED) ASC, 
+      t.rw_tps ASC,
+      t.nama_tps ASC 
+      LIMIT ? OFFSET ?`;
     selectParams.push(limit, offset);
 
     const list = await query(selectQueryStr, selectParams);

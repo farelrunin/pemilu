@@ -7,6 +7,63 @@
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/tps-pages.css">
   <style>
+    /* Print Friendly Stylesheet */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #detailVotersSection, #detailVotersSection * {
+        visibility: visible;
+      }
+      #detailVotersSection {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border: none;
+        background: white !important;
+        color: black !important;
+      }
+      #btnPrintVoters, #voterTableIntro, .tps-inline-meta, .tps-note-box {
+        display: none !important;
+      }
+      .table-container {
+        overflow: visible !important;
+      }
+      table.result-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        background: white !important;
+        color: black !important;
+      }
+      table.result-table th, table.result-table td {
+        border: 1px solid #ccc !important;
+        padding: 6px 10px !important;
+        color: black !important;
+        font-size: 11px !important;
+      }
+      table.result-table th {
+        background-color: #f2f2f2 !important;
+        font-weight: bold !important;
+      }
+      table.result-table tr {
+        background: transparent !important;
+        page-break-inside: avoid !important;
+      }
+      .tps-chip {
+        border: 1px solid #999 !important;
+        color: black !important;
+        background: transparent !important;
+        padding: 2px 6px !important;
+      }
+      strong {
+        color: black !important;
+      }
+    }
+
     /* Styling Peta Premium & Glassmorphism */
     .map-dashboard-grid {
       display: grid;
@@ -444,7 +501,12 @@
 
         <!-- DETAILS VOTE LIST BELOW MAP -->
         <div class="card" style="margin-top: 24px;" id="detailVotersSection">
-          <div class="section-title">Daftar Hasil Perbandingan TPS <span id="voterTableDusunTitle"></span></div>
+          <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px;">
+            <span>Daftar Hasil Perbandingan TPS <span id="voterTableDusunTitle"></span></span>
+            <button class="btn btn-outline" id="btnPrintVoters" style="display: none; padding: 6px 14px; font-size: 13px;" onclick="window.print()">
+              🖨️ Cetak Daftar RT
+            </button>
+          </div>
           <p id="voterTableIntro">Klik salah satu Dusun pada peta untuk melihat daftar detail nama-nama pemilih di dusun tersebut.</p>
           <div class="table-container">
             <table class="result-table" id="votersDetailTable" style="display: none;">
@@ -707,10 +769,12 @@
     const pagination = document.getElementById('votersPagination');
     const titleSpan = document.getElementById('voterTableDusunTitle');
     const intro = document.getElementById('voterTableIntro');
+    const printBtn = document.getElementById('btnPrintVoters');
 
     tbody.innerHTML = '<tr><td colspan="8" class="loading-state"><span class="loading"></span> Memuat daftar pemilih...</td></tr>';
     table.style.display = 'table';
     pagination.style.display = 'none';
+    if (printBtn) printBtn.style.display = 'none';
     intro.style.display = 'none';
     titleSpan.textContent = `— Dusun ${dusunName}`;
 
@@ -725,6 +789,8 @@
       const res = await response.json();
       
       const filtered = res.data || [];
+
+      if (printBtn && filtered.length) printBtn.style.display = 'inline-block';
 
       if (!filtered.length) {
         tbody.innerHTML = `<tr><td colspan="8" class="loading-state">Tidak ada rincian pemilih hasil perbandingan di Dusun ${dusunName} untuk TPS terpilih ini.</td></tr>`;
@@ -842,6 +908,8 @@
     document.querySelectorAll('.dusun-list-item').forEach(item => item.classList.remove('active'));
     document.getElementById('votersDetailTable').style.display = 'none';
     document.getElementById('votersPagination').style.display = 'none';
+    const printBtn = document.getElementById('btnPrintVoters');
+    if (printBtn) printBtn.style.display = 'none';
     document.getElementById('voterTableIntro').style.display = 'block';
     document.getElementById('voterTableDusunTitle').textContent = '';
   });
