@@ -600,9 +600,9 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
  
      let selectQueryStr = `
        SELECT * FROM (
-         SELECT hp.id, hp.pemilih_id, dt.nama AS nama_tps, dt.jenis_kelamin AS jk_tps, dt.usia AS usia_tps, dt.dusun AS dusun_tps, dt.rt AS rt_tps, dt.rw AS rw_tps,
+         SELECT hp.id, hp.pemilih_id, dt.nama AS nama_tps, dt.jenis_kelamin AS jk_tps, dt.usia AS usia_tps, dt.dusun AS dusun_tps, dt.rt AS rt_tps, dt.rw AS rw_tps, dt.alamat AS alamat_tps,
                 hp.status_cocok, hp.skor_total, hp.catatan,
-                p.nama AS nama_pemilih, p.nik,
+                p.nama AS nama_pemilih, p.nik, TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS usia_pemilih,
                 k.dusun AS dusun_pemilih, k.kordus, k.rt AS rt_pemilih,
                 CONCAT('Kader ', k.nomor, ' — ', k.nama) AS nama_kader,
                 CASE 
