@@ -81,6 +81,11 @@
       strong {
         color: black !important;
       }
+      .tps-link-match {
+        color: black !important;
+        text-decoration: none !important;
+        font-weight: bold !important;
+      }
     }
 
     /* Styling Peta Premium & Glassmorphism */
@@ -872,7 +877,7 @@
             <td>${item.usia_tps || '-'} tahun</td>
             <td>${item.alamat_tps || '-'}</td>
             <td>RT ${item.rt_tps || '00'} / RW ${item.rw_tps || '00'}</td>
-            <td>${item.nama_pemilih ? `<strong>${item.nama_pemilih}</strong>` : '<span style="color:var(--text3);">Tidak ada match</span>'}</td>
+            <td>${item.nama_pemilih ? `<a href="/edit-pemilih?id=${item.pemilih_id}" target="_blank" class="tps-link-match" style="color: var(--accent); text-decoration: underline; font-weight: bold;">${item.nama_pemilih}</a>` : '<span style="color:var(--text3);">Tidak ada match</span>'}</td>
             <td><span class="tps-chip ${chipClass}">${item.status_cocok}</span></td>
             <td><strong>${Math.round(item.skor_total)}%</strong></td>
           </tr>
