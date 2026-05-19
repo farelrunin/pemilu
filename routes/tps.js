@@ -627,8 +627,9 @@ router.get('/statistik-dusun', verifyToken, async (req, res) => {
     const data = await query(`
       SELECT 
         CASE 
-          WHEN TRIM(COALESCE(dt.dusun, '')) = '' THEN 'Sitimulyo'
-          ELSE TRIM(dt.dusun)
+          WHEN TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, '')) = '' THEN 'Sitimulyo'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) = 'sitimulyo' THEN 'Sitimulyo'
+          ELSE TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun))
         END AS dusun,
         COUNT(dt.id) AS total_pemilih_tps,
         COUNT(CASE WHEN hp.status_cocok = 'COCOK' THEN 1 END) AS cocok,
@@ -638,11 +639,27 @@ router.get('/statistik-dusun', verifyToken, async (req, res) => {
         ROUND(COUNT(CASE WHEN hp.status_cocok IN ('COCOK', 'PERLU_DICEK') THEN 1 END) / COUNT(dt.id) * 100, 2) AS persentase_optimal
       FROM data_tps dt
       LEFT JOIN hasil_perbandingan hp ON hp.data_tps_id = dt.id
+      LEFT JOIN pemilih p ON p.id = hp.pemilih_id
+      LEFT JOIN kader k ON k.id = p.kader_id
+      LEFT JOIN (
+        SELECT rt, rw, MAX(dusun) AS dusun
+        FROM (
+          SELECT COALESCE(p_sub.rt, k_sub.rt) AS rt, COALESCE(p_sub.rw, k_sub.rw) AS rw, k_sub.dusun
+          FROM pemilih p_sub
+          JOIN kader k_sub ON k_sub.id = p_sub.kader_id
+          UNION ALL
+          SELECT rt, rw, dusun
+          FROM kader
+        ) AS combined
+        WHERE rt IS NOT NULL AND rt <> ''
+        GROUP BY rt, rw
+      ) AS rt_mapping ON rt_mapping.rt = dt.rt AND rt_mapping.rw = dt.rw
       ${where}
       GROUP BY 
         CASE 
-          WHEN TRIM(COALESCE(dt.dusun, '')) = '' THEN 'Sitimulyo'
-          ELSE TRIM(dt.dusun)
+          WHEN TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, '')) = '' THEN 'Sitimulyo'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) = 'sitimulyo' THEN 'Sitimulyo'
+          ELSE TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun))
         END
       ORDER BY persentase_cocok DESC
     `, params);
