@@ -715,7 +715,7 @@
     titleSpan.textContent = `— Dusun ${dusunName}`;
 
     try {
-      const tpsToFetch = currentTpsFilter || (tpsSelect.options[1] ? tpsSelect.options[1].value : 'SITIMULYO');
+      const tpsToFetch = currentTpsFilter || 'SITIMULYO';
       
       const url = `/api/tps/${encodeURIComponent(tpsToFetch)}/hasil?dusun=${encodeURIComponent(dusunName)}&page=${page}&limit=20`;
       
