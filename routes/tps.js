@@ -541,7 +541,7 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 25;
     const offset = (page - 1) * limit;
-    const { dusun } = req.query;
+    const { dusun, rt } = req.query;
 
     const tps = req.params.nama_tps;
     const isAllTps = (!tps || tps.toLowerCase() === 'all' || tps.toLowerCase() === 'sitimulyo');
@@ -586,6 +586,10 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
      if (dusun) {
        countQueryStr += ` AND LOWER(t.resolved_dusun) = LOWER(?)`;
        countParams.push(String(dusun).trim());
+     }
+     if (rt) {
+       countQueryStr += ` AND CAST(NULLIF(t.rt_tps, '') AS UNSIGNED) = ?`;
+       countParams.push(parseInt(rt));
      }
  
      const [totalRow] = await query(countQueryStr, countParams);
@@ -635,7 +639,11 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
      if (dusun) {
        selectQueryStr += ` AND LOWER(t.resolved_dusun) = LOWER(?)`;
        selectParams.push(String(dusun).trim());
-    }
+     }
+     if (rt) {
+       selectQueryStr += ` AND CAST(NULLIF(t.rt_tps, '') AS UNSIGNED) = ?`;
+       selectParams.push(parseInt(rt));
+     }
 
     selectQueryStr += ` ORDER BY 
       CAST(NULLIF(t.rt_tps, '') AS UNSIGNED) ASC, 

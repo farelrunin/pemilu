@@ -9,56 +9,75 @@
   <style>
     /* Print Friendly Stylesheet */
     @media print {
-      body * {
-        visibility: hidden;
+      /* Sembunyikan elemen navigasi, sidebar, peta, topbar, dan pagination saat cetak */
+      .app-sidebar, .app-topbar, .page-header, .filters, .map-dashboard-grid, .map-tooltip,
+      #btnPrintVoters, #voterTableIntro, #votersPagination, .pagination, #rtSelectFilter {
+        display: none !important;
       }
-      #detailVotersSection, #detailVotersSection * {
-        visibility: visible;
+      
+      /* Reset layout wrappers agar bersifat flow (block) normal bukan flex/grid */
+      .app-shell, .app-main, .app-main-body, .container {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: transparent !important;
       }
+
       #detailVotersSection {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        box-shadow: none;
-        border: none;
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
         background: white !important;
         color: black !important;
       }
-      #btnPrintVoters, #voterTableIntro, .tps-inline-meta, .tps-note-box {
-        display: none !important;
+      
+      #detailVotersSection * {
+        visibility: visible !important;
       }
+      
       .table-container {
         overflow: visible !important;
       }
+      
       table.result-table {
         width: 100% !important;
         border-collapse: collapse !important;
         background: white !important;
         color: black !important;
       }
+      
       table.result-table th, table.result-table td {
         border: 1px solid #ccc !important;
         padding: 6px 10px !important;
         color: black !important;
         font-size: 11px !important;
       }
+      
       table.result-table th {
         background-color: #f2f2f2 !important;
         font-weight: bold !important;
       }
+      
       table.result-table tr {
         background: transparent !important;
         page-break-inside: avoid !important;
       }
+      
       .tps-chip {
         border: 1px solid #999 !important;
         color: black !important;
         background: transparent !important;
         padding: 2px 6px !important;
       }
+      
       strong {
         color: black !important;
       }
@@ -503,9 +522,29 @@
         <div class="card" style="margin-top: 24px;" id="detailVotersSection">
           <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 12px;">
             <span>Daftar Hasil Perbandingan TPS <span id="voterTableDusunTitle"></span></span>
-            <button class="btn btn-outline" id="btnPrintVoters" style="display: none; padding: 6px 14px; font-size: 13px;" onclick="window.print()">
-              🖨️ Cetak Daftar RT
-            </button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <select id="rtSelectFilter" class="tps-select" style="padding: 6px 12px; font-size: 13px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border); color: var(--text); display: none;">
+                <option value="">Semua RT</option>
+                <option value="1">RT 1</option>
+                <option value="2">RT 2</option>
+                <option value="3">RT 3</option>
+                <option value="4">RT 4</option>
+                <option value="5">RT 5</option>
+                <option value="6">RT 6</option>
+                <option value="7">RT 7</option>
+                <option value="8">RT 8</option>
+                <option value="9">RT 9</option>
+                <option value="10">RT 10</option>
+                <option value="11">RT 11</option>
+                <option value="12">RT 12</option>
+                <option value="13">RT 13</option>
+                <option value="14">RT 14</option>
+                <option value="15">RT 15</option>
+              </select>
+              <button class="btn btn-outline" id="btnPrintVoters" style="display: none; padding: 6px 14px; font-size: 13px;" onclick="window.print()">
+                🖨️ Cetak Daftar RT
+              </button>
+            </div>
           </div>
           <p id="voterTableIntro">Klik salah satu Dusun pada peta untuk melihat daftar detail nama-nama pemilih di dusun tersebut.</p>
           <div class="table-container">
@@ -705,6 +744,10 @@
       listItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
+    // Reset RT filter to empty when changing dusun
+    const rtSelect = document.getElementById('rtSelectFilter');
+    if (rtSelect) rtSelect.value = "";
+
     // Load detailed table
     loadDetailedVoters(dusunName, 1);
   }
@@ -770,18 +813,23 @@
     const titleSpan = document.getElementById('voterTableDusunTitle');
     const intro = document.getElementById('voterTableIntro');
     const printBtn = document.getElementById('btnPrintVoters');
+    const rtSelect = document.getElementById('rtSelectFilter');
 
     tbody.innerHTML = '<tr><td colspan="8" class="loading-state"><span class="loading"></span> Memuat daftar pemilih...</td></tr>';
     table.style.display = 'table';
     pagination.style.display = 'none';
     if (printBtn) printBtn.style.display = 'none';
+    if (rtSelect) rtSelect.style.display = 'none';
     intro.style.display = 'none';
-    titleSpan.textContent = `— Dusun ${dusunName}`;
+    
+    const rtVal = rtSelect ? rtSelect.value : "";
+    titleSpan.textContent = `— Dusun ${dusunName}${rtVal ? ` (RT ${rtVal})` : ''}`;
 
     try {
       const tpsToFetch = currentTpsFilter || 'SITIMULYO';
+      const limit = rtVal ? 1000 : 20;
       
-      const url = `/api/tps/${encodeURIComponent(tpsToFetch)}/hasil?dusun=${encodeURIComponent(dusunName)}&page=${page}&limit=20`;
+      const url = `/api/tps/${encodeURIComponent(tpsToFetch)}/hasil?dusun=${encodeURIComponent(dusunName)}&page=${page}&limit=${limit}${rtVal ? `&rt=${rtVal}` : ''}`;
       
       const response = await fetch(url, {
         headers: { 'Authorization': 'Bearer ' + getToken() }
@@ -791,6 +839,7 @@
       const filtered = res.data || [];
 
       if (printBtn && filtered.length) printBtn.style.display = 'inline-block';
+      if (rtSelect) rtSelect.style.display = 'inline-block';
 
       if (!filtered.length) {
         tbody.innerHTML = `<tr><td colspan="8" class="loading-state">Tidak ada rincian pemilih hasil perbandingan di Dusun ${dusunName} untuk TPS terpilih ini.</td></tr>`;
@@ -893,6 +942,12 @@
     loadDusunStats();
   });
 
+  document.getElementById('rtSelectFilter').addEventListener('change', () => {
+    if (selectedDusunName) {
+      loadDetailedVoters(selectedDusunName, 1);
+    }
+  });
+
   document.getElementById('btnResetFilter').addEventListener('click', () => {
     selectedDusunName = null;
     resetMapPolygonsColors();
@@ -908,8 +963,16 @@
     document.querySelectorAll('.dusun-list-item').forEach(item => item.classList.remove('active'));
     document.getElementById('votersDetailTable').style.display = 'none';
     document.getElementById('votersPagination').style.display = 'none';
+    
     const printBtn = document.getElementById('btnPrintVoters');
     if (printBtn) printBtn.style.display = 'none';
+    
+    const rtSelect = document.getElementById('rtSelectFilter');
+    if (rtSelect) {
+      rtSelect.value = "";
+      rtSelect.style.display = 'none';
+    }
+    
     document.getElementById('voterTableIntro').style.display = 'block';
     document.getElementById('voterTableDusunTitle').textContent = '';
   });
