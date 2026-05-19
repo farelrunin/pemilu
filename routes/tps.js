@@ -7,6 +7,22 @@ const { verifyToken, isAdmin } = require('../middleware/auth');
 
 const upload = multer({ dest: 'uploads/', limits: { fileSize: 10 * 1024 * 1024 } });
 
+// TEMPORARY SCHEMA DEBUG ENDPOINT
+router.get('/debug-db', async (req, res) => {
+  try {
+    const pemilihCols = await query('DESCRIBE pemilih');
+    const kaderCols = await query('DESCRIBE kader');
+    const dataTpsCols = await query('DESCRIBE data_tps');
+    res.json({
+      pemilih: pemilihCols,
+      kader: kaderCols,
+      data_tps: dataTpsCols
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── SIMILARITY ENGINE & SPREADSHEET HELPERS ────────────────────────
 
 function normalizeMatchText(value) {
