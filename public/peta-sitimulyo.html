@@ -597,6 +597,9 @@
               <button class="btn btn-outline" id="btnPrintVoters" style="display: none; padding: 6px 14px; font-size: 13px;" onclick="window.print()">
                 🖨️ Cetak Daftar RT
               </button>
+              <button class="btn btn-primary" id="btnExportVoters" style="display: none; padding: 6px 14px; font-size: 13px; background: var(--accent); color: white; border: none;" onclick="exportDetailedVoters()">
+                📥 Export Excel/CSV
+              </button>
             </div>
           </div>
           <p id="voterTableIntro">Klik salah satu Dusun pada peta untuk melihat daftar detail nama-nama pemilih di dusun tersebut.</p>
@@ -870,12 +873,14 @@
     const titleSpan = document.getElementById('voterTableDusunTitle');
     const intro = document.getElementById('voterTableIntro');
     const printBtn = document.getElementById('btnPrintVoters');
+    const exportBtn = document.getElementById('btnExportVoters');
     const rtSelect = document.getElementById('rtSelectFilter');
 
     tbody.innerHTML = '<tr><td colspan="11" class="loading-state"><span class="loading"></span> Memuat daftar pemilih...</td></tr>';
     table.style.display = 'table';
     pagination.style.display = 'none';
     if (printBtn) printBtn.style.display = 'none';
+    if (exportBtn) exportBtn.style.display = 'none';
     if (rtSelect) rtSelect.style.display = 'none';
     intro.style.display = 'none';
     
@@ -896,6 +901,7 @@
       const filtered = res.data || [];
 
       if (printBtn && filtered.length) printBtn.style.display = 'inline-block';
+      if (exportBtn && filtered.length) exportBtn.style.display = 'inline-block';
       if (rtSelect) rtSelect.style.display = 'inline-block';
       
       // Populate RT select dynamically with only existing RTs for this selected dusun
@@ -1042,6 +1048,9 @@
     const printBtn = document.getElementById('btnPrintVoters');
     if (printBtn) printBtn.style.display = 'none';
     
+    const exportBtn = document.getElementById('btnExportVoters');
+    if (exportBtn) exportBtn.style.display = 'none';
+    
     const rtSelect = document.getElementById('rtSelectFilter');
     if (rtSelect) {
       rtSelect.value = "";
@@ -1051,6 +1060,71 @@
     document.getElementById('voterTableIntro').style.display = 'block';
     document.getElementById('voterTableDusunTitle').textContent = '';
   });
+
+  async function exportDetailedVoters() {
+    if (!selectedDusunName) return;
+    
+    const rtSelect = document.getElementById('rtSelectFilter');
+    const rtVal = rtSelect ? rtSelect.value : "";
+    const tpsToFetch = currentTpsFilter || 'SITIMULYO';
+    
+    const exportBtn = document.getElementById('btnExportVoters');
+    const originalText = exportBtn.innerHTML;
+    exportBtn.innerHTML = '⏳ Menyiapkan data...';
+    exportBtn.disabled = true;
+    
+    try {
+      const url = `/api/tps/${encodeURIComponent(tpsToFetch)}/hasil?dusun=${encodeURIComponent(selectedDusunName)}&page=1&limit=10000${rtVal ? `&rt=${rtVal}` : ''}`;
+      
+      const response = await fetch(url, {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const res = await response.json();
+      const allData = res.data || [];
+      
+      if (!allData.length) {
+        alert('Tidak ada data untuk di-export.');
+        return;
+      }
+      
+      let csvContent = "\uFEFF"; 
+      csvContent += "No,Nama di TPS (DPT KPU),Gender,Usia TPS,Usia DB,Alamat TPS,RT/RW,Match di Database,NIK Database,Status Cocok,Skor Kemiripan\n";
+      
+      allData.forEach((item, index) => {
+        const no = index + 1;
+        const nama = `"${(item.nama_tps || '').replace(/"/g, '""')}"`;
+        const gender = `"${item.jk_tps || '-'}"`;
+        const usiaTps = item.usia_tps ? `"${item.usia_tps} tahun"` : `"-"`;
+        const usiaDb = item.usia_pemilih ? `"${item.usia_pemilih} tahun"` : `"-"`;
+        const alamat = `"${(item.alamat_tps || '').replace(/"/g, '""')}"`;
+        const rtrw = `"RT ${item.rt_tps || '00'} / RW ${item.rw_tps || '00'}"`;
+        const matchDb = `"${(item.nama_pemilih || 'Tidak ada match').replace(/"/g, '""')}"`;
+        const nikDb = item.nik ? `"${item.nik}"` : `"-"`;
+        const status = `"${item.status_cocok || '-'}"`;
+        const skor = `"${Math.round(item.skor_total)}%"`;
+        
+        csvContent += `${no},${nama},${gender},${usiaTps},${usiaDb},${alamat},${rtrw},${matchDb},${nikDb},${status},${skor}\n`;
+      });
+      
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const urlBlob = URL.createObjectURL(blob);
+      link.setAttribute("href", urlBlob);
+      
+      const filename = `DPT_Perbandingan_${selectedDusunName.replace(/\s+/g, '_')}${rtVal ? `_RT_${rtVal}` : ''}.csv`;
+      link.setAttribute("download", filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Error exporting DPT:', err);
+      alert('Gagal mengekspor data.');
+    } finally {
+      exportBtn.innerHTML = originalText;
+      exportBtn.disabled = false;
+    }
+  }
 
   window.addEventListener('load', async () => {
     loadUserInfo();
