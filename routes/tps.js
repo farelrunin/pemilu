@@ -75,14 +75,14 @@ function computeNameSimilarity(sourceName, candidateName) {
     return 100;
   }
 
-  const sourceTokens = source.split(' ').filter(Boolean);
-  const candidateTokens = candidate.split(' ').filter(Boolean);
+  const sourceWords = source.split(' ').filter(Boolean);
+  const candidateWords = candidate.split(' ').filter(Boolean);
 
   // Optimasi kecepatan super-aman: 
   // Jika panjang karakter berbeda jauh (> 7), lewati Levenshtein HANYA jika tidak ada satu pun kata yang sama persis (token overlap)
   const lenDiff = Math.abs(source.length - candidate.length);
   if (lenDiff > 7) {
-    const hasOverlap = sourceTokens.some(t => candidateTokens.includes(t));
+    const hasOverlap = sourceWords.some(t => candidateWords.includes(t));
     if (!hasOverlap) {
       return 0;
     }
