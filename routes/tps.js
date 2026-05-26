@@ -204,10 +204,28 @@ async function runTPSComparison(namaTps) {
       const ageSignal = computeAgeSignal(tps.usia, pemilih.usia);
       const locationSignal = computeLocationSignal(tps, pemilih);
 
+      let namaWeight = 0.70;
+      let ageWeight = 0.15;
+      let locationWeight = 0.15;
+
+      // Jika data usia tidak tersedia di salah satu pihak, distribusikan bobot usia ke nama
+      if (tps.usia == null || pemilih.usia == null) {
+        namaWeight += ageWeight;
+        ageWeight = 0;
+      }
+
+      // Jika data lokasi tidak tersedia di salah satu pihak, distribusikan ke nama
+      const tpsHasLoc = !!(tps.dusun || tps.alamat || tps.rt);
+      const pemilihHasLoc = !!(pemilih.dusun || pemilih.rt);
+      if (!tpsHasLoc || !pemilihHasLoc) {
+        namaWeight += locationWeight;
+        locationWeight = 0;
+      }
+
       const totalScore = Math.round(
-        (namaSimilarity * 0.70) +
-        (ageSignal * 0.15) +
-        (((locationSignal.dusunScore + locationSignal.rtScore) / 2) * 0.15)
+        (namaSimilarity * namaWeight) +
+        (ageSignal * ageWeight) +
+        (((locationSignal.dusunScore + locationSignal.rtScore) / 2) * locationWeight)
       );
 
       if (totalScore >= 60) {
