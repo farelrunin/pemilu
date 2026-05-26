@@ -254,6 +254,11 @@ function computeNameSimilarity(sourceName, candidateName) {
   const candidate = normalizeMatchText(candidateName);
   if (!source || !candidate) return 0;
 
+  // Jika nama persis sama setelah semua spasi dihilangkan (misal: "Siti Mulyo" vs "Sitimulyo")
+  if (source.replace(/\s+/g, '') === candidate.replace(/\s+/g, '')) {
+    return 100;
+  }
+
   const distance = levenshteinDistance(source, candidate);
   const maxLength = Math.max(source.length, candidate.length, 1);
   const levScore = Math.max(0, 1 - (distance / maxLength));
@@ -1707,6 +1712,7 @@ app.get('/kelola-tps',          (req, res) => res.sendFile(path.join(__dirname, 
 app.get('/perbandingan-tps',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'perbandingan-tps.html')));
 app.get('/statistik-tps',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'statistik-tps.html')));
 app.get('/peta-sitimulyo',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'peta-sitimulyo.html')));
+app.get('/non-dpt',               (req, res) => res.sendFile(path.join(__dirname, 'public', 'non-dpt.html')));
 
 // ── Ensure role enum includes AdminKantor and User ──
 async function ensureRoleEnum() {

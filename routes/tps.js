@@ -70,6 +70,11 @@ function computeNameSimilarity(sourceName, candidateName) {
   const candidate = normalizeMatchText(candidateName);
   if (!source || !candidate) return 0;
 
+  // Jika nama persis sama setelah semua spasi dihilangkan (misal: "Siti Mulyo" vs "Sitimulyo")
+  if (source.replace(/\s+/g, '') === candidate.replace(/\s+/g, '')) {
+    return 100;
+  }
+
   const distance = levenshteinDistance(source, candidate);
   const maxLength = Math.max(source.length, candidate.length, 1);
   const levScore = Math.max(0, 1 - (distance / maxLength));
@@ -506,6 +511,76 @@ router.delete('/data/:id', verifyToken, isAdmin, async (req, res) => {
       status: 'success',
       message: 'Berhasil menghapus baris data TPS.',
       comparison: compResult
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 6️⃣.5️⃣ Dapatkan daftar pemilih Non-DPT (Terdaftar di database lokal, tetapi tidak terdaftar di data TPS mana pun)
+router.get('/non-dpt', verifyToken, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 25;
+    const offset = (page - 1) * limit;
+    const { dusun, q } = req.query;
+
+    let countQueryStr = `
+      SELECT COUNT(DISTINCT p.id) AS total
+      FROM pemilih p
+      LEFT JOIN hasil_perbandingan hp ON p.id = hp.pemilih_id
+      LEFT JOIN kader k ON k.id = p.kader_id
+      WHERE hp.id IS NULL OR hp.status_cocok = 'TIDAK_COCOK'
+    `;
+    const countParams = [];
+
+    if (dusun) {
+      countQueryStr += ` AND LOWER(k.dusun) = LOWER(?)`;
+      countParams.push(String(dusun).trim());
+    }
+    if (q) {
+      countQueryStr += ` AND (p.nama LIKE ? OR p.nik LIKE ?)`;
+      countParams.push(`%${q}%`, `%${q}%`);
+    }
+
+    const [totalRow] = await query(countQueryStr, countParams);
+    const total = totalRow?.total || 0;
+
+    let selectQueryStr = `
+      SELECT p.id, p.nama, p.nik, p.jenis_kelamin, 
+             TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS usia,
+             k.dusun AS dusun_pemilih, k.rt AS rt_pemilih, k.rw AS rw_pemilih,
+             CONCAT('Kader ', k.nomor, ' — ', k.nama) AS nama_kader
+      FROM pemilih p
+      LEFT JOIN hasil_perbandingan hp ON p.id = hp.pemilih_id
+      LEFT JOIN kader k ON k.id = p.kader_id
+      WHERE hp.id IS NULL OR hp.status_cocok = 'TIDAK_COCOK'
+    `;
+    const selectParams = [];
+
+    if (dusun) {
+      selectQueryStr += ` AND LOWER(k.dusun) = LOWER(?)`;
+      selectParams.push(String(dusun).trim());
+    }
+    if (q) {
+      selectQueryStr += ` AND (p.nama LIKE ? OR p.nik LIKE ?)`;
+      selectParams.push(`%${q}%`, `%${q}%`);
+    }
+
+    selectQueryStr += ` ORDER BY k.dusun ASC, p.nama ASC LIMIT ? OFFSET ?`;
+    selectParams.push(limit, offset);
+
+    const data = await query(selectQueryStr, selectParams);
+
+    res.json({
+      status: 'success',
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
     });
   } catch (e) {
     res.status(500).json({ error: e.message });

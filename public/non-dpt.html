@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pemilih Non-DPT - Pemilu</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/tps-pages.css">
+  <style>
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      align-items: flex-end;
+    }
+    .filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .filter-item label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted, #718096);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .filter-item select, .filter-item input {
+      padding: 10px 14px;
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 8px;
+      background: var(--card-bg, #ffffff);
+      color: var(--text-color, #2d3748);
+      font-size: 14px;
+      min-width: 200px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .filter-item select:focus, .filter-item input:focus {
+      border-color: var(--primary-color, #4f8b76);
+      box-shadow: 0 0 0 3px rgba(79, 139, 118, 0.15);
+    }
+    .non-dpt-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      background-color: rgba(220, 95, 95, 0.15);
+      color: #bb6a6a;
+      border: 1px solid rgba(220, 95, 95, 0.2);
+    }
+  </style>
+</head>
+<body class="app-shell-page">
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih" class="admin-only"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import" class="admin-only"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
+        <a href="/log-duplikat" class="admin-only"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps" class="admin-only "><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/perbandingan-tps" class=""><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+        <a href="/statistik-tps" class=""><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
+        <a href="/peta-sitimulyo" class=""><span><strong>Peta Wilayah</strong></span><span class="nav-pill">PW</span></a>
+        <a href="/non-dpt" class="active"><span><strong>Pemilih Non-DPT</strong></span><span class="nav-pill">ND</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Pemilih Non-DPT</strong>
+          <span>Pantau warga di database lokal Anda yang namanya belum terdaftar di DPT TPS resmi mana pun. Segera tindaklanjuti ke lapangan!</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Modul TPS</div>
+        <div class="app-topbar-title">Daftar Pemilih Non-DPT (Belum Masuk DPT)</div>
+        <div class="app-topbar-subtitle">Daftar pemilih lokal yang dikumpulkan tim Anda tetapi tidak ada/tidak cocok di DPT TPS resmi mana pun.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container">
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › <a href="/upload-tps">Modul TPS</a> › <span>Pemilih Non-DPT</span>
+          </div>
+          <h1>Pemilih Belum Terdaftar (Non-DPT)</h1>
+          <p>Data ini mencantumkan warga binaan Anda yang sudah ada di database lokal namun **tidak ditemukan namanya di berkas DPT TPS resmi**. Pemilih dalam kategori ini kemungkinan besar adalah pemilih pemula, pensiunan TNI/Polri, pendatang baru, atau warga lokal yang terlewat saat Coklit KPU.</p>
+        </div>
+
+        <div class="card">
+          <div class="filter-row">
+            <div class="filter-item">
+              <label for="filterDusun">Saring Dusun</label>
+              <select id="filterDusun" onchange="applyFilters()">
+                <option value="">Semua Dusun</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <label for="searchQuery">Cari Nama / NIK</label>
+              <input type="text" id="searchQuery" placeholder="Masukkan nama atau NIK..." oninput="debounceFilter()">
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="result-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">No</th>
+                  <th>Nama Pemilih</th>
+                  <th>NIK</th>
+                  <th>JK</th>
+                  <th>Usia</th>
+                  <th>Dusun Asal</th>
+                  <th>RT/RW</th>
+                  <th>Kader Penanggung Jawab</th>
+                  <th style="text-align: center;">Status DPT</th>
+                </tr>
+              </thead>
+              <tbody id="nonDptBody">
+                <tr>
+                  <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">Memuat data pemilih...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-row" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div class="pagination-info" id="paginationInfo" style="color: var(--text-muted); font-size: 14px;">Menampilkan 0 - 0 dari 0 data</div>
+            <div class="pagination-nav" style="display: flex; gap: 10px;">
+              <button class="btn btn-outline" id="prevBtn" onclick="changePage(-1)" disabled>Sebelumnya</button>
+              <button class="btn btn-outline" id="nextBtn" onclick="changePage(1)" disabled>Selanjutnya</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/auth.js"></script>
+<script>
+  let currentPage = 1;
+  const limit = 25;
+  let debounceTimeout = null;
+
+  async function loadDusunOptions() {
+    try {
+      const response = await fetch('/api/koordinator', {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const data = await response.json();
+      
+      const select = document.getElementById('filterDusun');
+      
+      // Get unique dusun names from koordinator/kader response
+      const uniqueDusuns = [...new Set(data.map(item => item.jumlahDusun > 0 ? item.nama : '').filter(Boolean))];
+      
+      // Also query unique dusuns from database if available
+      // Fallback to static list commonly used in Sitimulyo
+      const sitimulyoDusuns = [
+        'Sampakan', 'Madugondo', 'Pager Gunung 1', 'Pager Gunung 2', 
+        'Babadan', 'Banyakan 1', 'Banyakan 2', 'Banyakan 3', 
+        'Mojosari', 'Ngampon', 'Tegalyoso', 'Nglengis', 
+        'Padangan', 'Ngablak', 'Nganyang', 'Karang Anom', 
+        'Bendosari', 'Kuden', 'Karang Gayam', 'Karang Ploso', 
+        'Cepoko', 'Gampingan', 'Somokaton'
+      ];
+      
+      const finalDusuns = [...new Set([...uniqueDusuns, ...sitimulyoDusuns])].sort();
+      
+      finalDusuns.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        select.appendChild(opt);
+      });
+    } catch (err) {
+      console.error('Gagal memuat opsi dusun:', err);
+    }
+  }
+
+  async function loadNonDptData() {
+    const dusun = document.getElementById('filterDusun').value;
+    const q = document.getElementById('searchQuery').value;
+    const tbody = document.getElementById('nonDptBody');
+    
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+          <div style="display: inline-block; width: 24px; height: 24px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: var(--primary-color, #4f8b76); animation: spin 1s linear infinite; margin-bottom: 10px;"></div>
+          <br>Mengambil data dari server...
+        </td>
+      </tr>
+    `;
+
+    try {
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: limit,
+        dusun: dusun,
+        q: q
+      });
+
+      const response = await fetch(`/api/tps/non-dpt?${params.toString()}`, {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        renderTable(result.data, result.pagination);
+      } else {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--danger-color, #bb6a6a); padding: 20px;">Gagal memuat data: ${result.error}</td></tr>`;
+      }
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--danger-color, #bb6a6a); padding: 20px;">Terjadi kesalahan jaringan: ${err.message}</td></tr>`;
+    }
+  }
+
+  function renderTable(data, pagination) {
+    const tbody = document.getElementById('nonDptBody');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pagInfo = document.getElementById('paginationInfo');
+
+    if (!data.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" style="text-align: center; padding: 50px; color: var(--text-muted);">
+            <div style="font-size: 32px; margin-bottom: 10px;">🎉</div>
+            <strong>Semua data terdaftar!</strong><br>
+            Tidak ada pemilih lokal yang terdeteksi sebagai Non-DPT dengan filter saat ini.
+          </td>
+        </tr>
+      `;
+      prevBtn.disabled = true;
+      nextBtn.disabled = true;
+      pagInfo.textContent = 'Menampilkan 0 data';
+      return;
+    }
+
+    const startNum = (pagination.page - 1) * pagination.limit + 1;
+    tbody.innerHTML = data.map((row, index) => {
+      const rtRw = [row.rt_pemilih, row.rw_pemilih].filter(Boolean).map(x => String(x).padStart(2, '0')).join('/');
+      return `
+        <tr>
+          <td>${startNum + index}</td>
+          <td><strong>${row.nama}</strong></td>
+          <td><code>${row.nik || '-'}</code></td>
+          <td>${row.jenis_kelamin || '-'}</td>
+          <td>${row.usia || '-'} tahun</td>
+          <td>${row.dusun_pemilih || '-'}</td>
+          <td>${rtRw || '-'}</td>
+          <td>${row.nama_kader || '-'}</td>
+          <td style="text-align: center;">
+            <span class="non-dpt-badge">🚨 Belum DPT</span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Configure pagination
+    prevBtn.disabled = pagination.page <= 1;
+    nextBtn.disabled = pagination.page >= pagination.totalPages;
+    
+    const endNum = Math.min(startNum + data.length - 1, pagination.total);
+    pagInfo.textContent = `Menampilkan ${startNum} - ${endNum} dari ${pagination.total} data`;
+  }
+
+  function applyFilters() {
+    currentPage = 1;
+    loadNonDptData();
+  }
+
+  function debounceFilter() {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => {
+      applyFilters();
+    }, 400);
+  }
+
+  function changePage(direction) {
+    currentPage += direction;
+    loadNonDptData();
+  }
+
+  window.addEventListener('load', () => {
+    loadUserInfo();
+    loadDusunOptions();
+    loadNonDptData();
+  });
+</script>
+<style>
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+</body>
+</html>
