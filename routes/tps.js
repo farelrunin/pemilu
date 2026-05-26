@@ -132,7 +132,7 @@ function computeLocationSignal(tpsRow, pemilihRow) {
     }
   }
 
-  let rtScore = 0;
+  let rtScore = null;
   if (rtSource && rtTarget) {
     rtScore = rtSource === rtTarget ? 100 : 0;
   }
@@ -275,10 +275,15 @@ async function runTPSComparison(namaTps) {
         locationWeight = 0;
       }
 
+      let locationScore = locationSignal.dusunScore;
+      if (locationSignal.rtScore !== null) {
+        locationScore = (locationSignal.dusunScore + locationSignal.rtScore) / 2;
+      }
+
       const totalScore = Math.round(
         (namaSimilarity * namaWeight) +
         (ageSignal * ageWeight) +
-        (((locationSignal.dusunScore + locationSignal.rtScore) / 2) * locationWeight)
+        (locationScore * locationWeight)
       );
 
       if (totalScore >= 50) {
@@ -375,7 +380,7 @@ async function runTPSComparison(namaTps) {
       m.pemilihId,
       m.status,
       m.score,
-      m.catatan || `Skor: ${m.score}% (nama: ${m.namaSimilarity}%, usia: ${m.ageSignal}%, lokasi: ${Math.round((m.locationSignal.dusunScore + m.locationSignal.rtScore) / 2)}%)`
+      m.catatan || `Skor: ${m.score}% (nama: ${m.namaSimilarity}%, usia: ${m.ageSignal}%, lokasi: ${Math.round(m.locationSignal.rtScore !== null ? (m.locationSignal.dusunScore + m.locationSignal.rtScore) / 2 : m.locationSignal.dusunScore)}%)`
     ]);
 
     await query(
