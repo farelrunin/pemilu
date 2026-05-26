@@ -165,7 +165,15 @@ async function runTPSComparison(namaTps) {
     FROM pemilih p
     LEFT JOIN kader k ON k.id = p.kader_id
     WHERE p.jenis_kelamin IS NOT NULL AND p.tanggal_lahir IS NOT NULL
-  `);
+      AND p.id NOT IN (
+        SELECT DISTINCT hp.pemilih_id 
+        FROM hasil_perbandingan hp
+        JOIN data_tps dt ON dt.id = hp.data_tps_id
+        WHERE hp.pemilih_id IS NOT NULL 
+          AND hp.status_cocok IN ('COCOK', 'PERLU_DICEK')
+          AND dt.nama_tps <> ?
+      )
+  `, [namaTps]);
 
   const startTime = Date.now();
   let cocok = 0, perluDicek = 0, tidakCocok = 0;
