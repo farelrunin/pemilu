@@ -276,14 +276,17 @@ function computeNameSimilarity(sourceName, candidateName) {
   const maxLength = Math.max(source.length, candidate.length, 1);
   const levScore = Math.max(0, 1 - (distance / maxLength));
 
-  const sourceTokens = new Set(source.split(' ').filter(Boolean));
-  const candidateTokens = new Set(candidate.split(' ').filter(Boolean));
+  const sourceTokens = new Set(sourceWords);
+  const candidateTokens = new Set(candidateWords);
   const overlap = [...sourceTokens].filter(token => candidateTokens.has(token)).length;
+  
+  // Menggunakan Math.min agar nama panggilan / singkatan / satu kata tidak dihukum berat
   const tokenScore = sourceTokens.size || candidateTokens.size
-    ? overlap / Math.max(sourceTokens.size, candidateTokens.size)
+    ? overlap / Math.min(sourceTokens.size, candidateTokens.size)
     : 0;
 
-  return Math.round(((levScore * 0.7) + (tokenScore * 0.3)) * 100);
+  // Mengubah bobot menjadi 50% Levenshtein & 50% Token Overlap agar nama substring/singkat sangat dihargai
+  return Math.round(((levScore * 0.5) + (tokenScore * 0.5)) * 100);
 }
 
 function computeAgeSignal(tpsAge, pemilihAge) {
