@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laporan Per Dusun & Cetak RT - Pemilu</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/tps-pages.css">
+  <style>
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      align-items: flex-end;
+    }
+    .filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .filter-item label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted, #718096);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .filter-item select, .filter-item input {
+      padding: 10px 14px;
+      border: 1px solid var(--border-color, #e2e8f0);
+      border-radius: 8px;
+      background: var(--card-bg, #ffffff);
+      color: var(--text-color, #2d3748);
+      font-size: 14px;
+      min-width: 180px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .filter-item select:focus, .filter-item input:focus {
+      border-color: var(--primary-color, #4f8b76);
+      box-shadow: 0 0 0 3px rgba(79, 139, 118, 0.15);
+    }
+    
+    .print-header-layout {
+      display: none;
+    }
+
+    /* Print styling rules */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 15mm;
+      }
+      body {
+        background: white !important;
+        color: black !important;
+        font-family: 'Times New Roman', Times, serif !important;
+        font-size: 11pt !important;
+      }
+      .app-sidebar, .app-topbar, .breadcrumb, .page-header, .filter-row, .btn, #paginationControls {
+        display: none !important;
+      }
+      .app-main {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+      }
+      .card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+      }
+      .print-header-layout {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 25px;
+        border-bottom: 2px double #000;
+        padding-bottom: 10px;
+      }
+      .print-header-layout h1 {
+        font-size: 16pt !important;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin: 0 0 5px 0;
+      }
+      .print-header-layout p {
+        font-size: 10pt;
+        margin: 0;
+        color: #333;
+      }
+      table.result-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-top: 15px !important;
+      }
+      table.result-table th, table.result-table td {
+        border: 1px solid #000 !important;
+        padding: 6px 10px !important;
+        font-size: 9.5pt !important;
+        color: #000 !important;
+        text-align: left;
+      }
+      table.result-table th {
+        background-color: #f2f2f2 !important;
+        font-weight: bold !important;
+      }
+      table.result-table tr {
+        page-break-inside: avoid !important;
+      }
+      a {
+        text-decoration: none !important;
+        color: #000 !important;
+      }
+      .tps-chip {
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        font-weight: bold;
+        color: #000 !important;
+      }
+    }
+  </style>
+</head>
+<body class="app-shell-page">
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar-panel">
+      <a href="/" class="sidebar-brand">
+        <div class="logo-icon">🗳️</div>
+        <div class="sidebar-brand-copy">
+          <div class="logo-text">Data<span>Pilih</span></div>
+          <div class="sidebar-brand-sub">Console Pendataan</div>
+        </div>
+      </a>
+
+      <div class="sidebar-section-label">Navigasi Utama</div>
+      <nav class="nav">
+        <a href="/"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
+        <a href="/tambah-pemilih" class="admin-only"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import" class="admin-only"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+        <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
+        <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
+        <a href="/log-duplikat" class="admin-only"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Modul TPS</div>
+      <nav class="nav">
+        <a href="/upload-tps" class="admin-only "><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+        <a href="/perbandingan-tps" class=""><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
+        <a href="/statistik-tps" class=""><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
+        <a href="/peta-sitimulyo" class=""><span><strong>Peta Wilayah</strong></span><span class="nav-pill">PW</span></a>
+        <a href="/non-dpt" class=""><span><strong>Pemilih Non-DPT</strong></span><span class="nav-pill">ND</span></a>
+        <a href="/laporan-dusun" class="active"><span><strong>Laporan Per Dusun</strong></span><span class="nav-pill">LD</span></a>
+      </nav>
+
+      <div class="sidebar-section-label">Akses Cepat</div>
+      <nav class="nav">
+        <a href="/?view=all#data-pemilih"><span><strong>Data Pemilih</strong></span><span class="nav-pill">DP</span></a>
+        <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-note">
+          <strong>Laporan Per Dusun</strong>
+          <span>Cetak data audit pemilih per RT untuk dibagikan langsung kepada kader penanggung jawab lapangan.</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <div class="app-topbar-copy">
+        <div class="page-kicker">Laporan Cetak Dusun</div>
+        <div class="app-topbar-title">Ekspor & Laporan Audit Per Dusun</div>
+        <div class="app-topbar-subtitle">Pilah data pemilih per dusun, urutkan rapi dari RT 1, dan cetak ke kertas dengan mudah.</div>
+      </div>
+      <div class="header-user-slot"></div>
+    </div>
+
+    <div class="app-main-body">
+      <div class="container">
+        <!-- HEADER KOP LAPORAN KHUSUS PRINT -->
+        <div class="print-header-layout">
+          <h1>LAPORAN AUDIT DAFTAR PEMILIH TPS (DPT KPU)</h1>
+          <p style="font-weight: bold; font-size: 11pt;">WILAYAH DUSUN: <span id="printDusun">...</span> — RT: <span id="printRT">SEMUA RT</span></p>
+          <p>Sistem Konsol Pendataan Sitimulyo — Tanggal Cetak: <span id="printDate"></span></p>
+        </div>
+
+        <div class="page-header page-header-card">
+          <div class="breadcrumb">
+            <a href="/">Dashboard</a> › Modul TPS › <span>Laporan Dusun</span>
+          </div>
+          <h1>Laporan Pemilih Per Dusun</h1>
+          <p>Halaman ini dirancang khusus untuk memilah data audit hasil perbandingan DPT KPU dengan Database Internal per Dusun. Data otomatis diurutkan secara **numerik rapi mulai dari RT 1** ke atas.</p>
+        </div>
+
+        <div class="card">
+          <div class="filter-row">
+            <div class="filter-item">
+              <label for="filterDusun">Pilih Dusun</label>
+              <select id="filterDusun" onchange="onDusunChange()">
+                <option value="">-- Pilih Dusun --</option>
+              </select>
+            </div>
+            
+            <div class="filter-item">
+              <label for="filterRT">RT (Tersedia)</label>
+              <select id="filterRT" onchange="onFiltersChange()">
+                <option value="">Semua RT</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label for="filterStatus">Status Kecocokan</label>
+              <select id="filterStatus" onchange="onFiltersChange()">
+                <option value="">Semua Status</option>
+                <option value="COCOK">COCOK</option>
+                <option value="PERLU_DICEK">PERLU DICEK</option>
+                <option value="TIDAK_COCOK">TIDAK COCOK</option>
+              </select>
+            </div>
+
+            <button onclick="window.print()" class="btn btn-primary" id="btnPrint" style="padding: 11px 24px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;" disabled>
+              🖨️ Cetak Laporan
+            </button>
+          </div>
+
+          <div id="loadingRow" style="display:none;padding:40px;text-align:center;color:var(--text-muted,#888);">
+            <div style="display: inline-block; width: 32px; height: 32px; border: 3px solid rgba(0,0,0,0.1); border-radius: 50%; border-top-color: var(--primary-color, #4f8b76); animation: spin 1s linear infinite; margin-bottom: 12px;"></div>
+            <br>⏳ Mengambil data dan mengurutkan RT...
+          </div>
+
+          <div class="table-container" id="tableContainer">
+            <table class="result-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">No</th>
+                  <th style="width: 80px;">RT/RW</th>
+                  <th>Nama di TPS KPU (Excel)</th>
+                  <th>Database Internal (Kader)</th>
+                  <th style="width: 60px; text-align: center;">Usia</th>
+                  <th style="width: 120px;">Kader P.J. (Database)</th>
+                  <th style="width: 130px;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="reportBody">
+                <tr>
+                  <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    Silakan pilih Dusun terlebih dahulu untuk memuat data laporan.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination controls -->
+          <div id="paginationControls" style="display:none;padding:20px 0;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;">
+            <button id="btnFirst" onclick="gotoPage(1)" class="btn btn-outline btn-xs">« Pertama</button>
+            <button id="btnPrev"  onclick="gotoPage(currentPage - 1)" class="btn btn-outline btn-xs">‹ Sebelumnya</button>
+            <span id="pageLabel" style="font-size:0.88rem;padding:0 8px;font-weight:600;"></span>
+            <button id="btnNext"  onclick="gotoPage(currentPage + 1)" class="btn btn-outline btn-xs">Berikutnya ›</button>
+            <button id="btnLast"  onclick="gotoPage(totalPages)" class="btn btn-outline btn-xs">Terakhir »</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/auth.js"></script>
+<script>
+  let currentPage = 1;
+  let totalPages = 1;
+  const PAGE_LIMIT = 50;
+
+  // Daftar dusun umum di Sitimulyo
+  const sitimulyoDusuns = [
+    'Babadan', 'Banyakan 1', 'Banyakan 2', 'Banyakan 3', 'Bendosari', 
+    'Cepoko', 'Gampingan', 'Gondobari-Somokaton', 'Karang Anom', 'Karang Gayam', 
+    'Karang Ploso', 'Kuden', 'Madugondo', 'Mojosari', 'Ngablak', 
+    'Ngampon', 'Nganyang', 'Nglengis', 'Padangan', 'Pager Gunung 1', 
+    'Pager Gunung 2', 'Somokaton', 'Tegalyoso', 'Sampakan'
+  ];
+
+  function populateDusunList() {
+    const select = document.getElementById('filterDusun');
+    sitimulyoDusuns.sort().forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      select.appendChild(opt);
+    });
+  }
+
+  async function onDusunChange() {
+    const dusun = document.getElementById('filterDusun').value;
+    const btnPrint = document.getElementById('btnPrint');
+    const filterRT = document.getElementById('filterRT');
+    
+    // Reset RT dropdown
+    filterRT.innerHTML = '<option value="">Semua RT</option>';
+    
+    if (!dusun) {
+      btnPrint.disabled = true;
+      document.getElementById('reportBody').innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+            Silakan pilih Dusun terlebih dahulu untuk memuat data laporan.
+          </td>
+        </tr>
+      `;
+      document.getElementById('paginationControls').style.display = 'none';
+      return;
+    }
+
+    btnPrint.disabled = false;
+    currentPage = 1;
+
+    // Fetch dynamic RTs for this dusun
+    try {
+      const response = await fetch(`/api/tps/all/hasil?page=1&limit=1&dusun=${encodeURIComponent(dusun)}`, {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const result = await response.json();
+      
+      if (result.availableRTs && result.availableRTs.length > 0) {
+        result.availableRTs.forEach(rt => {
+          const opt = document.createElement('option');
+          opt.value = rt;
+          opt.textContent = 'RT ' + String(rt).padStart(2, '0');
+          filterRT.appendChild(opt);
+        });
+      }
+    } catch (err) {
+      console.error('Gagal mengambil daftar RT dinamis:', err);
+    }
+
+    loadReportData(1);
+  }
+
+  function onFiltersChange() {
+    currentPage = 1;
+    loadReportData(1);
+  }
+
+  function gotoPage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    loadReportData(page);
+  }
+
+  async function loadReportData(page) {
+    const dusun = document.getElementById('filterDusun').value;
+    const rt = document.getElementById('filterRT').value;
+    const status = document.getElementById('filterStatus').value;
+    const tbody = document.getElementById('reportBody');
+    const loading = document.getElementById('loadingRow');
+    const pagControls = document.getElementById('paginationControls');
+
+    if (!dusun) return;
+
+    // Set Kop Laporan Print
+    document.getElementById('printDusun').textContent = dusun.toUpperCase();
+    document.getElementById('printRT').textContent = rt ? 'RT ' + String(rt).padStart(2, '0') : 'SEMUA RT';
+    document.getElementById('printDate').textContent = new Date().toLocaleDateString('id-ID', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    tbody.innerHTML = '';
+    loading.style.display = 'block';
+    pagControls.style.display = 'none';
+
+    try {
+      let url = `/api/tps/all/hasil?page=${page}&limit=${PAGE_LIMIT}&dusun=${encodeURIComponent(dusun)}`;
+      if (rt) url += `&rt=${encodeURIComponent(rt)}`;
+      if (status) url += `&status=${encodeURIComponent(status)}`;
+
+      const response = await fetch(url, {
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const result = await response.json();
+
+      if (result.status === 'success') {
+        renderTable(result.data, result.pagination);
+      } else {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger-color, #bb6a6a); padding: 20px;">Gagal memuat: ${result.error}</td></tr>`;
+      }
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger-color, #bb6a6a); padding: 20px;">Terjadi kesalahan jaringan: ${err.message}</td></tr>`;
+    } finally {
+      loading.style.display = 'none';
+    }
+  }
+
+  function renderTable(data, pagination) {
+    const tbody = document.getElementById('reportBody');
+    const pagControls = document.getElementById('paginationControls');
+
+    if (!data || !data.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">
+            Tidak ditemukan data pemilih yang sesuai dengan filter terpilih.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const startNum = (pagination.page - 1) * pagination.limit + 1;
+    tbody.innerHTML = data.map((row, index) => {
+      const rtRw = [row.rt_tps, row.rw_tps].filter(Boolean).map(x => String(x).padStart(2, '0')).join('/');
+      const statusClass = row.status_cocok.toLowerCase().replace(/_/g, '-');
+      
+      const pemilihLink = row.pemilih_id
+        ? `<a href="/?highlight=${encodeURIComponent(row.pemilih_id)}" target="_blank" style="color:inherit;text-decoration:underline dotted;" title="Buka data pemilih">${esc(row.nama_pemilih)}</a>`
+        : '<span class="text-muted" style="font-style:italic;">Belum Terdata (Non-DPT)</span>';
+
+      return `
+        <tr class="${statusClass}">
+          <td>${startNum + index}</td>
+          <td><code>${rtRw || '-'}</code></td>
+          <td><strong>${esc(row.nama_tps)}</strong></td>
+          <td>${pemilihLink}</td>
+          <td style="text-align: center;">${row.usia_tps || '-'} thn</td>
+          <td>${esc(row.nama_kader || '-')}</td>
+          <td>
+            <span class="tps-chip ${statusClass}">${row.status_cocok.replace(/_/g, ' ')}</span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Setup pagination
+    totalPages = pagination.totalPages || 1;
+    currentPage = pagination.page || 1;
+
+    if (totalPages > 1) {
+      pagControls.style.display = 'flex';
+      document.getElementById('pageLabel').textContent = `Halaman ${currentPage} / ${totalPages}`;
+      document.getElementById('btnFirst').disabled = currentPage <= 1;
+      document.getElementById('btnPrev').disabled  = currentPage <= 1;
+      document.getElementById('btnNext').disabled  = currentPage >= totalPages;
+      document.getElementById('btnLast').disabled  = currentPage >= totalPages;
+    } else {
+      pagControls.style.display = 'none';
+    }
+  }
+
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  window.addEventListener('load', () => {
+    loadUserInfo();
+    populateDusunList();
+  });
+</script>
+<style>
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+</body>
+</html>

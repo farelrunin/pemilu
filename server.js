@@ -1729,6 +1729,7 @@ app.get('/perbandingan-tps',    (req, res) => res.sendFile(path.join(__dirname, 
 app.get('/statistik-tps',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'statistik-tps.html')));
 app.get('/peta-sitimulyo',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'peta-sitimulyo.html')));
 app.get('/non-dpt',               (req, res) => res.sendFile(path.join(__dirname, 'public', 'non-dpt.html')));
+app.get('/laporan-dusun',         (req, res) => res.sendFile(path.join(__dirname, 'public', 'laporan-dusun.html')));
 
 // ── Ensure role enum includes AdminKantor and User ──
 async function ensureRoleEnum() {
