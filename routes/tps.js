@@ -231,7 +231,7 @@ async function runTPSComparison(namaTps) {
         (((locationSignal.dusunScore + locationSignal.rtScore) / 2) * locationWeight)
       );
 
-      if (totalScore >= 60) {
+      if (totalScore >= 50) {
         potentialMatches.push({
           tpsId: tps.id,
           pemilihId: pemilih.id,
