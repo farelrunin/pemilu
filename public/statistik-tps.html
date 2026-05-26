@@ -83,6 +83,18 @@
           <div class="stats-grid" id="overviewStats"></div>
         </div>
 
+        <!-- Global voter search card -->
+        <div class="card" style="background: linear-gradient(135deg, rgba(79, 139, 118, 0.05) 0%, rgba(79, 139, 118, 0.02) 100%); border-left: 4px solid var(--primary-color, #4f8b76);">
+          <div class="section-title" style="margin-bottom: 8px;">🔍 Cari Nama Pemilih Secara Global</div>
+          <p style="font-size: 0.9rem; color: var(--text-secondary, #666); margin-bottom: 16px;">
+            Masukkan nama atau NIK warga untuk mendeteksi secara instan di TPS mana dia terdaftar, atau apakah dia belum masuk DPT (Non-DPT).
+          </p>
+          <div class="filters" style="display: flex; gap: 10px; align-items: center; max-width: 600px;">
+            <input type="text" id="globalSearchQuery" placeholder="Cari nama atau NIK pemilih secara global..." style="padding: 10px 14px; border: 1px solid var(--border-color, #ccc); border-radius: 8px; font-size: 0.9rem; flex-grow: 1; outline: none; background: var(--card-bg, #ffffff); color: var(--text-color, #2d3748); transition: all 0.2s ease;" onkeydown="if(event.key === 'Enter') executeGlobalSearch()">
+            <button onclick="executeGlobalSearch()" class="btn btn-primary" style="padding: 10px 20px; font-weight: 600; border-radius: 8px;">Cari Pemilih</button>
+          </div>
+        </div>
+
         <div class="tps-grid-two">
           <div class="card">
             <div class="section-title">Persentase Cocok Per TPS</div>
@@ -108,6 +120,9 @@
 
         <div class="card">
           <div class="section-title">Detail Per TPS</div>
+          <div class="filters" style="margin-bottom: 12px; max-width: 300px;">
+            <input type="text" id="tpsSearchQuery" placeholder="Cari nama TPS (misal: TPS 01)..." oninput="filterTpsTable()" style="padding: 8px 12px; border: 1px solid var(--border-color, #ccc); border-radius: 6px; font-size: 0.85rem; width: 100%; outline: none; background: var(--card-bg, #ffffff); color: var(--text-color, #2d3748);">
+          </div>
           <div class="table-container">
             <table class="result-table" id="detailTable">
               <thead>
@@ -263,6 +278,28 @@
     ];
 
     document.getElementById('insightsBox').innerHTML = insights.join('');
+  }
+
+  function executeGlobalSearch() {
+    const q = document.getElementById('globalSearchQuery').value.trim();
+    if (!q) return alert('Silakan masukkan nama atau NIK terlebih dahulu.');
+    window.location.href = `/perbandingan-tps?tps=all&q=${encodeURIComponent(q)}`;
+  }
+
+  function filterTpsTable() {
+    const q = document.getElementById('tpsSearchQuery').value.toLowerCase().trim();
+    const rows = document.querySelectorAll('#detailBody tr');
+    rows.forEach(row => {
+      const tpsCell = row.querySelector('td strong');
+      if (tpsCell) {
+        const tpsName = tpsCell.textContent.toLowerCase();
+        if (tpsName.includes(q)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      }
+    });
   }
 
   window.addEventListener('load', () => {

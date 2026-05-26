@@ -124,12 +124,16 @@
             <div class="filters" style="flex-wrap:wrap;gap:8px;align-items:flex-end;">
               <div class="filter-group">
                 <label for="statusFilter">Filter status</label>
-                <select id="statusFilter" onchange="onFilterChange()">
+                <select id="statusFilter" onchange="onFilterChange()" style="padding: 8px 12px; border: 1px solid var(--border-color, #ccc); border-radius: 6px; font-size: 0.9rem; min-width: 150px; outline: none;">
                   <option value="">Semua</option>
                   <option value="COCOK">COCOK</option>
                   <option value="PERLU_DICEK">PERLU DICEK</option>
                   <option value="TIDAK_COCOK">TIDAK COCOK</option>
                 </select>
+              </div>
+              <div class="filter-group">
+                <label for="searchQuery">Cari Nama / NIK</label>
+                <input type="text" id="searchQuery" placeholder="Masukkan nama atau NIK..." oninput="onSearchInput()" style="padding: 8px 12px; border: 1px solid var(--border-color, #ccc); border-radius: 6px; font-size: 0.9rem; min-width: 250px; outline: none; background: var(--card-bg, #ffffff); color: var(--text-color, #2d3748); transition: all 0.2s ease;">
               </div>
               <div id="paginationInfo" style="margin-left:auto;font-size:0.85rem;color:var(--text-secondary,#888);align-self:center;"></div>
             </div>
@@ -216,6 +220,7 @@
   let totalPages = 1;
   let currentStatus = '';
   let currentDetailItem = null;
+  let debounceTimeout = null;
 
   const PAGE_LIMIT = 50;
   const requestedTps    = new URLSearchParams(window.location.search).get('tps');
@@ -230,6 +235,12 @@
       const result = await response.json();
       const select = document.getElementById('tpsList');
 
+      // Prepend option for all TPS
+      const allOpt = document.createElement('option');
+      allOpt.value = 'all';
+      allOpt.textContent = '🌐 Semua TPS (Global)';
+      select.appendChild(allOpt);
+
       if (result.data && result.data.length > 0) {
         result.data.forEach(tps => {
           const option = document.createElement('option');
@@ -237,20 +248,20 @@
           option.textContent = tps.nama_tps + ' (' + tps.total_data + ' orang)';
           select.appendChild(option);
         });
+      }
 
-        if (requestedTps) {
-          const decodedTps = decodeURIComponent(requestedTps);
-          const hasMatch = result.data.some(tps => tps.nama_tps === decodedTps);
-          if (hasMatch) {
-            select.value = decodedTps;
-            currentTps = decodedTps;
-            selectTps();
-            if (requestedStatus && ['COCOK','PERLU_DICEK','TIDAK_COCOK'].includes(requestedStatus)) {
-              currentStatus = requestedStatus;
-              document.getElementById('statusFilter').value = requestedStatus;
-            }
-            await loadResults(1);
+      if (requestedTps) {
+        const decodedTps = decodeURIComponent(requestedTps);
+        const hasMatch = decodedTps === 'all' || (result.data && result.data.some(tps => tps.nama_tps === decodedTps));
+        if (hasMatch) {
+          select.value = decodedTps;
+          currentTps = decodedTps;
+          selectTps();
+          if (requestedStatus && ['COCOK','PERLU_DICEK','TIDAK_COCOK'].includes(requestedStatus)) {
+            currentStatus = requestedStatus;
+            document.getElementById('statusFilter').value = requestedStatus;
           }
+          await loadResults(1);
         }
       }
     } catch (err) {
@@ -260,8 +271,8 @@
 
   function selectTps() {
     const tps = document.getElementById('tpsList').value;
-    document.getElementById('compareBtn').disabled = !tps;
-    document.getElementById('activeTpsLabel').textContent = tps || 'Belum dipilih';
+    document.getElementById('compareBtn').disabled = !tps || tps === 'all';
+    document.getElementById('activeTpsLabel').textContent = tps === 'all' ? 'Semua TPS (Global)' : (tps || 'Belum dipilih');
     currentTps = tps || null;
   }
 
@@ -335,6 +346,14 @@
     loadResults(1);
   }
 
+  function onSearchInput() {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => {
+      currentPage = 1;
+      loadResults(1);
+    }, 400);
+  }
+
   // ── Ganti halaman ────────────────────────────────────
   function gotoPage(page) {
     if (page < 1 || page > totalPages) return;
@@ -353,8 +372,10 @@
     document.getElementById('paginationControls').style.display = 'none';
 
     try {
+      const q = document.getElementById('searchQuery').value.trim();
       let url = `/api/tps/${encodeURIComponent(currentTps)}/hasil?page=${page}&limit=${PAGE_LIMIT}`;
       if (currentStatus) url += `&status=${currentStatus}`;
+      if (q) url += `&q=${encodeURIComponent(q)}`;
 
       const response = await fetch(url, {
         headers: { 'Authorization': 'Bearer ' + getToken() }
@@ -386,16 +407,29 @@
         headers: { 'Authorization': 'Bearer ' + getToken() }
       });
       const statResult = await statResp.json();
-      const perbandingan = (statResult.data && statResult.data.perbandingan) || [];
-      const tpsStat = perbandingan.find(t => t.nama_tps === currentTps);
 
-      if (tpsStat) {
-        const total = Number(tpsStat.total || 0);
-        const cocok = Number(tpsStat.cocok || 0);
-        const perlu = Number(tpsStat.perlu_dicek || 0);
-        const tidak = Number(tpsStat.tidak_cocok || 0);
-        renderStatCards(total, cocok, perlu, tidak);
-        drawChart(cocok, perlu, tidak);
+      if (currentTps === 'all') {
+        const ringkasan = statResult.data && statResult.data.ringkasan;
+        if (ringkasan) {
+          const total = Number(ringkasan.total_pemilih_tps || 0);
+          const cocok = Number(ringkasan.total_cocok_seluruh || 0);
+          const perlu = Number(ringkasan.total_perlu_dicek_seluruh || 0);
+          const tidak = Number(ringkasan.total_tidak_cocok_seluruh || 0);
+          renderStatCards(total, cocok, perlu, tidak);
+          drawChart(cocok, perlu, tidak);
+        }
+      } else {
+        const perbandingan = (statResult.data && statResult.data.perbandingan) || [];
+        const tpsStat = perbandingan.find(t => t.nama_tps === currentTps);
+
+        if (tpsStat) {
+          const total = Number(tpsStat.total || 0);
+          const cocok = Number(tpsStat.cocok || 0);
+          const perlu = Number(tpsStat.perlu_dicek || 0);
+          const tidak = Number(tpsStat.tidak_cocok || 0);
+          renderStatCards(total, cocok, perlu, tidak);
+          drawChart(cocok, perlu, tidak);
+        }
       }
     } catch (err) {
       console.error('updateSummaryStats error:', err);

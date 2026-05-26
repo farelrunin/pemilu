@@ -5,423 +5,21 @@ const XLSX = require('xlsx');
 const { query, pool } = require('../db');
 const { verifyToken, isAdmin } = require('../middleware/auth');
 
+// Import modular components
+const {
+  normalizeGender,
+  normalizeAge,
+  normalizeAreaCode,
+  findSpreadsheetColumnIndex,
+  getRawVal
+} = require('../utils/tpsMatcher');
+
+const {
+  runTPSComparison,
+  refreshTPSComparisonIfNeeded
+} = require('../services/tpsService');
+
 const upload = multer({ dest: 'uploads/', limits: { fileSize: 10 * 1024 * 1024 } });
-
-// ── SIMILARITY ENGINE & SPREADSHEET HELPERS ────────────────────────
-
-function normalizeMatchText(value) {
-  return String(value || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function normalizeGender(value) {
-  const raw = normalizeMatchText(value);
-  if (!raw) return null;
-  if (['l', 'lk', 'lakilaki', 'laki laki', 'male', 'pria'].includes(raw)) return 'L';
-  if (['p', 'pr', 'perempuan', 'female', 'wanita'].includes(raw)) return 'P';
-  return null;
-}
-
-function normalizeAge(value) {
-  if (value === null || value === undefined || value === '') return null;
-  const parsed = parseInt(String(value).replace(/[^\d]/g, ''), 10);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function normalizeAreaCode(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-  const digits = raw.replace(/[^\d]/g, '');
-  if (digits) return String(parseInt(digits, 10));
-  return normalizeMatchText(raw);
-}
-
-function levenshteinDistance(a = '', b = '') {
-  if (a === b) return 0;
-  if (!a) return b.length;
-  if (!b) return a.length;
-
-  const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
-
-  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
-
-  for (let i = 1; i <= a.length; i++) {
-    for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost
-      );
-    }
-  }
-
-  return dp[a.length][b.length];
-}
-
-function computeNameSimilarity(sourceName, candidateName) {
-  const source = normalizeMatchText(sourceName);
-  const candidate = normalizeMatchText(candidateName);
-  if (!source || !candidate) return 0;
-
-  // Jika nama persis sama setelah semua spasi dihilangkan (misal: "Siti Mulyo" vs "Sitimulyo")
-  if (source.replace(/\s+/g, '') === candidate.replace(/\s+/g, '')) {
-    return 100;
-  }
-
-  const sourceWords = source.split(' ').filter(Boolean);
-  const candidateWords = candidate.split(' ').filter(Boolean);
-
-  // Optimasi kecepatan super-aman: 
-  // Jika panjang karakter berbeda jauh (> 7), lewati Levenshtein HANYA jika tidak ada satu pun kata yang sama persis (token overlap)
-  const lenDiff = Math.abs(source.length - candidate.length);
-  if (lenDiff > 7) {
-    const hasOverlap = sourceWords.some(t => candidateWords.includes(t));
-    if (!hasOverlap) {
-      return 0;
-    }
-  }
-
-  const distance = levenshteinDistance(source, candidate);
-  const maxLength = Math.max(source.length, candidate.length, 1);
-  const levScore = Math.max(0, 1 - (distance / maxLength));
-
-  const sourceTokens = new Set(sourceWords);
-  const candidateTokens = new Set(candidateWords);
-  const overlap = [...sourceTokens].filter(token => candidateTokens.has(token)).length;
-  
-  // Menggunakan Math.min agar nama panggilan / singkatan / satu kata tidak dihukum berat
-  const tokenScore = sourceTokens.size || candidateTokens.size
-    ? overlap / Math.min(sourceTokens.size, candidateTokens.size)
-    : 0;
-
-  // Mengubah bobot menjadi 50% Levenshtein & 50% Token Overlap agar nama substring/singkat sangat dihargai
-  return Math.round(((levScore * 0.5) + (tokenScore * 0.5)) * 100);
-}
-
-function computeAgeSignal(tpsAge, pemilihAge) {
-  if (tpsAge == null || pemilihAge == null) return 0;
-  const diff = Math.abs(Number(tpsAge) - Number(pemilihAge));
-  
-  if (diff === 0) return 100;
-  if (diff <= 1) return 100; 
-  if (diff <= 2) return 95;  
-  if (diff <= 3) return 85;  
-  if (diff <= 5) return 60;  
-  return 0;
-}
-
-function computeLocationSignal(tpsRow, pemilihRow) {
-  const areaSource = normalizeMatchText([tpsRow.dusun, tpsRow.alamat].filter(Boolean).join(' '));
-  const areaTarget = normalizeMatchText([pemilihRow.dusun, pemilihRow.kordus].filter(Boolean).join(' '));
-  const rtSource = normalizeAreaCode(tpsRow.rt);
-  const rtTarget = normalizeAreaCode(pemilihRow.rt);
-
-  let dusunScore = 0;
-  if (areaSource && areaTarget) {
-    if (areaSource.includes(areaTarget) || areaTarget.includes(areaSource)) {
-      dusunScore = 100;
-    } else {
-      dusunScore = computeNameSimilarity(areaSource, areaTarget);
-    }
-  }
-
-  let rtScore = null;
-  if (rtSource && rtTarget) {
-    rtScore = rtSource === rtTarget ? 100 : 0;
-  }
-
-  return { dusunScore, rtScore };
-}
-
-// ── Gemini AI Brain Helper ─────────────────────────────────────────
-async function askGeminiForMatch(tpsRow, pemilihRow) {
-  if (!process.env.GEMINI_API_KEY) return null;
-
-  try {
-    const prompt = `Anda adalah otak AI untuk sistem verifikasi pemilu. Bandingkan kedua data pemilih berikut dan tentukan apakah mereka 95%+ kemungkinan adalah ORANG YANG SAMA.
-
-Data TPS (KPU):
-- Nama: ${tpsRow.nama}
-- Jenis Kelamin: ${tpsRow.jenis_kelamin || '-'}
-- Usia: ${tpsRow.usia || '-'}
-- Dusun/Alamat: ${tpsRow.dusun || ''} ${tpsRow.alamat || ''}
-- RT/RW: ${tpsRow.rt || '-'}/${tpsRow.rw || '-'}
-
-Data Database Lokal (Target):
-- Nama: ${pemilihRow.nama}
-- Jenis Kelamin: ${pemilihRow.jenis_kelamin || '-'}
-- Usia: ${pemilihRow.usia || '-'}
-- Dusun/Alamat: ${pemilihRow.dusun || ''}
-- RT/RW: ${pemilihRow.rt || '-'}/${pemilihRow.rw || '-'}
-
-Kembalikan jawaban Anda dalam format JSON (dan HANYA JSON, tanpa backticks markdown \`\`\`) dengan properti berikut:
-{
-  "isMatch": boolean (true jika kemungkinan besar orang yang sama, false jika berbeda),
-  "confidence": number (skor keyakinan 0-100),
-  "reason": "alasan singkat dalam Bahasa Indonesia"
-}`;
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      })
-    });
-
-    const json = await response.json();
-    const textResult = json.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (textResult) {
-      return JSON.parse(textResult.trim());
-    }
-  } catch (err) {
-    console.error('Gagal memanggil Gemini API:', err.message);
-  }
-  return null;
-}
-
-function findSpreadsheetColumnIndex(headers = [], aliases = []) {
-  for (let i = 0; i < headers.length; i++) {
-    const h = normalizeMatchText(headers[i]);
-    if (aliases.some(alias => normalizeMatchText(alias) === h)) return i;
-  }
-  return -1;
-}
-
-function getSpreadsheetValue(row = [], aliases = []) {
-  // Aliases lookup
-  return '';
-}
-
-// Helper to extract cell values safely
-function getRawVal(row, index) {
-  if (index === undefined || index === -1 || row[index] === undefined) return '';
-  return String(row[index]).trim();
-}
-
-// ── COMPARISON LOGIC CONTROLLERS ──────────────────────────────────
-
-async function runTPSComparison(namaTps) {
-  const dataTps = await query(`
-    SELECT id, nama, jenis_kelamin, usia, dusun, alamat, rt, rw FROM data_tps WHERE nama_tps = ?
-  `, [namaTps]);
-
-  if (!dataTps.length) {
-    const error = new Error('TPS tidak ditemukan');
-    error.statusCode = 404;
-    throw error;
-  }
-
-  const pemilihLokal = await query(`
-    SELECT p.id, p.nama, p.jenis_kelamin, 
-           COALESCE(p.rt, k.rt) AS rt,
-           COALESCE(p.rw, k.rw) AS rw,
-           TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS usia,
-           k.dusun, k.kordus
-    FROM pemilih p
-    LEFT JOIN kader k ON k.id = p.kader_id
-    WHERE p.id NOT IN (
-        SELECT DISTINCT hp.pemilih_id 
-        FROM hasil_perbandingan hp
-        JOIN data_tps dt ON dt.id = hp.data_tps_id
-        WHERE hp.pemilih_id IS NOT NULL 
-          AND hp.status_cocok IN ('COCOK', 'PERLU_DICEK')
-          AND dt.nama_tps <> ?
-      )
-  `, [namaTps]);
-
-  const startTime = Date.now();
-  let cocok = 0, perluDicek = 0, tidakCocok = 0;
-
-  await query(`
-    DELETE hp
-    FROM hasil_perbandingan hp
-    JOIN data_tps dt ON dt.id = hp.data_tps_id
-    WHERE dt.nama_tps = ?
-  `, [namaTps]);
-
-  const potentialMatches = [];
-  for (const tps of dataTps) {
-    for (const pemilih of pemilihLokal) {
-      const namaSimilarity = computeNameSimilarity(tps.nama, pemilih.nama);
-      const ageSignal = computeAgeSignal(tps.usia, pemilih.usia);
-      const locationSignal = computeLocationSignal(tps, pemilih);
-
-      let namaWeight = 0.70;
-      let ageWeight = 0.15;
-      let locationWeight = 0.15;
-
-      // Jika data usia tidak tersedia di salah satu pihak, distribusikan bobot usia ke nama
-      if (tps.usia == null || pemilih.usia == null) {
-        namaWeight += ageWeight;
-        ageWeight = 0;
-      }
-
-      // Jika data lokasi tidak tersedia di salah satu pihak, distribusikan ke nama
-      const tpsHasLoc = !!(tps.dusun || tps.alamat || tps.rt);
-      const pemilihHasLoc = !!(pemilih.dusun || pemilih.rt);
-      if (!tpsHasLoc || !pemilihHasLoc) {
-        namaWeight += locationWeight;
-        locationWeight = 0;
-      }
-
-      let locationScore = locationSignal.dusunScore;
-      if (locationSignal.rtScore !== null) {
-        locationScore = (locationSignal.dusunScore + locationSignal.rtScore) / 2;
-      }
-
-      const totalScore = Math.round(
-        (namaSimilarity * namaWeight) +
-        (ageSignal * ageWeight) +
-        (locationScore * locationWeight)
-      );
-
-      if (totalScore >= 50) {
-        potentialMatches.push({
-          tpsId: tps.id,
-          pemilihId: pemilih.id,
-          score: totalScore,
-          namaSimilarity,
-          ageSignal,
-          locationSignal
-        });
-      }
-    }
-  }
-
-  potentialMatches.sort((a, b) => b.score - a.score);
-
-  const matchedTpsIds = new Set();
-  const matchedPemilihIds = new Set();
-  const finalMatches = [];
-
-  for (const match of potentialMatches) {
-    if (matchedTpsIds.has(match.tpsId) || matchedPemilihIds.has(match.pemilihId)) {
-      continue;
-    }
-
-    matchedTpsIds.add(match.tpsId);
-    matchedPemilihIds.add(match.pemilihId);
-
-    let status = 'PERLU_DICEK';
-    let finalScore = match.score;
-    let catatan = `Skor: ${match.score}% (nama: ${match.namaSimilarity}%, usia: ${match.ageSignal}%, lokasi: ${Math.round((match.locationSignal.dusunScore + match.locationSignal.rtScore) / 2)}%)`;
-
-    if (match.score >= 85) {
-      status = 'COCOK';
-      cocok++;
-    } else {
-      // PANGGIL GEMINI SENYAP JIKA SKOR DI AREA ABU-ABU (60-84) UNTUK MEMUTUSKAN KECOCOKAN
-      if (match.score >= 60 && process.env.GEMINI_API_KEY) {
-        try {
-          const tpsRow = dataTps.find(t => t.id === match.tpsId);
-          const pemilihRow = pemilihLokal.find(p => p.id === match.pemilihId);
-          if (tpsRow && pemilihRow) {
-            const aiDecision = await askGeminiForMatch(tpsRow, pemilihRow);
-            if (aiDecision && aiDecision.isMatch && aiDecision.confidence >= 80) {
-              status = 'COCOK';
-              cocok++;
-              finalScore = Math.max(match.score, 85); // Naikkan skor ke cocok
-              catatan = `Disetujui AI (${aiDecision.confidence}%): ${aiDecision.reason}`;
-            } else {
-              perluDicek++;
-            }
-          } else {
-            perluDicek++;
-          }
-        } catch (e) {
-          perluDicek++;
-        }
-      } else {
-        perluDicek++;
-      }
-    }
-
-    finalMatches.push({
-      tpsId: match.tpsId,
-      pemilihId: match.pemilihId,
-      status,
-      score: finalScore,
-      namaSimilarity: match.namaSimilarity,
-      ageSignal: match.ageSignal,
-      locationSignal: match.locationSignal,
-      catatan
-    });
-  }
-
-  for (const tps of dataTps) {
-    if (!matchedTpsIds.has(tps.id)) {
-      tidakCocok++;
-      finalMatches.push({
-        tpsId: tps.id,
-        pemilihId: null,
-        status: 'TIDAK_COCOK',
-        score: 0,
-        namaSimilarity: 0,
-        ageSignal: 0,
-        locationSignal: { dusunScore: 0, rtScore: 0 }
-      });
-    }
-  }
-
-  if (finalMatches.length > 0) {
-    const values = finalMatches.map(m => [
-      m.tpsId,
-      m.pemilihId,
-      m.status,
-      m.score,
-      m.catatan || `Skor: ${m.score}% (nama: ${m.namaSimilarity}%, usia: ${m.ageSignal}%, lokasi: ${Math.round(m.locationSignal.rtScore !== null ? (m.locationSignal.dusunScore + m.locationSignal.rtScore) / 2 : m.locationSignal.dusunScore)}%)`
-    ]);
-
-    await query(
-      `INSERT INTO hasil_perbandingan (data_tps_id, pemilih_id, status_cocok, skor_total, catatan) VALUES ?`,
-      [values]
-    );
-  }
-
-  return {
-    durasi_ms: Date.now() - startTime,
-    statistik: {
-      total_data_tps: dataTps.length,
-      total_pemilih: pemilihLokal.length,
-      cocok,
-      perlu_dicek: perluDicek,
-      tidak_cocok: tidakCocok,
-      persentase_cocok: dataTps.length ? Math.round((cocok / dataTps.length) * 100) : 0,
-      persentase_optimal: dataTps.length ? Math.round(((cocok + perluDicek) / dataTps.length) * 100) : 0
-    }
-  };
-}
-
-async function refreshTPSComparisonIfNeeded(namaTps) {
-  const [countRow] = await query(
-    `SELECT COUNT(*) AS total FROM data_tps WHERE nama_tps = ?`,
-    [namaTps]
-  );
-  const total = Number(countRow?.total || 0);
-
-  if (total === 0) {
-    await query(`
-      DELETE hp
-      FROM hasil_perbandingan hp
-      JOIN data_tps dt ON dt.id = hp.data_tps_id
-      WHERE dt.nama_tps = ?
-    `, [namaTps]);
-    return null;
-  }
-
-  return runTPSComparison(namaTps);
-}
 
 // ── MODULE API ENDPOINTS ──────────────────────────────────────────
 
@@ -784,7 +382,7 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 25;
     const offset = (page - 1) * limit;
-    const { dusun, rt } = req.query;
+    const { dusun, rt, status, q } = req.query;
 
     const tps = req.params.nama_tps;
     const isAllTps = (!tps || tps.toLowerCase() === 'all' || tps.toLowerCase() === 'sitimulyo');
@@ -794,7 +392,7 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
     
     let countQueryStr = `
       SELECT COUNT(*) AS total FROM (
-        SELECT dt.rt AS rt_tps, dt.rw AS rw_tps,
+        SELECT dt.rt AS rt_tps, dt.rw AS rw_tps, hp.status_cocok, dt.nama AS nama_tps, p.nama AS nama_pemilih, p.nik,
                CASE 
                  WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('', 'sitimulyo') THEN 'Alamat Umum (Belum Terinci)'
                  WHEN LOWER(TRIM(COALESCE(k.dusun, rt_mapping.dusun, dt.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
@@ -833,6 +431,14 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
      if (rt) {
        countQueryStr += ` AND CAST(NULLIF(t.rt_tps, '') AS UNSIGNED) = ?`;
        countParams.push(parseInt(rt));
+     }
+     if (status) {
+       countQueryStr += ` AND t.status_cocok = ?`;
+       countParams.push(status);
+     }
+     if (q) {
+       countQueryStr += ` AND (t.nama_tps LIKE ? OR t.nama_pemilih LIKE ? OR t.nik LIKE ?)`;
+       countParams.push(`%${q}%`, `%${q}%`, `%${q}%`);
      }
  
      const [totalRow] = await query(countQueryStr, countParams);
@@ -886,6 +492,14 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
      if (rt) {
        selectQueryStr += ` AND CAST(NULLIF(t.rt_tps, '') AS UNSIGNED) = ?`;
        selectParams.push(parseInt(rt));
+     }
+     if (status) {
+       selectQueryStr += ` AND t.status_cocok = ?`;
+       selectParams.push(status);
+     }
+     if (q) {
+       selectQueryStr += ` AND (t.nama_tps LIKE ? OR t.nama_pemilih LIKE ? OR t.nik LIKE ?)`;
+       selectParams.push(`%${q}%`, `%${q}%`, `%${q}%`);
      }
 
     selectQueryStr += ` ORDER BY 
