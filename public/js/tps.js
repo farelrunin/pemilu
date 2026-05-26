@@ -37,8 +37,10 @@ const TPS_API = {
     return res.json();
   },
 
-  getTPSData: async (namaTps, page = 1, limit = 100) => {
-    const res = await fetch(`/api/tps/${encodeURIComponent(namaTps)}/data?page=${page}&limit=${limit}`, {
+  getTPSData: async (namaTps, page = 1, limit = 100, q = '') => {
+    let url = `/api/tps/${encodeURIComponent(namaTps)}/data?page=${page}&limit=${limit}`;
+    if (q) url += `&q=${encodeURIComponent(q)}`;
+    const res = await fetch(url, {
       headers: { 'Authorization': `Bearer ${getToken()}` }
     });
 

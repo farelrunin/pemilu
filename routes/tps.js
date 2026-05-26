@@ -542,13 +542,21 @@ router.get('/:nama_tps/data', verifyToken, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 25;
     const offset = (page - 1) * limit;
+    const q = req.query.q ? String(req.query.q).trim() : '';
 
     const tps = req.params.nama_tps;
 
-    const [totalRow] = await query('SELECT COUNT(*) AS total FROM data_tps WHERE nama_tps = ?', [tps]);
+    let countQuery = 'SELECT COUNT(*) AS total FROM data_tps WHERE nama_tps = ?';
+    const countParams = [tps];
+    if (q) {
+      countQuery += ' AND (nama LIKE ? OR rt LIKE ?)';
+      countParams.push(`%${q}%`, `%${q}%`);
+    }
+
+    const [totalRow] = await query(countQuery, countParams);
     const total = totalRow?.total || 0;
 
-    const list = await query(`
+    let selectQuery = `
       SELECT dt.id, dt.nama_tps, dt.nama, dt.jenis_kelamin, dt.usia, dt.dusun, dt.alamat, dt.rt, dt.rw,
              hp.status_cocok, hp.skor_total, hp.catatan,
              p.nama AS nama_lokal, p.id AS pemilih_id
@@ -556,9 +564,16 @@ router.get('/:nama_tps/data', verifyToken, async (req, res) => {
       LEFT JOIN hasil_perbandingan hp ON hp.data_tps_id = dt.id
       LEFT JOIN pemilih p ON p.id = hp.pemilih_id
       WHERE dt.nama_tps = ?
-      ORDER BY dt.nama ASC
-      LIMIT ? OFFSET ?
-    `, [tps, limit, offset]);
+    `;
+    const selectParams = [tps];
+    if (q) {
+      selectQuery += ' AND (dt.nama LIKE ? OR dt.rt LIKE ?)';
+      selectParams.push(`%${q}%`, `%${q}%`);
+    }
+    selectQuery += ' ORDER BY dt.nama ASC LIMIT ? OFFSET ?';
+    selectParams.push(limit, offset);
+
+    const list = await query(selectQuery, selectParams);
 
     res.json({
       status: 'success',

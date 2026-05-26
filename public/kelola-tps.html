@@ -110,6 +110,14 @@
         <div class="card">
           <div class="section-title">Data Pemilih TPS</div>
 
+          <!-- Kotak Pencarian TPS -->
+          <div class="toolbar-filters" style="margin-bottom: 15px; display: flex; gap: 10px;">
+            <div class="search-wrap" style="flex: 1; display: flex; align-items: center; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 6px 12px; background: var(--card-bg, #ffffff);">
+              <span style="margin-right: 8px; color: var(--text-secondary, #888);">🔍</span>
+              <input type="text" id="tpsSearchInput" placeholder="Cari nama atau RT di TPS ini..." style="border: none; outline: none; background: transparent; width: 100%; font-size: 14px;" oninput="onTpsSearch()">
+            </div>
+          </div>
+
           <!-- Info halaman + loading -->
           <div id="pageInfo" class="kelola-page-info"></div>
           <div id="loadingState" class="loading-state">Memuat baris TPS...</div>
@@ -192,6 +200,15 @@
     loadRows(currentPage);
   }
 
+  let searchDebounce = null;
+  function onTpsSearch() {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      currentPage = 1;
+      loadRows(1);
+    }, 350);
+  }
+
   // ── Load baris dari server ────────────────────────────
   async function loadRows(page) {
     const loadingState = document.getElementById('loadingState');
@@ -206,7 +223,8 @@
     document.getElementById('rowsBody').innerHTML = '';
 
     try {
-      const result = await TPS_API.getTPSData(currentTps, page, PAGE_LIMIT);
+      const q = document.getElementById('tpsSearchInput')?.value || '';
+      const result = await TPS_API.getTPSData(currentTps, page, PAGE_LIMIT, q);
       const rows      = result.data || [];
       const pagination = result.pagination || {};
       totalPages = pagination.totalPages || 1;
