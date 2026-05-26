@@ -140,6 +140,56 @@ function computeLocationSignal(tpsRow, pemilihRow) {
   return { dusunScore, rtScore };
 }
 
+// ── Gemini AI Brain Helper ─────────────────────────────────────────
+async function askGeminiForMatch(tpsRow, pemilihRow) {
+  if (!process.env.GEMINI_API_KEY) return null;
+
+  try {
+    const prompt = `Anda adalah otak AI untuk sistem verifikasi pemilu. Bandingkan kedua data pemilih berikut dan tentukan apakah mereka 95%+ kemungkinan adalah ORANG YANG SAMA.
+
+Data TPS (KPU):
+- Nama: ${tpsRow.nama}
+- Jenis Kelamin: ${tpsRow.jenis_kelamin || '-'}
+- Usia: ${tpsRow.usia || '-'}
+- Dusun/Alamat: ${tpsRow.dusun || ''} ${tpsRow.alamat || ''}
+- RT/RW: ${tpsRow.rt || '-'}/${tpsRow.rw || '-'}
+
+Data Database Lokal (Target):
+- Nama: ${pemilihRow.nama}
+- Jenis Kelamin: ${pemilihRow.jenis_kelamin || '-'}
+- Usia: ${pemilihRow.usia || '-'}
+- Dusun/Alamat: ${pemilihRow.dusun || ''}
+- RT/RW: ${pemilihRow.rt || '-'}/${pemilihRow.rw || '-'}
+
+Kembalikan jawaban Anda dalam format JSON (dan HANYA JSON, tanpa backticks markdown \`\`\`) dengan properti berikut:
+{
+  "isMatch": boolean (true jika kemungkinan besar orang yang sama, false jika berbeda),
+  "confidence": number (skor keyakinan 0-100),
+  "reason": "alasan singkat dalam Bahasa Indonesia"
+}`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      })
+    });
+
+    const json = await response.json();
+    const textResult = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (textResult) {
+      return JSON.parse(textResult.trim());
+    }
+  } catch (err) {
+    console.error('Gagal memanggil Gemini API:', err.message);
+  }
+  return null;
+}
+
 function findSpreadsheetColumnIndex(headers = [], aliases = []) {
   for (let i = 0; i < headers.length; i++) {
     const h = normalizeMatchText(headers[i]);
@@ -259,21 +309,48 @@ async function runTPSComparison(namaTps) {
     matchedPemilihIds.add(match.pemilihId);
 
     let status = 'PERLU_DICEK';
+    let finalScore = match.score;
+    let catatan = `Skor: ${match.score}% (nama: ${match.namaSimilarity}%, usia: ${match.ageSignal}%, lokasi: ${Math.round((match.locationSignal.dusunScore + match.locationSignal.rtScore) / 2)}%)`;
+
     if (match.score >= 85) {
       status = 'COCOK';
       cocok++;
     } else {
-      perluDicek++;
+      // PANGGIL GEMINI SENYAP JIKA SKOR DI AREA ABU-ABU (60-84) UNTUK MEMUTUSKAN KECOCOKAN
+      if (match.score >= 60 && process.env.GEMINI_API_KEY) {
+        try {
+          const tpsRow = dataTps.find(t => t.id === match.tpsId);
+          const pemilihRow = pemilihLokal.find(p => p.id === match.pemilihId);
+          if (tpsRow && pemilihRow) {
+            const aiDecision = await askGeminiForMatch(tpsRow, pemilihRow);
+            if (aiDecision && aiDecision.isMatch && aiDecision.confidence >= 80) {
+              status = 'COCOK';
+              cocok++;
+              finalScore = Math.max(match.score, 85); // Naikkan skor ke cocok
+              catatan = `Disetujui AI (${aiDecision.confidence}%): ${aiDecision.reason}`;
+            } else {
+              perluDicek++;
+            }
+          } else {
+            perluDicek++;
+          }
+        } catch (e) {
+          perluDicek++;
+        }
+      } else {
+        perluDicek++;
+      }
     }
 
     finalMatches.push({
       tpsId: match.tpsId,
       pemilihId: match.pemilihId,
       status,
-      score: match.score,
+      score: finalScore,
       namaSimilarity: match.namaSimilarity,
       ageSignal: match.ageSignal,
-      locationSignal: match.locationSignal
+      locationSignal: match.locationSignal,
+      catatan
     });
   }
 
@@ -298,7 +375,7 @@ async function runTPSComparison(namaTps) {
       m.pemilihId,
       m.status,
       m.score,
-      `Skor: ${m.score}% (nama: ${m.namaSimilarity}%, usia: ${m.ageSignal}%, lokasi: ${Math.round((m.locationSignal.dusunScore + m.locationSignal.rtScore) / 2)}%)`
+      m.catatan || `Skor: ${m.score}% (nama: ${m.namaSimilarity}%, usia: ${m.ageSignal}%, lokasi: ${Math.round((m.locationSignal.dusunScore + m.locationSignal.rtScore) / 2)}%)`
     ]);
 
     await query(
