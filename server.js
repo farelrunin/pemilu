@@ -259,10 +259,17 @@ function computeNameSimilarity(sourceName, candidateName) {
     return 100;
   }
 
-  // Optimasi kecepatan: Jika panjang karakter berbeda jauh (> 7) dan huruf pertama berbeda, lewati Levenshtein
+  const sourceTokens = source.split(' ').filter(Boolean);
+  const candidateTokens = candidate.split(' ').filter(Boolean);
+
+  // Optimasi kecepatan super-aman: 
+  // Jika panjang karakter berbeda jauh (> 7), lewati Levenshtein HANYA jika tidak ada satu pun kata yang sama persis (token overlap)
   const lenDiff = Math.abs(source.length - candidate.length);
-  if (lenDiff > 7 && source[0] !== candidate[0]) {
-    return 0;
+  if (lenDiff > 7) {
+    const hasOverlap = sourceTokens.some(t => candidateTokens.includes(t));
+    if (!hasOverlap) {
+      return 0;
+    }
   }
 
   const distance = levenshteinDistance(source, candidate);
