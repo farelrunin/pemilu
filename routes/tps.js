@@ -460,6 +460,36 @@ router.get('/:nama_tps/data', verifyToken, async (req, res) => {
   }
 });
 
+// 3️⃣.5️⃣ Jalankan perbandingan seluruh TPS secara bersih dan global dari nol
+router.post('/perbandingan-semua', verifyToken, async (req, res) => {
+  try {
+    // Hapus seluruh hasil lama agar tidak ada pemilih_id yang terkunci oleh sisa duplikat lama
+    await query('DELETE FROM hasil_perbandingan');
+
+    const tpsList = await query('SELECT DISTINCT nama_tps FROM data_tps ORDER BY nama_tps ASC');
+
+    const results = [];
+    for (const tps of tpsList) {
+      const resCompare = await runTPSComparison(tps.nama_tps);
+      results.push({
+        tps: tps.nama_tps,
+        total: resCompare.statistik.total_data_tps,
+        cocok: resCompare.statistik.cocok,
+        perlu_dicek: resCompare.statistik.perlu_dicek,
+        tidak_cocok: resCompare.statistik.tidak_cocok
+      });
+    }
+
+    res.json({
+      status: 'success',
+      message: `Berhasil mencocokkan ulang ${tpsList.length} TPS secara bersih, berurutan, dan global.`,
+      results
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // 4️⃣ Jalankan perbandingan data TPS secara manual
 router.post('/:nama_tps/perbandingan', verifyToken, async (req, res) => {
   try {

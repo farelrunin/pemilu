@@ -90,6 +90,7 @@
               <a href="/upload-tps" class="btn btn-outline admin-only">Upload TPS Baru</a>
               <a href="/statistik-tps" class="btn btn-outline">Lihat Statistik</a>
             </div>
+            <button id="compareAllBtn" onclick="runAllComparisons()" class="btn btn-outline admin-only" style="margin-top: 15px; width: 100%; font-weight: 600; border-color: var(--primary-color, #4f8b76); color: var(--primary-color, #4f8b76); background: rgba(79, 139, 118, 0.05);">🔄 Cocokkan Ulang Semua TPS (Global)</button>
           </div>
 
           <div class="tps-kpi-stack">
@@ -292,6 +293,38 @@
     } finally {
       btn.disabled = false;
       btn.textContent = 'Bandingkan';
+    }
+  }
+
+  // ── Jalankan perbandingan semua ──────────────────────
+  async function runAllComparisons() {
+    if (!confirm('Apakah Anda yakin ingin mencocokkan ulang seluruh TPS dari nol? Tindakan ini akan menghapus semua riwayat perbandingan lama dan menghitung ulang kecocokan secara global & bersih agar 100% akurat.')) {
+      return;
+    }
+
+    const btn = document.getElementById('compareAllBtn');
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ Memproses Semua TPS...';
+
+    try {
+      const response = await fetch('/api/tps/perbandingan-semua', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getToken() }
+      });
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('Berhasil mencocokkan ulang seluruh TPS secara global!');
+        window.location.reload();
+      } else {
+        alert('Gagal memproses perbandingan semua: ' + result.error);
+      }
+    } catch (err) {
+      alert('Terjadi kesalahan: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = origText;
     }
   }
 
