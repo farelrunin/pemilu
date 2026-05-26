@@ -259,6 +259,12 @@ function computeNameSimilarity(sourceName, candidateName) {
     return 100;
   }
 
+  // Optimasi kecepatan: Jika panjang karakter berbeda jauh (> 7) dan huruf pertama berbeda, lewati Levenshtein
+  const lenDiff = Math.abs(source.length - candidate.length);
+  if (lenDiff > 7 && source[0] !== candidate[0]) {
+    return 0;
+  }
+
   const distance = levenshteinDistance(source, candidate);
   const maxLength = Math.max(source.length, candidate.length, 1);
   const levScore = Math.max(0, 1 - (distance / maxLength));
