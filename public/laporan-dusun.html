@@ -397,9 +397,27 @@
       return;
     }
 
-    const startNum = (pagination.page - 1) * pagination.limit + 1;
+    let currentRt = null;
+    let localIndex = 0;
+
     tbody.innerHTML = data.map((row, index) => {
       const rtVal = row.rt_tps ? String(row.rt_tps).padStart(2, '0') : '-';
+      let headerHtml = '';
+
+      if (rtVal !== currentRt) {
+        currentRt = rtVal;
+        localIndex = 1;
+        headerHtml = `
+          <tr class="rt-group-header" style="background-color: var(--card-bg, #edf2f7) !important;">
+            <td colspan="6" style="font-weight: 800; text-align: left; padding: 12px; font-size: 11pt; border-bottom: 2px solid var(--border-color, #cbd5e0); color: var(--primary-color, #4f8b76);">
+              📍 WILAYAH RT ${rtVal}
+            </td>
+          </tr>
+        `;
+      } else {
+        localIndex++;
+      }
+
       const statusClass = row.status_cocok ? row.status_cocok.toLowerCase().replace(/_/g, '-') : '';
       
       const displayName = row.nama_pemilih || row.nama_tps || '-';
@@ -407,9 +425,9 @@
         ? `<a href="/?highlight=${encodeURIComponent(row.pemilih_id)}" target="_blank" style="color:inherit;text-decoration:none;" title="Buka data pemilih"><strong>${esc(displayName)}</strong></a>`
         : `<strong>${esc(displayName)}</strong>`;
 
-      return `
+      return headerHtml + `
         <tr class="${statusClass}">
-          <td>${startNum + index}</td>
+          <td>${localIndex}</td>
           <td>${pemilihLink}</td>
           <td><code>${esc(row.nik || '-')}</code></td>
           <td><code>RT ${rtVal}</code></td>
@@ -459,8 +477,30 @@
       if (result.status === 'success' && result.data && result.data.length > 0) {
         const originalTbodyHTML = tbody.innerHTML;
         
+        let printCurrentRt = null;
+        let printLocalIndex = 0;
+        let rtCount = 0;
+
         tbody.innerHTML = result.data.map((row, index) => {
           const rtVal = row.rt_tps ? String(row.rt_tps).padStart(2, '0') : '-';
+          let headerHtml = '';
+          
+          if (rtVal !== printCurrentRt) {
+            printCurrentRt = rtVal;
+            printLocalIndex = 1;
+            const pageBreakStyle = rtCount > 0 ? 'page-break-before: always;' : '';
+            rtCount++;
+            headerHtml = `
+              <tr class="rt-group-header" style="background-color: #edf2f7 !important; ${pageBreakStyle}">
+                <td colspan="6" style="font-weight: bold; text-align: left; padding: 12px 15px; font-size: 12pt; border-bottom: 2px solid #cbd5e0; color: #2d3748;">
+                  📍 DAFTAR PEMILIH RT ${rtVal}
+                </td>
+              </tr>
+            `;
+          } else {
+            printLocalIndex++;
+          }
+
           const statusClass = row.status_cocok ? row.status_cocok.toLowerCase().replace(/_/g, '-') : '';
           
           const displayName = row.nama_pemilih || row.nama_tps || '-';
@@ -468,9 +508,9 @@
             ? `<a href="/?highlight=${encodeURIComponent(row.pemilih_id)}" target="_blank" style="color:inherit;text-decoration:none;" title="Buka data pemilih"><strong>${esc(displayName)}</strong></a>`
             : `<strong>${esc(displayName)}</strong>`;
 
-          return `
+          return headerHtml + `
             <tr class="${statusClass}">
-              <td>${1 + index}</td>
+              <td>${printLocalIndex}</td>
               <td>${pemilihLink}</td>
               <td><code>${esc(row.nik || '-')}</code></td>
               <td><code>RT ${rtVal}</code></td>
