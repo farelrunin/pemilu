@@ -501,40 +501,34 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
 
     const list = await query(selectQueryStr, selectParams);
 
-    // Get unique RTs for this dusun to populate select dropdown dynamically
+    // Get unique RTs for this dusun to populate select dropdown dynamically from master kader table
     let rtList = [];
     if (dusun) {
       const rtQuery = `
-        SELECT DISTINCT dt.rt 
-        FROM hasil_perbandingan hp
-        JOIN data_tps dt ON dt.id = hp.data_tps_id
-        LEFT JOIN pemilih p ON p.id = hp.pemilih_id
-        LEFT JOIN kader k ON k.id = p.kader_id
-        WHERE 1=1
-        ${isAllTps ? '' : 'AND dt.nama_tps = ?'}
-        AND LOWER(
-          CASE 
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('', 'sitimulyo') THEN 'Alamat Umum (Belum Terinci)'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'Banyakan 2'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('banyakan 3', 'banyakan iii') THEN 'Banyakan 3'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'Cepoko'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'Kuden'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'Karang Gayam'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'Karang Ploso'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'Pager Gunung 1'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
-            WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
-            ELSE TRIM(COALESCE(k.dusun, dt.dusun))
-          END
-        ) = LOWER(?)
-        ORDER BY CAST(NULLIF(dt.rt, '') AS UNSIGNED) ASC, dt.rt ASC
+        SELECT DISTINCT rt 
+        FROM kader
+        WHERE rt IS NOT NULL AND rt <> ''
+          AND LOWER(
+            CASE 
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('', 'sitimulyo') THEN 'Alamat Umum (Belum Terinci)'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'Banyakan 2'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('banyakan 3', 'banyakan iii') THEN 'Banyakan 3'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'Cepoko'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'Kuden'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'Karang Gayam'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'Karang Ploso'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'Pager Gunung 1'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
+              ELSE TRIM(COALESCE(dusun, ''))
+            END
+          ) = LOWER(?)
+        ORDER BY CAST(rt AS UNSIGNED) ASC, rt ASC
       `;
-      const rtParams = [];
-      if (!isAllTps) rtParams.push(tps);
-      rtParams.push(String(dusun).trim());
+      const rtParams = [String(dusun).trim()];
       
       const rtRows = await query(rtQuery, rtParams);
       rtList = rtRows
