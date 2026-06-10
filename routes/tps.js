@@ -406,7 +406,7 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
                  WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
                  WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
                  WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
-                 WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
+                 WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari', 'gondosari somokaton', 'gondosari-somokaton', 'gondosari') THEN 'Gondosari-Somokaton'
                  ELSE TRIM(COALESCE(k.dusun, dt.dusun))
                END AS resolved_dusun
         FROM hasil_perbandingan hp
@@ -461,7 +461,7 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
                   WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
                   WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
                   WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
-                  WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
+                  WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari', 'gondosari somokaton', 'gondosari-somokaton', 'gondosari') THEN 'Gondosari-Somokaton'
                   ELSE TRIM(COALESCE(k.dusun, dt.dusun))
                 END AS resolved_dusun
          FROM hasil_perbandingan hp
@@ -522,7 +522,7 @@ router.get('/:nama_tps/hasil', verifyToken, async (req, res) => {
               WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
               WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
               WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
-              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
+              WHEN LOWER(TRIM(COALESCE(dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari', 'gondosari somokaton', 'gondosari-somokaton', 'gondosari') THEN 'Gondosari-Somokaton'
               ELSE TRIM(COALESCE(dusun, ''))
             END
           ) = LOWER(?)
@@ -622,7 +622,7 @@ router.get('/statistik-dusun', verifyToken, async (req, res) => {
           WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
           WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
           WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari', 'gondosari somokaton', 'gondosari-somokaton', 'gondosari') THEN 'Gondosari-Somokaton'
           ELSE TRIM(COALESCE(k.dusun, dt.dusun))
         END AS dusun,
         COUNT(dt.id) AS total_pemilih_tps,
@@ -650,7 +650,7 @@ router.get('/statistik-dusun', verifyToken, async (req, res) => {
           WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
           WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
           WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari') THEN 'Gondobari-Somokaton'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, dt.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari', 'gondosari somokaton', 'gondosari-somokaton', 'gondosari') THEN 'Gondosari-Somokaton'
           ELSE TRIM(COALESCE(k.dusun, dt.dusun))
         END
       ORDER BY persentase_cocok DESC

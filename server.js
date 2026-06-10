@@ -747,10 +747,77 @@ app.delete('/api/koordinator/:id', verifyToken, isAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/kader/statistik-dusun', verifyToken, async (req, res) => {
+  try {
+    const data = await query(`
+      SELECT 
+        CASE 
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('', 'sitimulyo') THEN 'Alamat Umum (Belum Terinci)'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'Banyakan 2'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan 3', 'banyakan iii') THEN 'Banyakan 3'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'Cepoko'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'Kuden'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'Karang Gayam'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'Karang Ploso'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'Pager Gunung 1'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari', 'gondosari somokaton', 'gondosari-somokaton', 'gondosari') THEN 'Gondosari-Somokaton'
+          ELSE TRIM(k.dusun)
+        END AS dusun,
+        COUNT(k.id) AS total_kader,
+        GROUP_CONCAT(CONCAT('Kader ', k.nomor, ' (', k.nama, ')') ORDER BY k.nomor ASC SEPARATOR ', ') AS daftar_kader
+      FROM kader k
+      GROUP BY 1
+    `);
+    
+    const pemilihStats = await query(`
+      SELECT 
+        CASE 
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('', 'sitimulyo') THEN 'Alamat Umum (Belum Terinci)'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'Banyakan 2'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan 3', 'banyakan iii') THEN 'Banyakan 3'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'Cepoko'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'Kuden'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'Karang Gayam'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'Karang Ploso'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'Pager Gunung 1'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari', 'gondosari somokaton', 'gondosari-somokaton', 'gondosari') THEN 'Gondosari-Somokaton'
+          ELSE TRIM(k.dusun)
+        END AS dusun,
+        COUNT(p.id) AS total_pemilih
+      FROM pemilih p
+      JOIN kader k ON k.id = p.kader_id
+      GROUP BY 1
+    `);
+
+    const result = data.map(item => {
+      const pStat = pemilihStats.find(p => p.dusun.toLowerCase() === item.dusun.toLowerCase());
+      return {
+        dusun: item.dusun,
+        total_kader: item.total_kader,
+        daftar_kader: item.daftar_kader,
+        total_pemilih: pStat ? pStat.total_pemilih : 0
+      };
+    });
+
+    res.json({ status: 'success', data: result });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/kader', verifyToken, async (req, res) => {
   try {
     const q = String(req.query.q || '').trim();
     const koordinatorId = String(req.query.koordinatorId || '').trim();
+    const dusun = String(req.query.dusun || '').trim();
     let where = 'WHERE 1 = 1';
     const params = [];
 
@@ -767,6 +834,28 @@ app.get('/api/kader', verifyToken, async (req, res) => {
     if (koordinatorId) {
       where += ' AND k.koordinator_id = ?';
       params.push(koordinatorId);
+    }
+
+    if (dusun) {
+      where += ` AND LOWER(
+        CASE 
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('', 'sitimulyo') THEN 'alamat umum (belum terinci)'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'banyakan 1'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'banyakan 2'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan 3', 'banyakan iii') THEN 'banyakan 3'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'cepoko'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'kuden'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'karang gayam'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'karang ploso'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'pager gunung 1'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'pager gunung 2'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'nglengis'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'karang anom'
+          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari', 'gondosari somokaton', 'gondosari-somokaton', 'gondosari') THEN 'gondosari-somokaton'
+          ELSE LOWER(TRIM(k.dusun))
+        END
+      ) = LOWER(?)`;
+      params.push(dusun);
     }
 
     const rows = await query(`
@@ -1728,6 +1817,7 @@ app.get('/kelola-tps',          (req, res) => res.sendFile(path.join(__dirname, 
 app.get('/perbandingan-tps',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'perbandingan-tps.html')));
 app.get('/statistik-tps',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'statistik-tps.html')));
 app.get('/peta-sitimulyo',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'peta-sitimulyo.html')));
+app.get('/peta-kader',            (req, res) => res.sendFile(path.join(__dirname, 'public', 'peta-kader.html')));
 app.get('/non-dpt',               (req, res) => res.sendFile(path.join(__dirname, 'public', 'non-dpt.html')));
 app.get('/laporan-dusun',         (req, res) => res.sendFile(path.join(__dirname, 'public', 'laporan-dusun.html')));
 
