@@ -37,9 +37,24 @@
       body.print-map-mode .page-header,
       body.print-map-mode .filters,
       body.print-map-mode .tps-kpi-stack,
-      body.print-map-mode #detailKaderSection,
       body.print-map-mode .map-tooltip,
       body.print-map-mode #btnPrintKader {
+        display: none !important;
+      }
+
+      body.print-map-mode #detailKaderSection {
+        display: block !important;
+        page-break-before: always !important;
+        margin-top: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      body.print-map-mode #detailKaderSection * {
+        visibility: visible !important;
+      }
+      body.print-map-mode #kaderTableIntro {
         display: none !important;
       }
 
