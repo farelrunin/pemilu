@@ -334,28 +334,40 @@ async function ensureNikColumnsFlexible() {
   }
 }
 
-// 🔄 Auto-compare TPS yang sudah ada di database tapi belum pernah dibandingkan
+// 🔄 Auto-compare cerdas: jika ada pemilih tanpa hasil perbandingan, compare ulang semua dari awal
 async function autoCompareUnprocessedTPS() {
   try {
     const { runTPSComparison } = require('./services/tpsService');
 
-    // Cari TPS yang belum punya SATUPUN hasil perbandingan
-    const unprocessed = await query(`
-      SELECT DISTINCT dt.nama_tps
-      FROM data_tps dt
-      LEFT JOIN hasil_perbandingan hp ON hp.data_tps_id = dt.id
-      WHERE hp.id IS NULL
-      ORDER BY dt.nama_tps ASC
-    `);
-
-    if (!unprocessed.length) {
-      console.log('✅ [AUTO-COMPARE] Semua TPS sudah pernah dibandingkan.');
+    // Cek apakah ada data TPS sama sekali
+    const [tpsCount] = await query('SELECT COUNT(*) AS total FROM data_tps');
+    if (!tpsCount || tpsCount.total === 0) {
+      console.log('ℹ️  [AUTO-COMPARE] Belum ada data TPS yang diupload, lewati.');
       return;
     }
 
-    console.log(`🔄 [AUTO-COMPARE] Ditemukan ${unprocessed.length} TPS yang belum dibandingkan. Memulai pencocokan otomatis...`);
+    // Cek apakah ada pemilih yang tidak punya hasil perbandingan sama sekali
+    const [unmatchedCount] = await query(`
+      SELECT COUNT(*) AS total
+      FROM pemilih p
+      LEFT JOIN hasil_perbandingan hp ON hp.pemilih_id = p.id
+      WHERE hp.id IS NULL
+    `);
 
-    for (const row of unprocessed) {
+    if (!unmatchedCount || unmatchedCount.total === 0) {
+      console.log('✅ [AUTO-COMPARE] Semua pemilih sudah punya hasil perbandingan.');
+      return;
+    }
+
+    console.log(`🔄 [AUTO-COMPARE] Ditemukan ${unmatchedCount.total} pemilih belum dibandingkan. Menjalankan ulang perbandingan semua TPS dari awal...`);
+
+    // Hapus semua hasil lama agar tidak ada konflik
+    await query('DELETE FROM hasil_perbandingan');
+    console.log('🗑️  [AUTO-COMPARE] Hasil perbandingan lama dihapus. Memulai ulang...');
+
+    // Ambil semua TPS lalu bandingkan satu per satu
+    const tpsList = await query('SELECT DISTINCT nama_tps FROM data_tps ORDER BY nama_tps ASC');
+    for (const row of tpsList) {
       try {
         console.log(`   ⏳ [AUTO-COMPARE] Memproses TPS: ${row.nama_tps}`);
         const result = await runTPSComparison(row.nama_tps);
@@ -365,7 +377,7 @@ async function autoCompareUnprocessedTPS() {
       }
     }
 
-    console.log('🎉 [AUTO-COMPARE] Pencocokan otomatis selesai untuk semua TPS yang tertunda.');
+    console.log('🎉 [AUTO-COMPARE] Pencocokan otomatis selesai untuk semua TPS!');
   } catch (err) {
     console.error('❌ [AUTO-COMPARE] Gagal menjalankan auto-compare saat startup:', err.message);
   }
