@@ -98,10 +98,24 @@ router.post('/upload', verifyToken, isAdmin, upload.single('file'), async (req, 
       [rowsToInsert]
     );
 
+    // ✅ Kirim respons langsung ke user — jangan tahan menunggu proses pencocokan
     res.json({
       status: 'success',
-      message: `Berhasil mengimpor ${rowsToInsert.length} data pemilih ke dalam TPS ${cleanedNamaTps}`
+      message: `Berhasil mengimpor ${rowsToInsert.length} data pemilih ke dalam TPS ${cleanedNamaTps}. Proses pencocokan otomatis sedang berjalan di latar belakang...`,
+      autoCompare: true
     });
+
+    // 🔄 Jalankan perbandingan otomatis di background (tidak menunggu respons HTTP)
+    setImmediate(async () => {
+      try {
+        console.log(`[AUTO-COMPARE] Memulai pencocokan otomatis untuk TPS: ${cleanedNamaTps}`);
+        const result = await runTPSComparison(cleanedNamaTps);
+        console.log(`[AUTO-COMPARE] ✅ Selesai TPS ${cleanedNamaTps}: cocok=${result.statistik.cocok}, perlu_dicek=${result.statistik.perlu_dicek}, tidak_cocok=${result.statistik.tidak_cocok}`);
+      } catch (compareErr) {
+        console.error(`[AUTO-COMPARE] ❌ Gagal pencocokan otomatis TPS ${cleanedNamaTps}:`, compareErr.message);
+      }
+    });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
