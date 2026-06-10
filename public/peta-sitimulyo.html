@@ -670,16 +670,16 @@
               <thead>
                 <tr>
                   <th>No.</th>
-                  <th>Nama di TPS</th>
-                  <th>Gender</th>
-                  <th>Usia TPS</th>
-                  <th>Usia DB</th>
-                  <th>Alamat TPS</th>
-                  <th>RT/RW</th>
-                  <th>Match di Database</th>
-                  <th>NIK Database</th>
-                  <th>Status Cocok</th>
-                  <th>Skor</th>
+                  <th id="th-col1">Nama di TPS</th>
+                  <th id="th-col2">Gender</th>
+                  <th id="th-col3">Usia TPS</th>
+                  <th id="th-col4">Usia</th>
+                  <th id="th-col5">Alamat TPS</th>
+                  <th id="th-col6">RT/RW</th>
+                  <th id="th-col7">Match di Database</th>
+                  <th id="th-col8">NIK Database</th>
+                  <th id="th-col9">Status Cocok</th>
+                  <th id="th-col10">Skor</th>
                 </tr>
               </thead>
               <tbody id="votersDetailBody"></tbody>
@@ -969,6 +969,18 @@
       }
 
       tbody.innerHTML = filtered.map((item, index) => {
+        // Reset header kolom ke mode normal (data TPS KPU) setiap kali render dusun biasa
+        document.getElementById('th-col1').textContent = 'Nama di TPS';
+        document.getElementById('th-col2').textContent = 'Gender';
+        document.getElementById('th-col3').textContent = 'Usia TPS';
+        document.getElementById('th-col4').textContent = 'Usia DB';
+        document.getElementById('th-col5').textContent = 'Alamat TPS';
+        document.getElementById('th-col6').textContent = 'RT/RW';
+        document.getElementById('th-col7').textContent = 'Match di Database';
+        document.getElementById('th-col8').textContent = 'NIK Database';
+        document.getElementById('th-col9').textContent = 'Status Cocok';
+        document.getElementById('th-col10').textContent = 'Skor';
+
         let statusClass = 'tidak-cocok';
         let chipClass = 'danger';
         if (item.status_cocok === 'COCOK') { statusClass = 'cocok'; chipClass = 'success'; }
@@ -1046,26 +1058,34 @@
         return;
       }
 
+      // Ganti label kolom ke mode "Tidak Terpeta" (data dari kader, bukan TPS KPU)
+      document.getElementById('th-col1').textContent = '-';
+      document.getElementById('th-col2').textContent = 'Gender';
+      document.getElementById('th-col3').textContent = '-';
+      document.getElementById('th-col4').textContent = 'Usia';
+      document.getElementById('th-col5').textContent = 'Dusun Kader';
+      document.getElementById('th-col6').textContent = 'RT/RW';
+      document.getElementById('th-col7').textContent = 'Nama Pemilih (Data Kader)';
+      document.getElementById('th-col8').textContent = 'NIK';
+      document.getElementById('th-col9').textContent = 'Status';
+      document.getElementById('th-col10').textContent = 'Kader';
+
       tbody.innerHTML = filtered.map((item, index) => {
         const rowNum = (page - 1) * 50 + index + 1;
-        let statusClass = 'tidak-cocok';
-        let chipClass = 'danger';
-        if (item.status_cocok === 'COCOK') { statusClass = 'cocok'; chipClass = 'success'; }
-        else if (item.status_cocok === 'PERLU_DICEK') { statusClass = 'perlu_dicek'; chipClass = 'warning'; }
 
         return `
-          <tr class="${statusClass}">
+          <tr>
             <td style="text-align: center; color: var(--text3); font-weight: 500;">${rowNum}</td>
             <td><span style="color:var(--text3);">-</span></td>
-            <td>-</td>
-            <td>-</td>
+            <td>${item.jenis_kelamin || '<span style="color:var(--text3);">-</span>'}</td>
+            <td><span style="color:var(--text3);">-</span></td>
             <td>${item.umur ? `${item.umur} tahun` : '<span style="color:var(--text3);">-</span>'}</td>
-            <td>Dusun ${item.dusunKader || '-'}</td>
+            <td>${item.dusunKader ? `Dusun ${item.dusunKader}` : '<span style="color:var(--text3);">-</span>'}</td>
             <td>RT ${item.rt || '00'} / RW ${item.rw || '00'}</td>
             <td><a href="/edit-pemilih?id=${item.id}" target="_blank" class="tps-link-match" style="color: var(--accent); text-decoration: underline; font-weight: bold;">${item.nama}</a></td>
             <td style="font-family: monospace; font-size: 13px; font-weight: bold; letter-spacing: 0.5px; color: var(--text2);">${item.nik || '<span style="color:var(--text3);">-</span>'}</td>
-            <td><span class="tps-chip ${chipClass}">${item.status_cocok}</span></td>
-            <td>-</td>
+            <td><span class="tps-chip danger">Belum di-DPT</span></td>
+            <td style="font-size:12px; color:var(--text3);">${item.namaKader ? `Kader ${item.nomorKader}` : '-'}</td>
           </tr>
         `;
       }).join('');
