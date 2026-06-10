@@ -9,6 +9,7 @@ const upload = multer({ dest: 'uploads/', limits: { fileSize: 10 * 1024 * 1024 }
 router.get('/pemilih', verifyToken, pemilihController.getPemilih);
 router.get('/pemilih/statistik', verifyToken, pemilihController.getPemilihStats);
 router.get('/pemilih/cek-nik/:nik', verifyToken, pemilihController.checkNIK);
+router.get('/pemilih/tidak-terpeta', verifyToken, pemilihController.getUnmappedPemilih);
 router.get('/pemilih/:id', verifyToken, pemilihController.getPemilihById);
 router.post('/pemilih', verifyToken, isAdmin, pemilihController.addPemilih);
 router.put('/pemilih/:id', verifyToken, isAdmin, pemilihController.updatePemilih);

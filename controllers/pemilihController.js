@@ -671,6 +671,63 @@ async function getLogDuplikatStats(req, res) {
   }
 }
 
+// GET /api/pemilih/tidak-terpeta
+async function getUnmappedPemilih(req, res) {
+  try {
+    const { q, page, limit } = req.query;
+    const pg  = Math.max(1, parseInt(page) || 1);
+    const lim = Math.min(2000, Math.max(1, parseInt(limit) || 1000));
+    const offset = (pg - 1) * lim;
+
+    let searchClause = '';
+    const params = [];
+    if (q) {
+      searchClause = ' AND (p.nama LIKE ? OR p.nik LIKE ?)';
+      params.push(`%${q}%`, `%${q}%`);
+    }
+
+    const countRows = await query(`
+      SELECT COUNT(*) AS total
+      FROM pemilih p
+      LEFT JOIN kader k ON k.id = p.kader_id
+      LEFT JOIN hasil_perbandingan hp ON hp.pemilih_id = p.id
+      WHERE (hp.id IS NULL 
+         OR k.id IS NULL 
+         OR LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('', 'sitimulyo'))
+         ${searchClause}
+    `, params);
+
+    const data = await query(`
+      SELECT p.id, p.nama, p.nik, p.status, p.rt, p.rw, p.created_at,
+             k.nama AS namaKader, k.nomor AS nomorKader, k.dusun AS dusunKader,
+             TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS umur,
+             CASE
+               WHEN hp.id IS NOT NULL THEN hp.status_cocok
+               ELSE 'BELUM_DIBANDINGKAN'
+             END AS status_cocok
+      FROM pemilih p
+      LEFT JOIN kader k ON k.id = p.kader_id
+      LEFT JOIN hasil_perbandingan hp ON hp.pemilih_id = p.id
+      WHERE (hp.id IS NULL 
+         OR k.id IS NULL 
+         OR LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('', 'sitimulyo'))
+         ${searchClause}
+      ORDER BY p.nama ASC
+      LIMIT ? OFFSET ?
+    `, [...params, lim, offset]);
+
+    res.json({
+      status: 'success',
+      data,
+      total: countRows[0]?.total || 0,
+      page: pg,
+      limit: lim
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
 module.exports = {
   getPemilih,
   getPemilihStats,
@@ -682,5 +739,6 @@ module.exports = {
   importPreview,
   importSubmit,
   getLogDuplikat,
-  getLogDuplikatStats
+  getLogDuplikatStats,
+  getUnmappedPemilih
 };
