@@ -686,14 +686,12 @@ async function getUnmappedPemilih(req, res) {
       params.push(`%${q}%`, `%${q}%`);
     }
 
+    // Hanya tampilkan yang benar-benar belum punya entri di hasil_perbandingan
     const countRows = await query(`
       SELECT COUNT(*) AS total
       FROM pemilih p
-      LEFT JOIN kader k ON k.id = p.kader_id
       LEFT JOIN hasil_perbandingan hp ON hp.pemilih_id = p.id
-      WHERE (hp.id IS NULL 
-         OR k.id IS NULL 
-         OR LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('', 'sitimulyo'))
+      WHERE hp.id IS NULL
          ${searchClause}
     `, params);
 
@@ -701,16 +699,11 @@ async function getUnmappedPemilih(req, res) {
       SELECT p.id, p.nama, p.nik, p.status, p.rt, p.rw, p.created_at,
              k.nama AS namaKader, k.nomor AS nomorKader, k.dusun AS dusunKader,
              TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS umur,
-             CASE
-               WHEN hp.id IS NOT NULL THEN hp.status_cocok
-               ELSE 'BELUM_DIBANDINGKAN'
-             END AS status_cocok
+             'BELUM_DIBANDINGKAN' AS status_cocok
       FROM pemilih p
       LEFT JOIN kader k ON k.id = p.kader_id
       LEFT JOIN hasil_perbandingan hp ON hp.pemilih_id = p.id
-      WHERE (hp.id IS NULL 
-         OR k.id IS NULL 
-         OR LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('', 'sitimulyo'))
+      WHERE hp.id IS NULL
          ${searchClause}
       ORDER BY p.nama ASC
       LIMIT ? OFFSET ?
