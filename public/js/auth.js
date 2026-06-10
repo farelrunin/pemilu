@@ -321,6 +321,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ── Collapsible Sidebar Sections ──
+  document.querySelectorAll('.sidebar-section-header').forEach(header => {
+    const sectionName = header.getAttribute('data-section');
+    const targetNav = header.nextElementSibling;
+    if (targetNav && targetNav.classList.contains('nav')) {
+      const hasActive = targetNav.querySelector('a.active');
+      const isCollapsed = localStorage.getItem(`sidebar_collapsed_${sectionName}`) === 'true';
+
+      if (hasActive) {
+        targetNav.classList.remove('collapsed');
+        header.classList.remove('collapsed');
+      } else if (isCollapsed) {
+        targetNav.classList.add('collapsed');
+        header.classList.add('collapsed');
+      }
+
+      header.addEventListener('click', () => {
+        const isNowCollapsed = targetNav.classList.toggle('collapsed');
+        header.classList.toggle('collapsed', isNowCollapsed);
+        localStorage.setItem(`sidebar_collapsed_${sectionName}`, isNowCollapsed ? 'true' : 'false');
+      });
+    }
+  });
+
+
   // Pastikan bila user klik back setelah logout, mereka langsung diarahkan login lagi
   window.addEventListener('pageshow', (event) => {
     const navType = performance.getEntriesByType('navigation')[0];
