@@ -1,3 +1,4 @@
+
 // ════════════════════════════════════════
 //  server.js — Express + MySQL (v3 — Auth)
 // ════════════════════════════════════════
@@ -333,12 +334,53 @@ async function ensureNikColumnsFlexible() {
   }
 }
 
+// 🔄 Auto-compare TPS yang sudah ada di database tapi belum pernah dibandingkan
+async function autoCompareUnprocessedTPS() {
+  try {
+    const { runTPSComparison } = require('./services/tpsService');
+
+    // Cari TPS yang belum punya SATUPUN hasil perbandingan
+    const unprocessed = await query(`
+      SELECT DISTINCT dt.nama_tps
+      FROM data_tps dt
+      LEFT JOIN hasil_perbandingan hp ON hp.data_tps_id = dt.id
+      WHERE hp.id IS NULL
+      ORDER BY dt.nama_tps ASC
+    `);
+
+    if (!unprocessed.length) {
+      console.log('✅ [AUTO-COMPARE] Semua TPS sudah pernah dibandingkan.');
+      return;
+    }
+
+    console.log(`🔄 [AUTO-COMPARE] Ditemukan ${unprocessed.length} TPS yang belum dibandingkan. Memulai pencocokan otomatis...`);
+
+    for (const row of unprocessed) {
+      try {
+        console.log(`   ⏳ [AUTO-COMPARE] Memproses TPS: ${row.nama_tps}`);
+        const result = await runTPSComparison(row.nama_tps);
+        console.log(`   ✅ [AUTO-COMPARE] Selesai ${row.nama_tps}: cocok=${result.statistik.cocok}, perlu_dicek=${result.statistik.perlu_dicek}, tidak_cocok=${result.statistik.tidak_cocok}`);
+      } catch (err) {
+        console.error(`   ❌ [AUTO-COMPARE] Gagal proses TPS ${row.nama_tps}:`, err.message);
+      }
+    }
+
+    console.log('🎉 [AUTO-COMPARE] Pencocokan otomatis selesai untuk semua TPS yang tertunda.');
+  } catch (err) {
+    console.error('❌ [AUTO-COMPARE] Gagal menjalankan auto-compare saat startup:', err.message);
+  }
+}
+
 async function start() {
   await testConnection();
   await ensureKoordinatorSchema();
   await ensureTPSComparisonSchema();
   await ensureRoleEnum();
   await ensureNikColumnsFlexible();
-  app.listen(PORT, () => console.log(`✅ Server berjalan di http://localhost:${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`✅ Server berjalan di http://localhost:${PORT}`);
+    // Jalankan pencocokan otomatis di background setelah server siap
+    setImmediate(() => autoCompareUnprocessedTPS());
+  });
 }
 start();
