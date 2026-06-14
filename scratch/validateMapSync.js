@@ -48,7 +48,7 @@ async function validate() {
 
     const invalidDusuns = [];
     unmappedKaders.forEach(k => {
-      const cleanDusun = String(k.dusun || '').toLowerCase().trim();
+      const cleanDusun = String(k.dusun || '').toLowerCase().trim().replace(/^dusun\s+/i, '');
       if (!cleanDusun || !dusunMappingKeys.has(cleanDusun)) {
         invalidDusuns.push(k);
       }
@@ -73,19 +73,19 @@ async function validate() {
     const mapStats = await query(`
       SELECT 
         CASE 
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('', 'sitimulyo') THEN 'Alamat Umum (Belum Terinci)'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'Banyakan 2'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('banyakan 3', 'banyakan iii') THEN 'Banyakan 3'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'Cepoko'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'Kuden'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'Karang Gayam'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'Karang Ploso'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'Pager Gunung 1'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
-          WHEN LOWER(TRIM(COALESCE(k.dusun, ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari', 'gondosari somokaton', 'gondosari-somokaton', 'gondosari') THEN 'Gondosari-Somokaton'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('', 'sitimulyo') THEN 'Alamat Umum (Belum Terinci)'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('banyakan', 'banyakan 1', 'banyakan i') THEN 'Banyakan 1'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('banyakan 2', 'banyakan ii', 'gentingsari banyakan ii') THEN 'Banyakan 2'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('banyakan 3', 'banyakan iii') THEN 'Banyakan 3'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('cepoko', 'cepokojajar', 'cepokosari') THEN 'Cepoko'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('kuden', 'kuden cepin', 'cepin rt 6 kuden') THEN 'Kuden'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('karang gayam', 'karanggayam', 'k. gayam') THEN 'Karang Gayam'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('karang ploso', 'karangploso', 'k. ploso') THEN 'Karang Ploso'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('pager gunung 1', 'pagergunung 1', 'p. gunung 1') THEN 'Pager Gunung 1'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('pager gunung 2', 'pagergunung 2', 'p. gunung 2') THEN 'Pager Gunung 2'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('nglengis', 'ngelengis', 'karangasem nglengis') THEN 'Nglengis'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('karanganom', 'karang anom') THEN 'Karang Anom'
+          WHEN LOWER(TRIM(REPLACE(LOWER(COALESCE(k.dusun, '')), 'dusun ', ''))) IN ('gondobari somokaton', 'gondobari-somokaton', 'gondobari', 'gondosari somokaton', 'gondosari-somokaton', 'gondosari') THEN 'Gondosari-Somokaton'
           ELSE TRIM(COALESCE(k.dusun, ''))
         END AS dusun,
         COUNT(p.id) AS total_pemilih_tps
