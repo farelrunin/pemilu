@@ -1,94 +1,32 @@
 // ════════════════════════════════════════
-//  auth.js — Otentikasi & JWT Helper Frontend
+//  auth.js — LOCAL MODE (no auth required)
 // ════════════════════════════════════════
 
-// ── 1. Cek Login Otomatis di setiap halaman (kecuali login) ──
-const isLoginPage = window.location.pathname === '/login';
-const token = localStorage.getItem('token');
-const userRole = localStorage.getItem('userRole');
+// Sistem berjalan full local — tidak ada login, tidak ada token, tidak ada redirect
+const isLoginPage = false;
+const token = 'local';
+const userRole = 'Superadmin';
 
-if (!token && !isLoginPage) {
-  // Belum login, tendang ke halaman login
-  window.location.href = '/login';
-} else if (token && isLoginPage) {
-  // Sudah login tapi akses halaman login
-  window.location.href = '/';
-} else if (token) {
-  // Cek otorisasi halaman (Client-side protection)
-  const restrictedPaths = [
-    '/tambah-pemilih', '/import', '/tambah-kader', '/edit-kader', 
-    '/edit-pemilih', '/upload-tps', '/admin-dashboard', '/admin-users'
-  ];
-  const currentPath = window.location.pathname;
-  
-  if (restrictedPaths.some(path => currentPath.startsWith(path))) {
-    if (userRole === 'User' || userRole === 'Kader') {
-      console.warn('Unauthorized access attempt to:', currentPath);
-      window.location.href = '/?unauthorized=1';
-    }
-  }
-}
-
-// ── 2. Helper Fetch dengan Bearer Token ──
+// ── Helper Fetch — langsung tanpa token ──
 window.fetchWithAuth = async function(url, options = {}) {
-  // Pastikan headers ada
-  if (!options.headers) {
-    options.headers = {};
-  }
-  
-  // Tambahkan Authorization token jika ada (dan bukan hapus multipart form data)
+  if (!options.headers) options.headers = {};
   const isFormData = options.body instanceof FormData;
   if (!isFormData && !options.headers['Content-Type']) {
     options.headers['Content-Type'] = 'application/json';
   }
-  
-  if (token) {
-    options.headers['Authorization'] = `Bearer ${token}`;
-  }
-
   try {
-    const response = await fetch(url, options);
-    
-    // Jika token kadaluarsa atau tidak valid (401), tendang ke login
-    if (response.status === 401 && !isLoginPage) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('username');
-      localStorage.removeItem('namaKader');
-      window.location.href = '/login?expired=1';
-    }
-    
-    return response;
+    return await fetch(url, options);
   } catch (error) {
     console.error('Fetch Error:', error);
     throw error;
   }
 };
 
-// ── 3. Logout ──
-window.logout = function() {
-  localStorage.clear();
-  window.location.href = '/login';
-};
+window.logout = function() { window.location.href = '/'; };
+window.loadUserInfo = function() {};
+window.getToken = function() { return 'local'; };
 
-// ── 3b. Load User Info ──
-window.loadUserInfo = function() {
-  const username = localStorage.getItem('username') || '';
-  const userRole = localStorage.getItem('userRole') || '';
-  const namaKader = localStorage.getItem('namaKader') || userRole;
-  
-  const userInfoEl = document.getElementById('userInfo');
-  if (userInfoEl) {
-    userInfoEl.innerHTML = `${username} (${namaKader})`;
-  }
-};
-
-// ── 4. Get Token ──
-window.getToken = function() {
-  return localStorage.getItem('token');
-};
-
-// ── 4. UI Manipulation (Render info user & kosmetik admin) ──
+// ── Dialog & UI Helpers ──
 window.showAppDialog = function(config = {}) {
   const previous = document.getElementById('app-dialog-overlay');
   if (previous) previous.remove();
@@ -270,57 +208,6 @@ window.showAppChoiceDialog = function(message, choices = [], options = {}) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (isLoginPage) return;
-
-  // Render info user di header
-  const username = localStorage.getItem('username') || '';
-  const namaKader = localStorage.getItem('namaKader') && localStorage.getItem('namaKader') !== 'null' 
-    ? localStorage.getItem('namaKader') 
-    : userRole; // Jika null (Superadmin), tampilkan role
-
-  const headerStats = document.querySelector('.header-stats');
-  const headerUserSlot = document.querySelector('.header-user-slot');
-  const headerNav = document.querySelector('.nav');
-  if (headerUserSlot || headerStats || headerNav) {
-    const userHtml = `
-      <div class="user-profile">
-        <div>
-          <div class="u-name">${username}</div>
-          <div class="u-role">${namaKader}</div>
-        </div>
-        <button onclick="logout()" class="btn btn-outline btn-sm btn-danger" style="padding:4px 8px;">Logout</button>
-      </div>
-    `;
-
-    if (headerUserSlot) {
-      headerUserSlot.insertAdjacentHTML('beforeend', userHtml);
-    } else if (headerStats) {
-      headerStats.insertAdjacentHTML('beforeend', userHtml);
-    } else {
-      headerNav.insertAdjacentHTML('beforeend', userHtml);
-    }
-  }
-
-  // Tambahkan class role ke body untuk CSS-based RBAC
-  if (userRole) {
-    const roleClass = 'role-' + userRole.toLowerCase().replace(/\s+/g, '-');
-    document.body.classList.add(roleClass);
-    console.log('RBAC Initialized for role:', userRole, 'with class:', roleClass);
-  }
-
-  // Kosmetik RBAC: Sembunyikan elemen sesuai role (Legacy fallback)
-  if (userRole === 'User' || userRole === 'Kader') {
-    document.querySelectorAll('.superadmin-only, .admin-only, .editor-only').forEach(el => {
-      el.style.display = 'none';
-      el.remove();
-    });
-  } else if (userRole === 'AdminKantor') {
-    document.querySelectorAll('.superadmin-only').forEach(el => {
-      el.style.display = 'none';
-      el.remove();
-    });
-  }
-
   // ── Collapsible Sidebar Sections ──
   document.querySelectorAll('.sidebar-section-header').forEach(header => {
     const sectionName = header.getAttribute('data-section');
@@ -328,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (targetNav && targetNav.classList.contains('nav')) {
       const hasActive = targetNav.querySelector('a.active');
       const isCollapsed = localStorage.getItem(`sidebar_collapsed_${sectionName}`) === 'true';
-
       if (hasActive) {
         targetNav.classList.remove('collapsed');
         header.classList.remove('collapsed');
@@ -336,22 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
         targetNav.classList.add('collapsed');
         header.classList.add('collapsed');
       }
-
       header.addEventListener('click', () => {
         const isNowCollapsed = targetNav.classList.toggle('collapsed');
         header.classList.toggle('collapsed', isNowCollapsed);
         localStorage.setItem(`sidebar_collapsed_${sectionName}`, isNowCollapsed ? 'true' : 'false');
       });
-    }
-  });
-
-
-  // Pastikan bila user klik back setelah logout, mereka langsung diarahkan login lagi
-  window.addEventListener('pageshow', (event) => {
-    const navType = performance.getEntriesByType('navigation')[0];
-    const isBack = event.persisted || (navType && navType.type === 'back_forward');
-    if (isBack && !token && !isLoginPage) {
-      window.location.replace('/login');
     }
   });
 });

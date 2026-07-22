@@ -7,39 +7,20 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'datapilih_secret_key_2026';
 const JWT_EXPIRES = process.env.JWT_EXPIRES || '24h';
 
-// ── verifyToken: Cek apakah request punya token valid ──
+// ── verifyToken: LOCAL MODE — auth dinonaktifkan ──
 function verifyToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Akses ditolak. Token tidak ditemukan.' });
-  }
-
-  const token = authHeader.split(' ')[1];
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // { id, username, role, idKader }
-    next();
-  } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Sesi kadaluarsa. Silakan login kembali.' });
-    }
-    return res.status(401).json({ error: 'Token tidak valid.' });
-  }
-}
-
-// ── isSuperadmin: Hanya Superadmin yang boleh lewat ──
-function isSuperadmin(req, res, next) {
-  if (!req.user || req.user.role !== 'Superadmin') {
-    return res.status(403).json({ error: 'Akses ditolak. Hanya Superadmin.' });
-  }
+  // Local mode: inject user dummy agar controller tidak error saat akses req.user
+  req.user = { id: 'local', username: 'local', role: 'Superadmin', idKader: null };
   next();
 }
 
-// ── isAdmin: Boleh Superadmin atau AdminKantor ──
+// ── isSuperadmin: LOCAL MODE — selalu lolos ──
+function isSuperadmin(req, res, next) {
+  next();
+}
+
+// ── isAdmin: LOCAL MODE — selalu lolos ──
 function isAdmin(req, res, next) {
-  if (!req.user || (req.user.role !== 'Superadmin' && req.user.role !== 'AdminKantor')) {
-    return res.status(403).json({ error: 'Akses ditolak. Hanya Admin atau Superadmin.' });
-  }
   next();
 }
 

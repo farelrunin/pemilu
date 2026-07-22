@@ -14,9 +14,13 @@ const pool = mysql.createPool({
   password : process.env.DB_PASSWORD || '',
   database : process.env.DB_NAME     || 'pendataan_pemilih',
   waitForConnections: true,
-  connectionLimit   : 10,   // maks 10 koneksi paralel
+  connectionLimit   : 15,
   queueLimit        : 0,
-  charset           : 'utf8mb4'
+  charset           : 'utf8mb4',
+  // Cegah koneksi mati saat query berat berjalan lama
+  connectTimeout    : 60000,
+  enableKeepAlive   : true,
+  keepAliveInitialDelay: 10000,
 });
 
 // ── Test koneksi saat server start ───────────────────

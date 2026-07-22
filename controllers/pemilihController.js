@@ -10,15 +10,19 @@ const {
   getSpreadsheetValue
 } = require('../utils/voterHelpers');
 
-// Helper: check if column exists
+// Cache hasColumn agar tidak query information_schema berulang kali
+const _columnCache = new Map();
 async function hasColumn(table, column) {
+  const key = `${table}.${column}`;
+  if (_columnCache.has(key)) return _columnCache.get(key);
   const res = await query(
-    `SELECT COUNT(*) AS n
-     FROM information_schema.columns
+    `SELECT COUNT(*) AS n FROM information_schema.columns
      WHERE table_schema = ? AND table_name = ? AND column_name = ?`,
     [process.env.DB_NAME || 'pendataan_pemilih', table, column]
   );
-  return res[0] && res[0].n > 0;
+  const result = res[0] && res[0].n > 0;
+  _columnCache.set(key, result);
+  return result;
 }
 
 // GET /api/pemilih
@@ -69,22 +73,30 @@ async function getPemilih(req, res) {
 }
 
 // GET /api/pemilih/statistik
+// Semua query dijalankan paralel agar lebih cepat
 async function getPemilihStats(req, res) {
   try {
-    await cleanupDuplicateLogs();
+    // Jalankan semua query statistik secara paralel
+    const hasJumlahPercobaan = await hasColumn('log_duplikat', 'jumlah_percobaan');
 
-    const [totalSemua] = await query('SELECT COUNT(*) AS n FROM pemilih');
-    const [bermasalah] = await query('SELECT COUNT(*) AS n FROM pemilih WHERE status IS NOT NULL');
-    const [underage]   = await query("SELECT COUNT(*) AS n FROM pemilih WHERE status = 'BELUM_CUKUP_UMUR'");
+    const [
+      [totalSemua],
+      [bermasalah],
+      [underage],
+      [logRows],
+      logDupResult
+    ] = await Promise.all([
+      query('SELECT COUNT(*) AS n FROM pemilih'),
+      query('SELECT COUNT(*) AS n FROM pemilih WHERE status IS NOT NULL'),
+      query("SELECT COUNT(*) AS n FROM pemilih WHERE status = 'BELUM_CUKUP_UMUR'"),
+      query('SELECT COUNT(*) AS n FROM log_duplikat'),
+      hasJumlahPercobaan
+        ? query('SELECT COALESCE(SUM(jumlah_percobaan), 0) AS n FROM log_duplikat')
+        : Promise.resolve(null)
+    ]);
+
     const clear = Math.max((totalSemua.n || 0) - (bermasalah.n || 0), 0);
-
-    const [logRows] = await query('SELECT COUNT(*) AS n FROM log_duplikat');
-    let percobaanDuplikat = logRows.n;
-
-    if (await hasColumn('log_duplikat', 'jumlah_percobaan')) {
-      const [logDup] = await query('SELECT COALESCE(SUM(jumlah_percobaan), 0) AS n FROM log_duplikat');
-      percobaanDuplikat = logDup.n;
-    }
+    const percobaanDuplikat = logDupResult ? logDupResult[0].n : logRows.n;
 
     res.json({
       total: clear,

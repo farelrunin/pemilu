@@ -232,6 +232,44 @@ router.post('/perbandingan-semua', verifyToken, async (req, res) => {
   }
 });
 
+// Tombol manual — jalankan perbandingan semua TPS di background
+router.post('/jalankan-perbandingan', async (req, res) => {
+  try {
+    const tpsList = await query('SELECT DISTINCT nama_tps FROM data_tps ORDER BY nama_tps ASC');
+    if (!tpsList.length) {
+      return res.json({ status: 'success', message: 'Belum ada data TPS yang diupload.' });
+    }
+
+    // Hapus hasil lama
+    await query('DELETE FROM hasil_perbandingan');
+
+    // Jalankan di background — tidak menunggu selesai
+    setImmediate(async () => {
+      const BATCH = 2; // proses 2 TPS paralel
+      for (let i = 0; i < tpsList.length; i += BATCH) {
+        const batch = tpsList.slice(i, i + BATCH);
+        await Promise.all(batch.map(async row => {
+          try {
+            await runTPSComparison(row.nama_tps);
+            console.log(`[MANUAL-COMPARE] ✅ Selesai: ${row.nama_tps}`);
+          } catch (err) {
+            console.error(`[MANUAL-COMPARE] ❌ Gagal: ${row.nama_tps}:`, err.message);
+          }
+        }));
+      }
+      console.log('[MANUAL-COMPARE] 🎉 Semua TPS selesai diproses.');
+    });
+
+    res.json({
+      status: 'success',
+      started: true,
+      message: `Perbandingan ${tpsList.length} TPS sedang berjalan di background. Cek statistik beberapa saat lagi.`
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // 4️⃣ Jalankan perbandingan data TPS secara manual
 router.post('/:nama_tps/perbandingan', verifyToken, async (req, res) => {
   try {

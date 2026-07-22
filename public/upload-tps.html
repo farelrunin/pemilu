@@ -130,6 +130,17 @@
           </div>
         </div>
 
+                <!-- Tombol Jalankan Perbandingan -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="section-title">Perbandingan Data TPS</div>
+          <p style="font-size:13px;color:var(--text3);margin-bottom:14px">Jalankan proses pencocokan data pemilih dengan seluruh TPS yang sudah diupload. Proses ini bisa memakan beberapa menit tergantung jumlah data.</p>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button id="btnRunCompare" class="btn btn-primary" onclick="jalankanPerbandingan()">🔄 Jalankan Perbandingan Semua TPS</button>
+            <a href="/statistik-tps" class="btn btn-outline">📊 Lihat Statistik</a>
+          </div>
+          <div id="compareStatus" style="margin-top:12px;display:none"></div>
+        </div>
+
         <div class="card">
           <div class="section-title">TPS Yang Sudah Diunggah</div>
           <div id="listLoading" class="loading-state">Memuat daftar TPS...</div>
@@ -332,6 +343,35 @@
       await refreshTpsList();
     } catch (error) {
       showAlert('danger', error.message || 'Gagal menghapus TPS.');
+    }
+  }
+
+  async function jalankanPerbandingan() {
+    const btn = document.getElementById('btnRunCompare');
+    const status = document.getElementById('compareStatus');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner spinner-inline-sm"></span> Memproses…';
+    status.style.display = 'block';
+    status.className = 'alert alert-warning';
+    status.textContent = '⏳ Perbandingan sedang berjalan di background. Halaman ini tetap bisa digunakan.';
+
+    try {
+      const res = await fetchWithAuth('/api/tps/jalankan-perbandingan', { method: 'POST' });
+      const json = await res.json();
+      if (json.status === 'success' || json.started) {
+        status.className = 'alert alert-success';
+        status.textContent = '✅ Perbandingan selesai! ' + (json.message || '');
+        await refreshTpsList();
+      } else {
+        status.className = 'alert alert-warning';
+        status.textContent = json.message || 'Perbandingan selesai dengan catatan.';
+      }
+    } catch (e) {
+      status.className = 'alert alert-danger';
+      status.textContent = '❌ Gagal menjalankan perbandingan: ' + e.message;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '🔄 Jalankan Perbandingan Semua TPS';
     }
   }
 
