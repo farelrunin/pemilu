@@ -32,67 +32,87 @@ function normalizeAreaCode(value) {
   return normalizeMatchText(raw);
 }
 
-function levenshteinDistance(a = '', b = '') {
+function levenshteinDistance(a = '', b = '', maxDist = Infinity) {
   if (a === b) return 0;
   if (!a) return b.length;
   if (!b) return a.length;
 
-  const dp = Array.from({ length: a.length + 1 }, () => new Array(b.length + 1).fill(0));
+  // Early exit: jika perbedaan panjang sudah melebihi maxDist, tidak perlu hitung
+  if (Math.abs(a.length - b.length) > maxDist) return maxDist + 1;
 
-  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  // Gunakan dua baris saja (hemat memori, lebih cepat)
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  let curr = new Array(b.length + 1).fill(0);
 
   for (let i = 1; i <= a.length; i++) {
+    curr[0] = i;
+    let rowMin = curr[0];
+
     for (let j = 1; j <= b.length; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost
+      curr[j] = Math.min(
+        prev[j] + 1,
+        curr[j - 1] + 1,
+        prev[j - 1] + cost
       );
+      if (curr[j] < rowMin) rowMin = curr[j];
     }
+
+    // Early exit: jika skor minimum baris ini sudah melewati maxDist
+    if (rowMin > maxDist) return maxDist + 1;
+
+    [prev, curr] = [curr, prev];
   }
 
-  return dp[a.length][b.length];
+  return prev[b.length];
+}
+
+// Cache normalisasi agar nama yang sama tidak dinormalisasi berulang kali
+const _normalizeCache = new Map();
+function normalizeMatchTextCached(value) {
+  const key = String(value || '');
+  if (_normalizeCache.has(key)) return _normalizeCache.get(key);
+  const result = normalizeMatchText(key);
+  // Batasi cache agar tidak terlalu besar
+  if (_normalizeCache.size < 50000) _normalizeCache.set(key, result);
+  return result;
 }
 
 function computeNameSimilarity(sourceName, candidateName) {
-  const source = normalizeMatchText(sourceName);
-  const candidate = normalizeMatchText(candidateName);
+  const source = normalizeMatchTextCached(sourceName);
+  const candidate = normalizeMatchTextCached(candidateName);
   if (!source || !candidate) return 0;
 
-  // Jika nama persis sama setelah semua spasi dihilangkan (misal: "Siti Mulyo" vs "Sitimulyo")
-  if (source.replace(/\s+/g, '') === candidate.replace(/\s+/g, '')) {
-    return 100;
-  }
+  // Exact match setelah strip spasi
+  if (source.replace(/\s+/g, '') === candidate.replace(/\s+/g, '')) return 100;
 
   const sourceWords = source.split(' ').filter(Boolean);
   const candidateWords = candidate.split(' ').filter(Boolean);
-
-  // Optimasi kecepatan super-aman: 
-  // Jika panjang karakter berbeda jauh (> 7), lewati Levenshtein HANYA jika tidak ada satu pun kata yang sama persis (token overlap)
-  const lenDiff = Math.abs(source.length - candidate.length);
-  if (lenDiff > 7) {
-    const hasOverlap = sourceWords.some(t => candidateWords.includes(t));
-    if (!hasOverlap) {
-      return 0;
-    }
-  }
-
-  const distance = levenshteinDistance(source, candidate);
-  const maxLength = Math.max(source.length, candidate.length, 1);
-  const levScore = Math.max(0, 1 - (distance / maxLength));
-
   const sourceTokens = new Set(sourceWords);
   const candidateTokens = new Set(candidateWords);
-  const overlap = [...sourceTokens].filter(token => candidateTokens.has(token)).length;
-  
-  // Menggunakan Math.min agar nama panggilan / singkatan / satu kata tidak dihukum berat
-  const tokenScore = sourceTokens.size || candidateTokens.size
+
+  // Hitung token overlap dulu — ini O(n) dan sangat cepat
+  const overlap = [...sourceTokens].filter(t => candidateTokens.has(t)).length;
+  const tokenScore = (sourceTokens.size || candidateTokens.size)
     ? overlap / Math.min(sourceTokens.size, candidateTokens.size)
     : 0;
 
-  // Mengubah bobot menjadi 50% Levenshtein & 50% Token Overlap agar nama substring/singkat sangat dihargai
+  // Jika token overlap sudah 100%, tidak perlu Levenshtein
+  if (tokenScore === 1) return 100;
+
+  const lenDiff = Math.abs(source.length - candidate.length);
+  const maxLength = Math.max(source.length, candidate.length, 1);
+
+  // Hitung maxDist yang masih bisa menghasilkan skor ≥ 30% dari Levenshtein
+  // (50% Lev + 50% Token). Jika token = 0 dan kita butuh total ≥ 50 (threshold),
+  // maka Lev harus ≥ 0 — tetap hitung. Tapi kalau perbedaan panjang sendiri
+  // sudah memastikan Lev score < 10%, skip.
+  const maxAllowedDist = Math.floor(maxLength * 0.7); // Lev score > 30%
+  if (lenDiff > maxAllowedDist && tokenScore === 0) return 0;
+
+  const distance = levenshteinDistance(source, candidate, maxAllowedDist);
+  const levScore = Math.max(0, 1 - (distance / maxLength));
+
   return Math.round(((levScore * 0.5) + (tokenScore * 0.5)) * 100);
 }
 

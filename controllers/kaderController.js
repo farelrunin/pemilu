@@ -1,15 +1,19 @@
 const { query } = require('../db');
 const { genId, cleanupDuplicateLogs } = require('../utils/voterHelpers');
 
-// Helper: check if column exists
+// Cache hasColumn agar tidak query information_schema berulang kali
+const _columnCache = new Map();
 async function hasColumn(table, column) {
+  const key = `${table}.${column}`;
+  if (_columnCache.has(key)) return _columnCache.get(key);
   const res = await query(
-    `SELECT COUNT(*) AS n
-     FROM information_schema.columns
+    `SELECT COUNT(*) AS n FROM information_schema.columns
      WHERE table_schema = ? AND table_name = ? AND column_name = ?`,
     [process.env.DB_NAME || 'pendataan_pemilih', table, column]
   );
-  return res[0] && res[0].n > 0;
+  const result = res[0] && res[0].n > 0;
+  _columnCache.set(key, result);
+  return result;
 }
 
 // Helper: resolve koordinator input
@@ -247,17 +251,15 @@ async function getKaders(req, res) {
       params.push(dusun);
     }
 
-    const rows = await query(`
+        const rows = await query(`
       SELECT k.id, k.nama, k.nomor, k.dusun, k.kordus, k.rt, k.rw, k.target_suara, k.created_at, k.koordinator_id,
              COALESCE(ko.nama, NULLIF(k.kordus, '')) AS namaKoordinator,
-             (
-               SELECT COUNT(*)
-               FROM pemilih p
-               WHERE p.kader_id = k.id
-             ) AS jumlahPemilih
+             COUNT(p.id) AS jumlahPemilih
       FROM kader k
       LEFT JOIN koordinator ko ON ko.id = k.koordinator_id
+      LEFT JOIN pemilih p ON p.kader_id = k.id
       ${where}
+      GROUP BY k.id, k.nama, k.nomor, k.dusun, k.kordus, k.rt, k.rw, k.target_suara, k.created_at, k.koordinator_id, namaKoordinator
       ORDER BY COALESCE(ko.nama, NULLIF(k.kordus, ''), 'zzz') ASC, k.dusun ASC, k.nomor ASC
     `, params);
     res.json(rows);
@@ -371,9 +373,7 @@ async function getKaderPemilih(req, res) {
 
 // GET /api/kader/:id/aktivitas
 async function getKaderActivity(req, res) {
-  try {
-    await cleanupDuplicateLogs();
-
+    try {
     const kaderId = req.params.id;
     const pemilih = await query(`
       SELECT p.*,

@@ -267,7 +267,7 @@ app.use('/api', pemilihRoutes);
 app.use('/api/tps', require('./routes/tps'));
 
 // ── HTML pages ────────────────────────────────────────
-app.get('/login',          (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
+// login dinonaktifkan — sistem full local
 app.get('/',               (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/tambah-pemilih', (req, res) => res.sendFile(path.join(__dirname, 'public', 'tambah-pemilih.html')));
 app.get('/tambah-kader',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'tambah-kader.html')));
@@ -278,9 +278,7 @@ app.get('/edit-kader',     (req, res) => res.sendFile(path.join(__dirname, 'publ
 app.get('/view-kader',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'view-kader.html')));
 app.get('/import',              (req, res) => res.sendFile(path.join(__dirname, 'public', 'import.html')));
 app.get('/log-duplikat',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'log-duplikat.html')));
-app.get('/admin-dashboard',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-dashboard.html')));
-app.get('/admin-users',         (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-users.html')));
-app.get('/kelola-user',         (req, res) => res.sendFile(path.join(__dirname, 'public', 'kelola-user.html')));
+// admin-dashboard, admin-users, kelola-user dinonaktifkan — sistem full local
 app.get('/upload-tps',          (req, res) => res.sendFile(path.join(__dirname, 'public', 'upload-tps.html')));
 app.get('/kelola-tps',          (req, res) => res.sendFile(path.join(__dirname, 'public', 'kelola-tps.html')));
 app.get('/perbandingan-tps',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'perbandingan-tps.html')));
@@ -365,16 +363,20 @@ async function autoCompareUnprocessedTPS() {
     await query('DELETE FROM hasil_perbandingan');
     console.log('🗑️  [AUTO-COMPARE] Hasil perbandingan lama dihapus. Memulai ulang...');
 
-    // Ambil semua TPS lalu bandingkan satu per satu
+        // Jalankan max 3 TPS paralel agar lebih cepat tanpa membebani memori
     const tpsList = await query('SELECT DISTINCT nama_tps FROM data_tps ORDER BY nama_tps ASC');
-    for (const row of tpsList) {
-      try {
-        console.log(`   ⏳ [AUTO-COMPARE] Memproses TPS: ${row.nama_tps}`);
-        const result = await runTPSComparison(row.nama_tps);
-        console.log(`   ✅ [AUTO-COMPARE] Selesai ${row.nama_tps}: cocok=${result.statistik.cocok}, perlu_dicek=${result.statistik.perlu_dicek}, tidak_cocok=${result.statistik.tidak_cocok}`);
-      } catch (err) {
-        console.error(`   ❌ [AUTO-COMPARE] Gagal proses TPS ${row.nama_tps}:`, err.message);
-      }
+    const PARALLEL = 3;
+    for (let i = 0; i < tpsList.length; i += PARALLEL) {
+      const batch = tpsList.slice(i, i + PARALLEL);
+      await Promise.all(batch.map(async row => {
+        try {
+          console.log(`   ⏳ [AUTO-COMPARE] Memproses TPS: ${row.nama_tps}`);
+          const result = await runTPSComparison(row.nama_tps);
+          console.log(`   ✅ [AUTO-COMPARE] Selesai ${row.nama_tps}: cocok=${result.statistik.cocok}, perlu_dicek=${result.statistik.perlu_dicek}, tidak_cocok=${result.statistik.tidak_cocok}`);
+        } catch (err) {
+          console.error(`   ❌ [AUTO-COMPARE] Gagal proses TPS ${row.nama_tps}:`, err.message);
+        }
+      }));
     }
 
     console.log('🎉 [AUTO-COMPARE] Pencocokan otomatis selesai untuk semua TPS!');
@@ -391,8 +393,7 @@ async function start() {
   await ensureNikColumnsFlexible();
   app.listen(PORT, () => {
     console.log(`✅ Server berjalan di http://localhost:${PORT}`);
-    // Jalankan pencocokan otomatis di background setelah server siap
-    setImmediate(() => autoCompareUnprocessedTPS());
+    // Auto-compare saat startup dinonaktifkan — gunakan tombol di halaman Kelola TPS
   });
 }
 start();

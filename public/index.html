@@ -4,7 +4,11 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard — Pendataan Pemilih</title>
-  <link rel="stylesheet" href="/css/style.css"/>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/layout.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+  <link rel="stylesheet" href="/css/dashboard.css"/>
+  <link rel="stylesheet" href="/css/tps-pages.css"/>
   <style>
     @keyframes rowFlash {
       0%,100% { background: transparent; }
@@ -12,7 +16,7 @@
     }
     .row-highlight { animation: rowFlash 1.8s ease 3; outline: 2px solid #facc15; }
   </style>
-  <script src="/js/auth.js"></script>
+
 </head>
 <body class="dashboard-page app-shell-page">
 
@@ -33,11 +37,11 @@
       </div>
       <nav class="nav">
         <a href="/" class="active"><span><strong>Dashboard</strong></span><span class="nav-pill">DB</span></a>
-        <a href="/tambah-pemilih" class="admin-only"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
-        <a href="/import" class="admin-only"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
+                <a href="/tambah-pemilih"><span><strong>Tambah Pemilih</strong></span><span class="nav-pill">TP</span></a>
+        <a href="/import"><span><strong>Import Data</strong></span><span class="nav-pill">IM</span></a>
         <a href="/kader"><span><strong>Data Kader</strong></span><span class="nav-pill">KD</span></a>
         <a href="/koordinator"><span><strong>Data Koordinator</strong></span><span class="nav-pill">KR</span></a>
-        <a href="/log-duplikat" class="admin-only"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
+        <a href="/log-duplikat"><span><strong>Log Duplikat</strong></span><span class="nav-pill">LG</span></a>
       </nav>
 
       <div class="sidebar-section-header" data-section="modul-tps">
@@ -45,7 +49,7 @@
         <span class="sidebar-section-arrow">▼</span>
       </div>
       <nav class="nav">
-      <a href="/upload-tps" class="admin-only "><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
+      <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
       <a href="/perbandingan-tps" class=""><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
       <a href="/statistik-tps" class=""><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
       <a href="/peta-sitimulyo" class=" "><span><strong>Peta Pemilih</strong></span><span class="nav-pill">PP</span></a>
@@ -63,13 +67,7 @@
         <a href="/?view=bermasalah#data-pemilih"><span><strong>NIK Bermasalah</strong></span><span class="nav-pill">NB</span></a>
       </nav>
 
-      <div class="sidebar-section-header superadmin-only" data-section="akses-khusus-admin">
-        <span class="sidebar-section-label">Akses Khusus Admin</span>
-        <span class="sidebar-section-arrow">▼</span>
-      </div>
-      <nav class="nav superadmin-only">
-        <a href="/admin-dashboard"><span><strong>Panel Admin</strong></span><span class="nav-pill">ADM</span></a>
-      </nav>
+      
 
       <div class="sidebar-footer">
         <div class="sidebar-note">
@@ -81,23 +79,15 @@
   </aside>
 
   <main class="app-main">
-    <div class="app-topbar">
+        <div class="app-topbar">
       <div class="app-topbar-copy">
-        <div class="page-kicker">Overview Sistem</div>
         <div class="app-topbar-title">Dashboard Pendataan</div>
-        <div class="app-topbar-subtitle">Ringkasan data pemilih, kondisi kader, dan indikator kualitas input dalam satu tampilan.</div>
       </div>
       <div class="header-stats">
         <div class="stat-pill"><div class="dot dot-blue"></div>Kader: <strong id="hdr-kader">…</strong></div>
-        <div class="stat-pill"><div class="dot dot-green"></div>Data Clear: <strong id="hdr-pemilih">…</strong></div>
-        <div class="stat-pill stat-pill-warning">
-          <div class="dot dot-warning"></div>
-          Bermasalah: <strong id="hdr-bermasalah" class="text-warning">…</strong>
-        </div>
-        <div class="stat-pill stat-pill-danger">
-          <div class="dot dot-danger"></div>
-          Log Duplikat: <strong id="hdr-dup" class="text-danger">…</strong>
-        </div>
+        <div class="stat-pill"><div class="dot dot-green"></div>Pemilih Clear: <strong id="hdr-pemilih">…</strong></div>
+        <div class="stat-pill stat-pill-warning"><div class="dot dot-warning"></div>Butuh Cek: <strong id="hdr-bermasalah" class="text-warning">…</strong></div>
+        <div class="stat-pill stat-pill-danger"><div class="dot dot-danger"></div>Duplikat: <strong id="hdr-dup" class="text-danger">…</strong></div>
         <div class="stat-pill"><div class="pulse-dot"></div><span class="live-label">Live</span></div>
       </div>
       <div class="header-user-slot"></div>
@@ -106,15 +96,12 @@
     <div class="app-main-body">
       <div class="container">
 
-  <div class="dashboard-hero">
+    <div class="dashboard-hero">
     <div class="hero-card hero-main-card">
       <div class="hero-main-copy">
-        <div class="hero-kicker">Ringkasan Operasional</div>
-        <h2>Pergerakan input dan performa kader terlihat lebih cepat dari satu layar.</h2>
-        <p>Panel ini merangkum data clear, beban verifikasi, dan distribusi performa antar kader untuk bahan presentasi.</p>
         <div class="hero-stat-row">
           <div class="hero-stat-chip">
-            <span class="chip-label">Data Clear</span>
+            <span class="chip-label">Pemilih Clear</span>
             <strong id="hero-total">…</strong>
           </div>
           <div class="hero-stat-chip">
@@ -126,12 +113,18 @@
             <strong id="hero-bermasalah">…</strong>
           </div>
         </div>
+        <!-- Isu Data Ringkas -->
+        <div class="isu-data-grid">
+          <div class="isu-data-label">⚠️ Isu Data</div>
+          <div class="isu-data-item"><span class="isu-data-key">NIK Invalid</span><span class="isu-data-val text-warning" id="isu-bermasalah">…</span></div>
+          <div class="isu-data-item"><span class="isu-data-key">Usia &lt;17</span><span class="isu-data-val" style="color:#6366f1" id="isu-underage">…</span></div>
+          <div class="isu-data-item"><span class="isu-data-key">Duplikat</span><span class="isu-data-val text-danger" id="isu-dup">…</span></div>
+        </div>
       </div>
       <div class="hero-chart-panel">
         <div class="hero-chart-head">
           <div>
-            <div class="hero-chart-title">Distribusi Pemilih per Kader</div>
-            <div class="hero-chart-sub">6 kader teratas berdasarkan jumlah pemilih saat ini</div>
+            <div class="hero-chart-title">📊 Top 6 Kader</div>
           </div>
           <div class="hero-chart-legend">
             <span><i class="legend-dot legend-blue"></i>Pemilih</span>
@@ -146,7 +139,6 @@
 
     <div class="hero-card hero-side-card">
       <div class="hero-chart-title">Ringkasan Aktivitas</div>
-      <div class="hero-chart-sub">Total ini menjumlahkan data clear, butuh cek, dan percobaan duplikat agar pembacaan dashboard lebih utuh.</div>
       <div class="donut-wrap">
         <svg id="quality-donut" viewBox="0 0 220 220" class="quality-donut" aria-label="Diagram ringkasan aktivitas data"></svg>
       </div>
@@ -154,32 +146,26 @@
     </div>
   </div>
 
-  <div class="grid-5 dashboard-stat-grid">
-    <a href="/?view=clear#data-pemilih" class="stat-card stat-card-link stat-card-total">
-      <div class="sc-label">Total Pemilih Clear</div>
-      <div class="sc-value sc-blue" id="stat-total">…</div>
-      <div class="sc-sub">siap dijumlahkan</div>
-    </a>
-    <a href="/kader" class="stat-card stat-card-link stat-card-kader">
-      <div class="sc-label">Jumlah Kader</div>
-      <div class="sc-value sc-green" id="stat-kader">…</div>
-      <div class="sc-sub">kader aktif</div>
-    </a>
-    <a href="/?view=bermasalah#data-pemilih" class="stat-card stat-card-link stat-card-warning">
-      <div class="sc-label">⚠️ Data Bermasalah</div>
-      <div class="sc-value sc-value-warning" id="stat-bermasalah">…</div>
-      <div class="sc-sub">NIK tidak valid</div>
-    </a>
-    <a href="/?view=underage#data-pemilih" class="stat-card stat-card-link stat-card-underage">
-      <div class="sc-label">🔞 Belum Cukup Umur</div>
-      <div class="sc-value" style="color:#6366f1" id="stat-underage">…</div>
-      <div class="sc-sub">usia di bawah 17 thn</div>
-    </a>
-    <a href="/log-duplikat" class="stat-card dup-card stat-card-link stat-card-danger">
-      <div class="sc-label">Percobaan Duplikat</div>
-      <div class="sc-value sc-value-danger" id="stat-dup">…</div>
-      <div class="sc-sub">tercatat di log</div>
-    </a>
+    <div class="grid-2 dashboard-stat-grid">
+      <a href="/?view=clear#data-pemilih" class="stat-card stat-card-link stat-card-total">
+        <div class="sc-label">Pemilih Clear</div>
+        <div class="sc-value sc-blue" id="stat-total">…</div>
+      </a>
+      <a href="/kader" class="stat-card stat-card-link stat-card-kader">
+        <div class="sc-label">Kader Aktif</div>
+        <div class="sc-value sc-green" id="stat-kader">…</div>
+      </a>
+    </div>
+
+  <!-- Widget TPS Match Rate -->
+  <div class="tps-widget" id="tps-widget">
+    <div class="tps-widget-head">
+      <div class="tps-widget-title">🗳️ Kecocokan Data TPS</div>
+      <a href="/statistik-tps" class="tps-widget-link">Lihat Detail →</a>
+    </div>
+    <div class="tps-widget-body" id="tps-widget-body">
+      <div class="loading"><span class="spinner"></span>Memuat data TPS…</div>
+    </div>
   </div>
 
   <div class="dashboard-lower-grid">
@@ -191,12 +177,11 @@
     </div>
 
     <!-- Per kader -->
-    <div class="card card-mb-20">
+        <div class="card card-mb-20">
     <div class="dashboard-section-head">
-      <div class="card-title card-title-tight"><div class="card-icon ci-blue">📋</div> Progress Kader vs Target</div>
-      <a href="/kader" class="btn btn-outline btn-xs btn-auto">Lihat Semua Kader</a>
+      <div class="card-title card-title-tight"><div class="card-icon ci-blue">📋</div> Progress vs Target</div>
+      <a href="/kader" class="btn btn-outline btn-xs btn-auto">Lihat Semua Kader →</a>
     </div>
-    <div class="dashboard-section-sub">Dashboard hanya menampilkan ringkasan kader paling dekat ke target. Daftar lengkap tetap ada di halaman Data Kader.</div>
     <div id="kader-breakdown"><div class="loading"><span class="spinner"></span>Memuat…</div></div>
     </div>
   </div>
@@ -208,8 +193,8 @@
         <div class="card-icon ci-green">👥</div> Data Pemilih
       </div>
       <div class="title-actions">
-        <a href="/import" class="btn btn-outline btn-sm btn-auto admin-only">📥 Import Excel</a>
-        <a href="/tambah-pemilih" class="btn btn-primary btn-sm btn-auto admin-only">➕ Tambah</a>
+                <a href="/import" class="btn btn-outline btn-sm btn-auto">📥 Import Excel</a>
+        <a href="/tambah-pemilih" class="btn btn-primary btn-sm btn-auto">➕ Tambah</a>
       </div>
     </div>
 
@@ -642,8 +627,8 @@
           <td class="table-cell-muted">${formatDate(p.created_at)}</td>
           <td>
             <div class="gap-12">
-              <a href="/edit-pemilih?id=${p.id}" class="btn btn-outline btn-xs admin-only" aria-label="Edit data ${p.nama}">✏️</a>
-              <button class="btn btn-danger btn-xs superadmin-only" aria-label="Hapus data ${p.nama}" onclick="konfirmasiHapusPemilih('${p.id}','${p.nama}')">🗑️</button>
+                            <a href="/edit-pemilih?id=${p.id}" class="btn btn-outline btn-xs" aria-label="Edit data ${p.nama}">✏️</a>
+              <button class="btn btn-danger btn-xs" aria-label="Hapus data ${p.nama}" onclick="konfirmasiHapusPemilih('${p.id}','${p.nama}')">🗑️</button>
             </div>
           </td>
         </tr>`;
@@ -738,9 +723,10 @@
     document.getElementById('hdr-dup').textContent      = statRes.percobaanDuplikat || 0;
     document.getElementById('stat-total').textContent   = totalClear;
     document.getElementById('stat-kader').textContent   = kaders.length;
-    document.getElementById('stat-bermasalah').textContent = statRes.bermasalah || 0;
-    document.getElementById('stat-underage').textContent   = statRes.underage || 0;
-    document.getElementById('stat-dup').textContent     = statRes.percobaanDuplikat || 0;
+        document.getElementById('stat-bermasalah') && (document.getElementById('stat-bermasalah').textContent = statRes.bermasalah || 0);
+    document.getElementById('isu-bermasalah').textContent = statRes.bermasalah || 0;
+    document.getElementById('isu-underage').textContent   = statRes.underage || 0;
+    document.getElementById('isu-dup').textContent        = statRes.percobaanDuplikat || 0;
     document.getElementById('hero-total').textContent   = formatNum(totalClear);
     document.getElementById('hero-kader').textContent   = formatNum(kaders.length);
     document.getElementById('hero-bermasalah').textContent = formatNum(statRes.bermasalah || 0);
@@ -764,7 +750,71 @@
   async function loadPemilih()       { loadTabel(); }
   async function updateHeaderStats() { loadSemua(); }
 
+  // ── Load TPS Widget ────────────────────────────────
+  async function loadTPSWidget() {
+    try {
+      const res = await fetchWithAuth('/api/tps/statistik');
+      const json = await res.json();
+      if (!json || json.status !== 'success' || !json.data) {
+        document.getElementById('tps-widget-body').innerHTML = '<div class="empty"><p>Belum ada data TPS.</p></div>';
+        return;
+      }
+
+      const { ringkasan, perbandingan } = json.data;
+      const totalTps = json.data.total_tps || 0;
+      const totalData = Number(ringkasan.total_pemilih_tps) || 0;
+      const totalCocok = Number(ringkasan.total_cocok_seluruh) || 0;
+      const totalPerluDicek = Number(ringkasan.total_perlu_dicek_seluruh) || 0;
+      const totalTidakCocok = Number(ringkasan.total_tidak_cocok_seluruh) || 0;
+
+      const pctCocok = totalData > 0 ? Math.round((totalCocok / totalData) * 100) : 0;
+      const pctDicek = totalData > 0 ? Math.round((totalPerluDicek / totalData) * 100) : 0;
+      const pctTidak = totalData > 0 ? Math.round((totalTidakCocok / totalData) * 100) : 0;
+
+      const colorCocok = pctCocok >= 70 ? '#22c55e' : pctCocok >= 40 ? '#f59e0b' : '#ef4444';
+
+      const tpsRows = (perbandingan || []).map(tps => {
+        const pct = Number(tps.persentase_cocok) || 0;
+        const barColor = pct >= 70 ? '#22c55e' : pct >= 40 ? '#f59e0b' : '#ef4444';
+        return `
+          <div class="tps-row">
+            <div class="tps-row-label">${tps.nama_tps}</div>
+            <div class="tps-row-bar-wrap">
+              <div class="tps-row-bar" style="width:${pct}%;background:${barColor}"></div>
+            </div>
+            <div class="tps-row-pct" style="color:${barColor}">${pct}%</div>
+            <div class="tps-row-detail">${formatNum(tps.cocok)}✓ / ${formatNum(tps.total)}</div>
+          </div>`;
+      }).join('');
+
+      document.getElementById('tps-widget-body').innerHTML = `
+        <div class="tps-summary">
+          <div class="tps-summary-item">
+            <span class="tps-summary-val" style="color:${colorCocok}">${pctCocok}%</span>
+            <span class="tps-summary-label">Cocok</span>
+          </div>
+          <div class="tps-summary-item">
+            <span class="tps-summary-val" style="color:#f59e0b">${pctDicek}%</span>
+            <span class="tps-summary-label">Perlu Dicek</span>
+          </div>
+          <div class="tps-summary-item">
+            <span class="tps-summary-val" style="color:#ef4444">${pctTidak}%</span>
+            <span class="tps-summary-label">Tidak Cocok</span>
+          </div>
+          <div class="tps-summary-item">
+            <span class="tps-summary-val">${formatNum(totalTps)}</span>
+            <span class="tps-summary-label">Total TPS</span>
+          </div>
+        </div>
+        <div class="tps-bar-list">${tpsRows}</div>
+      `;
+    } catch (e) {
+      document.getElementById('tps-widget-body').innerHTML = '<div class="empty"><p>Gagal memuat data TPS.</p></div>';
+    }
+  }
+
   loadSemua().then(handleDeepLink);
+  loadTPSWidget();
 </script>
 </body>
 </html>
