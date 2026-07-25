@@ -1,0 +1,111 @@
+/* Skeleton loaders yang smooth dan cepat */
+.skeleton-loader {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-line {
+  height: 16px;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+    rgba(188, 205, 221, 0.16) 0%,
+    rgba(188, 205, 221, 0.4) 50%,
+    rgba(188, 205, 221, 0.16) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  will-change: background-position;
+}
+
+.skeleton-line.line-sm { height: 12px; }
+.skeleton-line.line-lg { height: 22px; }
+.skeleton-line.line-chart { height: 140px; margin: 6px 0; }
+
+.skeleton-table {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeleton-row {
+  display: grid;
+  grid-template-columns: 2fr 2.5fr 1.5fr 1.5fr 1fr 1fr 1.5fr 1.2fr;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(188, 205, 221, 0.4);
+}
+
+.skeleton-row:first-child {
+  background: rgba(188, 205, 221, 0.08);
+  padding: 12px;
+  border-radius: 8px 8px 0 0;
+}
+
+.skeleton-row:last-child {
+  border-bottom: none;
+  border-radius: 0 0 8px 8px;
+}
+
+.skeleton-card {
+  padding: 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.85), rgba(236, 243, 249, 0.9));
+  border: 1px solid rgba(188, 205, 221, 0.65);
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-stat-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.skeleton-stat-chip {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.85), rgba(236, 243, 249, 0.9));
+  border: 1px solid rgba(188, 205, 221, 0.65);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Fast fade in untuk konten yang selesai loading */
+@keyframes fadeInFast {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-fast {
+  animation: fadeInFast 0.28s ease-out forwards;
+}
+
+/* Loader pulse yang lebih halus */
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4f8b76;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.live-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #4f8b76;
+}

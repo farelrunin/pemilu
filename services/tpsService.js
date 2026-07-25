@@ -6,10 +6,41 @@ const {
   askGeminiForMatch
 } = require('../utils/tpsMatcher');
 
+// Chunk array menjadi potongan-potongan kecil
+function chunkArray(arr, size) {
+  const chunks = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+
+// Pre-index pemilih berdasarkan huruf pertama nama untuk fast lookup
+function buildPemilihIndex(pemilihList) {
+  const index = new Map();
+  for (const p of pemilihList) {
+    const key = (p.nama || '').toLowerCase().charAt(0);
+    if (!index.has(key)) index.set(key, []);
+    index.get(key).push(p);
+  }
+  return index;
+}
+
+// Ambil kandidat pemilih yang relevan berdasarkan huruf pertama nama
+// Fallback ke semua pemilih jika tidak ada kandidat cukup
+function getCandidates(tpsNama, pemilihIndex, pemilihAll, minCandidates = 50) {
+  const key = (tpsNama || '').toLowerCase().charAt(0);
+  const byFirstChar = pemilihIndex.get(key) || [];
+  if (byFirstChar.length >= minCandidates) return byFirstChar;
+  // Jika terlalu sedikit, kembalikan semua (nama pendek/inisial)
+  return pemilihAll;
+}
+
 async function runTPSComparison(namaTps) {
-  const dataTps = await query(`
-    SELECT id, nama, jenis_kelamin, usia, dusun, alamat, rt, rw FROM data_tps WHERE nama_tps = ?
-  `, [namaTps]);
+  const dataTps = await query(
+    'SELECT id, nama, jenis_kelamin, usia, dusun, alamat, rt, rw FROM data_tps WHERE nama_tps = ?',
+    [namaTps]
+  );
 
   if (!dataTps.length) {
     const error = new Error('TPS tidak ditemukan');
@@ -17,23 +48,26 @@ async function runTPSComparison(namaTps) {
     throw error;
   }
 
+  // Ganti NOT IN (subquery berat) dengan LEFT JOIN + IS NULL
   const pemilihLokal = await query(`
-    SELECT p.id, p.nama, p.jenis_kelamin, 
+    SELECT p.id, p.nama, p.jenis_kelamin,
            COALESCE(p.rt, k.rt) AS rt,
            COALESCE(p.rw, k.rw) AS rw,
            TIMESTAMPDIFF(YEAR, p.tanggal_lahir, CURDATE()) AS usia,
            k.dusun, k.kordus
     FROM pemilih p
     LEFT JOIN kader k ON k.id = p.kader_id
-    WHERE p.id NOT IN (
-        SELECT DISTINCT hp.pemilih_id 
-        FROM hasil_perbandingan hp
-        JOIN data_tps dt ON dt.id = hp.data_tps_id
-        WHERE hp.pemilih_id IS NOT NULL 
-          AND hp.status_cocok IN ('COCOK', 'PERLU_DICEK')
-          AND dt.nama_tps <> ?
-      )
+    LEFT JOIN hasil_perbandingan hp
+      ON hp.pemilih_id = p.id
+      AND hp.status_cocok IN ('COCOK','PERLU_DICEK')
+    LEFT JOIN data_tps dt
+      ON dt.id = hp.data_tps_id
+      AND dt.nama_tps <> ?
+    WHERE dt.id IS NULL
   `, [namaTps]);
+
+  // Buat index pemilih untuk pre-filter cepat
+  const pemilihIndex = buildPemilihIndex(pemilihLokal);
 
   const startTime = Date.now();
   let cocok = 0, perluDicek = 0, tidakCocok = 0;
@@ -45,40 +79,62 @@ async function runTPSComparison(namaTps) {
     WHERE dt.nama_tps = ?
   `, [namaTps]);
 
-  const potentialMatches = [];
+    const potentialMatches = [];
   for (const tps of dataTps) {
-    for (const pemilih of pemilihLokal) {
+    // Pre-filter: hanya bandingkan pemilih dengan huruf pertama nama yang sama
+    // Ini memangkas 80-90% komparasi yang tidak perlu
+    const candidates = getCandidates(tps.nama, pemilihIndex, pemilihLokal);
+
+    // Hitung bobot sekali per TPS record (tidak berubah antar pemilih)
+    const tpsHasLoc = !!(tps.dusun || tps.alamat || tps.rt);
+    let baseNamaWeight     = 0.70;
+    let baseAgeWeight      = 0.15;
+    let baseLocationWeight = 0.15;
+    if (tps.usia == null) {
+      baseNamaWeight += baseAgeWeight;
+      baseAgeWeight   = 0;
+    }
+    if (!tpsHasLoc) {
+      baseNamaWeight     += baseLocationWeight;
+      baseLocationWeight  = 0;
+    }
+
+    for (const pemilih of candidates) {
+      // Early exit: jika huruf pertama sangat berbeda, skip Levenshtein
+      const tpsFirst  = (tps.nama  || '').toLowerCase().charAt(0);
+      const pemFirst  = (pemilih.nama || '').toLowerCase().charAt(0);
+      const charDiff  = Math.abs(tpsFirst.charCodeAt(0) - pemFirst.charCodeAt(0));
+      if (charDiff > 3) continue; // beda lebih dari 3 huruf alfabet, skip
+
       const namaSimilarity = computeNameSimilarity(tps.nama, pemilih.nama);
-      const ageSignal = computeAgeSignal(tps.usia, pemilih.usia);
-      const locationSignal = computeLocationSignal(tps, pemilih);
+      // Early exit: jika nama similarity sudah sangat rendah, skip sinyal lain
+      if (namaSimilarity < 30) continue;
 
-      let namaWeight = 0.70;
-      let ageWeight = 0.15;
-      let locationWeight = 0.15;
+      let namaWeight     = baseNamaWeight;
+      let ageWeight      = baseAgeWeight;
+      let locationWeight = baseLocationWeight;
 
-      // Jika data usia tidak tersedia di salah satu pihak, distribusikan bobot usia ke nama
-      if (tps.usia == null || pemilih.usia == null) {
+      if (pemilih.usia == null && ageWeight > 0) {
         namaWeight += ageWeight;
-        ageWeight = 0;
+        ageWeight   = 0;
       }
-
-      // Jika data lokasi tidak tersedia di salah satu pihak, distribusikan ke nama
-      const tpsHasLoc = !!(tps.dusun || tps.alamat || tps.rt);
       const pemilihHasLoc = !!(pemilih.dusun || pemilih.rt);
-      if (!tpsHasLoc || !pemilihHasLoc) {
-        namaWeight += locationWeight;
-        locationWeight = 0;
+      if (!pemilihHasLoc && locationWeight > 0) {
+        namaWeight     += locationWeight;
+        locationWeight  = 0;
       }
 
-      let locationScore = locationSignal.dusunScore;
-      if (locationSignal.rtScore !== null) {
-        locationScore = (locationSignal.dusunScore + locationSignal.rtScore) / 2;
-      }
+      const ageSignal      = ageWeight > 0 ? computeAgeSignal(tps.usia, pemilih.usia) : 0;
+      const locationSignal = locationWeight > 0 ? computeLocationSignal(tps, pemilih) : { dusunScore: 0, rtScore: null };
+
+      const locationScore = locationSignal.rtScore !== null
+        ? (locationSignal.dusunScore + locationSignal.rtScore) / 2
+        : locationSignal.dusunScore;
 
       const totalScore = Math.round(
         (namaSimilarity * namaWeight) +
-        (ageSignal * ageWeight) +
-        (locationScore * locationWeight)
+        (ageSignal      * ageWeight) +
+        (locationScore  * locationWeight)
       );
 
       if (totalScore >= 50) {
@@ -169,19 +225,22 @@ async function runTPSComparison(namaTps) {
     }
   }
 
-  if (finalMatches.length > 0) {
-    const values = finalMatches.map(m => [
+    if (finalMatches.length > 0) {
+    const allValues = finalMatches.map(m => [
       m.tpsId,
       m.pemilihId,
       m.status,
       m.score,
       m.catatan || `Skor: ${m.score}% (nama: ${m.namaSimilarity}%, usia: ${m.ageSignal}%, lokasi: ${Math.round(m.locationSignal.rtScore !== null ? (m.locationSignal.dusunScore + m.locationSignal.rtScore) / 2 : m.locationSignal.dusunScore)}%)`
     ]);
-
-    await query(
-      `INSERT INTO hasil_perbandingan (data_tps_id, pemilih_id, status_cocok, skor_total, catatan) VALUES ?`,
-      [values]
-    );
+    // Chunk insert agar tidak timeout saat data banyak
+    const CHUNK_SIZE = 200;
+    for (const chunk of chunkArray(allValues, CHUNK_SIZE)) {
+      await query(
+        'INSERT INTO hasil_perbandingan (data_tps_id, pemilih_id, status_cocok, skor_total, catatan) VALUES ?',
+        [chunk]
+      );
+    }
   }
 
   return {

@@ -1,5 +1,6 @@
 const { query } = require('../db');
 const { genId, cleanupDuplicateLogs } = require('../utils/voterHelpers');
+const cache = require('../utils/cache');
 
 // Cache hasColumn agar tidak query information_schema berulang kali
 const _columnCache = new Map();
@@ -211,6 +212,13 @@ async function getKaders(req, res) {
     const q = String(req.query.q || '').trim();
     const koordinatorId = String(req.query.koordinatorId || '').trim();
     const dusun = String(req.query.dusun || '').trim();
+    
+    const cacheKey = `kader-list-q=${q}|kor=${koordinatorId}|dus=${dusun}`;
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+    
     let where = 'WHERE 1 = 1';
     const params = [];
 
@@ -262,6 +270,8 @@ async function getKaders(req, res) {
       GROUP BY k.id, k.nama, k.nomor, k.dusun, k.kordus, k.rt, k.rw, k.target_suara, k.created_at, k.koordinator_id, namaKoordinator
       ORDER BY COALESCE(ko.nama, NULLIF(k.kordus, ''), 'zzz') ASC, k.dusun ASC, k.nomor ASC
     `, params);
+    
+    cache.set(cacheKey, rows, 30);
     res.json(rows);
   } catch (e) {
     res.status(500).json({ error: e.message });

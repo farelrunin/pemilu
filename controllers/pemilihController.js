@@ -1,5 +1,9 @@
 const XLSX = require('xlsx');
+const path = require('path');
+const fs = require('fs');
 const { query } = require('../db');
+const { listDataFiles, normalizeTpsName } = require('../utils/dataFolderLoader');
+const cache = require('../utils/cache');
 const {
   genId,
   normalizeNIK,
@@ -26,6 +30,37 @@ async function hasColumn(table, column) {
 }
 
 // GET /api/pemilih
+async function getFolderDataIndex(req, res) {
+  try {
+    const baseDirs = [
+      path.join(__dirname, '..', 'data'),
+      path.join(__dirname, '..', 'data_tps')
+    ];
+
+    const files = [];
+    for (const baseDir of baseDirs) {
+      for (const file of listDataFiles(baseDir)) {
+        const rel = path.relative(path.join(__dirname, '..'), file).replace(/\\/g, '/');
+        const name = path.basename(file);
+        files.push({
+          path: rel,
+          name,
+          type: path.extname(name).toLowerCase(),
+          tpsName: normalizeTpsName(name)
+        });
+      }
+    }
+
+    res.json({
+      status: 'success',
+      data: files.slice(0, 200),
+      total: files.length
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
 async function getPemilih(req, res) {
   try {
     const { q, kaderId, statusFilter, page, limit } = req.query;
@@ -76,6 +111,12 @@ async function getPemilih(req, res) {
 // Semua query dijalankan paralel agar lebih cepat
 async function getPemilihStats(req, res) {
   try {
+    const cacheKey = 'pemilih-stats-dashboard';
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return res.json({ ...cached, cached: true });
+    }
+
     // Jalankan semua query statistik secara paralel
     const hasJumlahPercobaan = await hasColumn('log_duplikat', 'jumlah_percobaan');
 
@@ -98,7 +139,7 @@ async function getPemilihStats(req, res) {
     const clear = Math.max((totalSemua.n || 0) - (bermasalah.n || 0), 0);
     const percobaanDuplikat = logDupResult ? logDupResult[0].n : logRows.n;
 
-    res.json({
+    const result = {
       total: clear,
       clear,
       totalSemua: totalSemua.n,
@@ -106,7 +147,10 @@ async function getPemilihStats(req, res) {
       underage: underage.n,
       percobaanDuplikat,
       entryDuplikat: logRows.n
-    });
+    };
+
+    cache.set(cacheKey, result, 15);
+    res.json(result);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -745,5 +789,6 @@ module.exports = {
   importSubmit,
   getLogDuplikat,
   getLogDuplikatStats,
-  getUnmappedPemilih
+  getUnmappedPemilih,
+  getFolderDataIndex
 };

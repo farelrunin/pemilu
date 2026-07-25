@@ -48,8 +48,25 @@ body.app-shell-page { min-height: 100vh; }
   width: 42px;
   height: 42px;
   border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+  background: rgba(63, 111, 166, 0.10);
+  flex-shrink: 0;
 }
 .sidebar-brand-copy { display: flex; flex-direction: column; gap: 2px; }
+.logo-text {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.logo-text span {
+  color: var(--accent);
+}
 .sidebar-brand-sub {
   font-size: 11px;
   letter-spacing: 0.08em;

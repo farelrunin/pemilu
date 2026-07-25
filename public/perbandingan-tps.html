@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -12,7 +12,7 @@
 <div class="app-shell">
   <aside class="app-sidebar">
     <div class="app-sidebar-panel">
-      <a href="/" class="sidebar-brand">
+      <a href="/" class="sidebar-brand" aria-label="DataPilih - Kembali ke Dashboard">
         <div class="logo-icon">🗳️</div>
         <div class="sidebar-brand-copy">
           <div class="logo-text">Data<span>Pilih</span></div>
@@ -38,7 +38,6 @@
         <span class="sidebar-section-arrow">▼</span>
       </div>
       <nav class="nav">
-      <a href="/upload-tps" class="admin-only "><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
       <a href="/perbandingan-tps" class="active"><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
       <a href="/statistik-tps" class=""><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
       <a href="/peta-sitimulyo" class=" "><span><strong>Peta Pemilih</strong></span><span class="nav-pill">PP</span></a>
@@ -79,7 +78,7 @@
       <div class="container">
         <div class="page-header page-header-card">
           <div class="breadcrumb">
-            <a href="/">Dashboard</a> › <a href="/upload-tps">Modul TPS</a> › <span>Perbandingan</span>
+            <a href="/">Dashboard</a> › Modul TPS › <span>Perbandingan</span>
           </div>
           <h1>Hasil Perbandingan TPS</h1>
           <p>Setelah data TPS diunggah, halaman ini membantu melihat seberapa banyak data yang cocok, perlu dicek, atau belum terhubung ke database internal.</p>
@@ -98,7 +97,6 @@
               <button id="compareBtn" onclick="runComparison()" class="btn btn-primary" disabled>Bandingkan</button>
             </div>
             <div class="tps-link-row">
-              <a href="/upload-tps" class="btn btn-outline admin-only">Upload TPS Baru</a>
               <a href="/statistik-tps" class="btn btn-outline">Lihat Statistik</a>
             </div>
             <button id="compareAllBtn" onclick="runAllComparisons()" class="btn btn-outline admin-only" style="margin-top: 15px; width: 100%; font-weight: 600; border-color: var(--primary-color, #4f8b76); color: var(--primary-color, #4f8b76); background: rgba(79, 139, 118, 0.05);">🔄 Cocokkan Ulang Semua TPS (Global)</button>

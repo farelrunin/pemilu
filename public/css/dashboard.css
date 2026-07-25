@@ -7,29 +7,30 @@
 .dashboard-hero {
   display: grid;
   grid-template-columns: 1.75fr 0.95fr;
-  gap: 22px;
-  margin-bottom: 22px;
+  gap: 20px;
+  margin-bottom: 20px;
+  align-items: stretch;
 }
 .hero-card {
   background: linear-gradient(180deg, rgba(244,248,251,0.98), rgba(234,241,247,0.98));
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
+  box-shadow: 0 2px 8px rgba(24,44,68,0.07);
   overflow: hidden;
 }
 .hero-main-card {
   display: grid;
-  grid-template-columns: 1fr 1.1fr;
+  grid-template-columns: 1fr 1.4fr;
 }
 .hero-main-copy {
-  padding: 24px 28px;
+  padding: 28px 24px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 16px;
+  justify-content: flex-start;
+  gap: 20px;
   background:
-    radial-gradient(circle at top left, rgba(63,111,166,0.14), transparent 38%),
-    linear-gradient(180deg, rgba(63,111,166,0.10), rgba(244,248,251,0.28));
+    radial-gradient(circle at top left, rgba(63,111,166,0.10), transparent 40%),
+    linear-gradient(180deg, rgba(63,111,166,0.07), rgba(244,248,251,0.20));
 }
 .hero-kicker {
   font-size: 11px;
@@ -39,44 +40,50 @@
   color: var(--accent2);
   margin-bottom: 4px;
 }
+
+/* KPI chips — horizontal pills tanpa border berlebih */
 .hero-stat-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .hero-stat-chip {
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(248, 251, 255, 0.62);
-  border: 1px solid rgba(63, 111, 166, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.70);
+  border-left: 3px solid var(--accent);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
+.hero-stat-chip:nth-child(2) { border-left-color: var(--success); }
+.hero-stat-chip:nth-child(3) { border-left-color: var(--warning); }
 .hero-stat-chip strong {
-  display: block;
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1;
-  margin-top: 5px;
   color: var(--accent2);
   font-family: 'JetBrains Mono', monospace;
   font-weight: 800;
 }
+.hero-stat-chip:nth-child(2) strong { color: var(--success); }
+.hero-stat-chip:nth-child(3) strong { color: var(--warning); }
 .chip-label {
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   color: var(--text3);
   font-weight: 700;
 }
 
-/* Isu Data ringkas */
+/* Isu Data — compact badge row, tanpa box-in-box */
 .isu-data-grid {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.55);
-  border: 1px solid rgba(188, 205, 221, 0.7);
+  gap: 6px 10px;
+  padding: 10px 0 0;
+  border-top: 1px solid rgba(188,205,221,0.5);
 }
 .isu-data-label {
   font-size: 10px;
@@ -85,11 +92,19 @@
   letter-spacing: 0.08em;
   color: var(--text3);
   width: 100%;
-  margin-bottom: 0;
+  margin-bottom: 2px;
 }
-.isu-data-item { display: flex; align-items: center; gap: 6px; }
+.isu-data-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(248,251,255,0.9);
+  border: 1px solid rgba(188,205,221,0.55);
+}
 .isu-data-key  { font-size: 11px; color: var(--text3); font-weight: 600; }
-.isu-data-val  { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 800; line-height: 1; }
+.isu-data-val  { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; line-height: 1; }
 
 /* Chart panel */
 .hero-chart-panel {
@@ -119,25 +134,25 @@
 
 /* Side card (donut) */
 .hero-side-card {
-  padding: 22px;
+  padding: 22px 20px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 12px;
 }
-.donut-wrap { padding: 10px 8px 6px; }
-.donut-legend { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.donut-wrap { padding: 4px 0; }
+.donut-legend { display: grid; grid-template-columns: 1fr; gap: 6px; }
 .donut-legend-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(248, 251, 255, 0.72);
-  border: 1px solid rgba(188, 205, 221, 0.65);
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(248,251,255,0.60);
+  /* Hapus border per item — cukup background saja */
 }
-.donut-legend-item strong { display: block; font-size: 16px; color: var(--text); }
-.donut-legend-item span:last-child { color: var(--text3); font-size: 12px; }
-.donut-swatch         { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 auto; }
+.donut-legend-item strong { font-size: 14px; color: var(--text); font-weight: 700; min-width: 40px; }
+.donut-legend-item span:last-child { color: var(--text3); font-size: 11px; line-height: 1.4; }
+.donut-swatch         { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
 .donut-swatch-accent  { background: var(--accent); }
 .donut-swatch-underage { background: #6366f1; }
 .donut-swatch-warning { background: var(--warning); }
@@ -212,10 +227,10 @@
 /* TPS Widget */
 .tps-widget {
   background: linear-gradient(180deg, rgba(244,248,251,0.98), rgba(234,241,247,0.98));
-  border: 1px solid var(--border);
+  border: 1px solid rgba(188,205,221,0.7);
   border-radius: var(--radius);
   padding: 22px 26px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
   margin-bottom: 22px;
 }
 .tps-widget-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(148,163,184,0.12); }
@@ -236,11 +251,15 @@
 .tps-row-detail { font-size: 11px; color: var(--text3); text-align: right; white-space: nowrap; }
 
 /* Responsive dashboard */
+@media (max-width: 1024px) {
+  .hero-main-card { grid-template-columns: 1fr; }
+  .hero-chart-panel { border-left: none; border-top: 1px solid rgba(188,205,221,0.5); }
+}
 @media (max-width: 768px) {
   .dashboard-hero, .dashboard-lower-grid { grid-template-columns: 1fr; }
   .hero-main-card { grid-template-columns: 1fr; }
-  .hero-chart-panel { border-left: none; border-top: 1px solid rgba(188,205,221,0.7); }
-  .hero-stat-row { grid-template-columns: repeat(3, 1fr); }
+  .hero-stat-row { flex-direction: row; flex-wrap: wrap; }
+  .hero-stat-chip { flex: 1 1 calc(33% - 8px); min-width: 100px; }
   .tps-summary { grid-template-columns: repeat(2, 1fr); }
   .tps-row { grid-template-columns: 56px 1fr 40px; }
   .tps-row-detail { display: none; }

@@ -10,6 +10,7 @@ router.get('/pemilih', verifyToken, pemilihController.getPemilih);
 router.get('/pemilih/statistik', verifyToken, pemilihController.getPemilihStats);
 router.get('/pemilih/cek-nik/:nik', verifyToken, pemilihController.checkNIK);
 router.get('/pemilih/tidak-terpeta', verifyToken, pemilihController.getUnmappedPemilih);
+router.get('/pemilih/folder-data', verifyToken, pemilihController.getFolderDataIndex);
 router.get('/pemilih/:id', verifyToken, pemilihController.getPemilihById);
 router.post('/pemilih', verifyToken, isAdmin, pemilihController.addPemilih);
 router.put('/pemilih/:id', verifyToken, isAdmin, pemilihController.updatePemilih);

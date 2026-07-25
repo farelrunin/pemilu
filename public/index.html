@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8"/>
@@ -6,6 +6,7 @@
   <title>Dashboard — Pendataan Pemilih</title>
   <link rel="stylesheet" href="/css/base.css"/>
   <link rel="stylesheet" href="/css/layout.css"/>
+  <link rel="stylesheet" href="/css/skeleton.css"/>
   <link rel="stylesheet" href="/css/components.css"/>
   <link rel="stylesheet" href="/css/dashboard.css"/>
   <link rel="stylesheet" href="/css/tps-pages.css"/>
@@ -49,7 +50,6 @@
         <span class="sidebar-section-arrow">▼</span>
       </div>
       <nav class="nav">
-      <a href="/upload-tps"><span><strong>Import TPS</strong></span><span class="nav-pill">UT</span></a>
       <a href="/perbandingan-tps" class=""><span><strong>Perbandingan TPS</strong></span><span class="nav-pill">PB</span></a>
       <a href="/statistik-tps" class=""><span><strong>Statistik TPS</strong></span><span class="nav-pill">ST</span></a>
       <a href="/peta-sitimulyo" class=" "><span><strong>Peta Pemilih</strong></span><span class="nav-pill">PP</span></a>
@@ -115,16 +115,16 @@
         </div>
         <!-- Isu Data Ringkas -->
         <div class="isu-data-grid">
-          <div class="isu-data-label">⚠️ Isu Data</div>
+          <div class="isu-data-label">&#x26A0;&#xFE0F; Isu Data</div>
           <div class="isu-data-item"><span class="isu-data-key">NIK Invalid</span><span class="isu-data-val text-warning" id="isu-bermasalah">…</span></div>
           <div class="isu-data-item"><span class="isu-data-key">Usia &lt;17</span><span class="isu-data-val" style="color:#6366f1" id="isu-underage">…</span></div>
           <div class="isu-data-item"><span class="isu-data-key">Duplikat</span><span class="isu-data-val text-danger" id="isu-dup">…</span></div>
         </div>
       </div>
-      <div class="hero-chart-panel">
+      <div class="hero-chart-panel" style="border-left:none;">
         <div class="hero-chart-head">
           <div>
-            <div class="hero-chart-title">📊 Top 6 Kader</div>
+            <div class="hero-chart-title">&#x1F4CA; Top 6 Kader</div>
           </div>
           <div class="hero-chart-legend">
             <span><i class="legend-dot legend-blue"></i>Pemilih</span>
@@ -132,7 +132,7 @@
           </div>
         </div>
         <div class="hero-chart-wrap">
-          <svg id="overview-chart" viewBox="0 0 560 230" class="overview-chart" aria-label="Diagram distribusi pemilih per kader"></svg>
+          <svg id="overview-chart" viewBox="0 0 560 300" class="overview-chart" aria-label="Diagram distribusi pemilih per kader"></svg>
         </div>
       </div>
     </div>
@@ -146,21 +146,10 @@
     </div>
   </div>
 
-    <div class="grid-2 dashboard-stat-grid">
-      <a href="/?view=clear#data-pemilih" class="stat-card stat-card-link stat-card-total">
-        <div class="sc-label">Pemilih Clear</div>
-        <div class="sc-value sc-blue" id="stat-total">…</div>
-      </a>
-      <a href="/kader" class="stat-card stat-card-link stat-card-kader">
-        <div class="sc-label">Kader Aktif</div>
-        <div class="sc-value sc-green" id="stat-kader">…</div>
-      </a>
-    </div>
-
   <!-- Widget TPS Match Rate -->
   <div class="tps-widget" id="tps-widget">
     <div class="tps-widget-head">
-      <div class="tps-widget-title">🗳️ Kecocokan Data TPS</div>
+      <div class="tps-widget-title">&#x1F5F3;&#xFE0F; Kecocokan Data TPS</div>
       <a href="/statistik-tps" class="tps-widget-link">Lihat Detail →</a>
     </div>
     <div class="tps-widget-body" id="tps-widget-body">
@@ -170,7 +159,7 @@
 
   <div class="dashboard-lower-grid">
     <div class="card card-mb-20">
-      <div class="card-title"><div class="card-icon ci-orange">📌</div> Highlight Presentasi</div>
+      <div class="card-title"><div class="card-icon ci-orange">&#x1F4CC;</div> Highlight Presentasi</div>
       <div id="presentasi-highlight" class="highlight-list">
         <div class="loading"><span class="spinner"></span>Memuat…</div>
       </div>
@@ -179,7 +168,7 @@
     <!-- Per kader -->
         <div class="card card-mb-20">
     <div class="dashboard-section-head">
-      <div class="card-title card-title-tight"><div class="card-icon ci-blue">📋</div> Progress vs Target</div>
+      <div class="card-title card-title-tight"><div class="card-icon ci-blue">&#x1F4CB;</div> Progress vs Target</div>
       <a href="/kader" class="btn btn-outline btn-xs btn-auto">Lihat Semua Kader →</a>
     </div>
     <div id="kader-breakdown"><div class="loading"><span class="spinner"></span>Memuat…</div></div>
@@ -190,10 +179,10 @@
   <div class="card card-mb-32" id="data-pemilih">
     <div class="card-title card-title-between">
       <div class="title-with-icon">
-        <div class="card-icon ci-green">👥</div> Data Pemilih
+        <div class="card-icon ci-green">&#x1F465;</div> Data Pemilih
       </div>
       <div class="title-actions">
-                <a href="/import" class="btn btn-outline btn-sm btn-auto">📥 Import Excel</a>
+                <a href="/import" class="btn btn-outline btn-sm btn-auto">&#x1F4E5; Import Excel</a>
         <a href="/tambah-pemilih" class="btn btn-primary btn-sm btn-auto">➕ Tambah</a>
       </div>
     </div>
@@ -255,9 +244,27 @@
 
 <div id="toast"></div>
 
+<script src="/js/auth.js"></script>
 <script src="/js/kader.js"></script>
 <script src="/js/pemilih.js"></script>
+<script src="/js/coverage-donut.js"></script>
 <script>
+  function createTableSkeletons(count = 8) {
+    return Array.from({ length: count }, (_, i) => `
+      <tr key="sk-${i}">
+        <td><div class="skeleton-line" style="width:30px"></div></td>
+        <td><div class="skeleton-line" style="width:85%"></div></td>
+        <td><div class="skeleton-line" style="width:90px"></div></td>
+        <td><div class="skeleton-line" style="width:110px"></div></td>
+        <td><div class="skeleton-line" style="width:85px"></div></td>
+        <td><div class="skeleton-line" style="width:60px"></div></td>
+        <td><div class="skeleton-line" style="width:70px"></div></td>
+        <td><div class="skeleton-line" style="width:95px"></div></td>
+        <td><div class="skeleton-line" style="width:65px"></div></td>
+      </tr>
+    `).join('');
+  }
+
   function formatDate(ts) {
     if (!ts) return '-';
     return new Date(ts).toLocaleString('id-ID', {
@@ -271,7 +278,8 @@
   function formatNum(n) {
     return new Intl.NumberFormat('id-ID').format(Number(n) || 0);
   }
-  function showToast(msg, emoji='✅') {
+  function showToast(msg, emoji) {
+    emoji = emoji || '&#x2705;';
     const t = document.getElementById('toast');
     t.innerHTML = `${emoji} ${msg}`;
     t.classList.add('show');
@@ -301,8 +309,7 @@
     }
 
     const width = 560;
-    const height = 230;
-    const left = 36;
+    const height = 300;
     const right = 18;
     const top = 18;
     const bottom = 44;
@@ -355,63 +362,6 @@
     `;
   }
 
-  function renderQualityDonut(statRes) {
-    const svg = document.getElementById('quality-donut');
-    const legend = document.getElementById('quality-legend');
-    if (!svg || !legend) return;
-
-    const valid = Number(statRes.clear ?? statRes.total ?? 0) || 0;
-    const underage = Number(statRes.underage ?? 0) || 0;
-    const masalah = Math.max(0, Number(statRes.bermasalah ?? 0) - underage);
-    const duplikat = Number(statRes.percobaanDuplikat ?? 0) || 0;
-    const totalAktivitas = valid + underage + masalah + duplikat;
-    const totalKategori = Math.max(totalAktivitas, 1);
-    const radius = 72;
-    const circumference = 2 * Math.PI * radius;
-    const segments = [
-      { label: 'Data Clear', value: valid, color: 'var(--accent)', swatchClass: 'donut-swatch-accent' },
-      { label: 'Underage (🔞)', value: underage, color: '#6366f1', swatchClass: 'donut-swatch-underage' },
-      { label: 'Butuh Cek', value: masalah, color: 'var(--warning)', swatchClass: 'donut-swatch-warning' },
-      { label: 'Percobaan Duplikat', value: duplikat, color: 'var(--danger)', swatchClass: 'donut-swatch-danger' }
-    ];
-
-    let offset = 0;
-    const arcs = segments.map(segment => {
-      const dash = (segment.value / totalKategori) * circumference;
-      const circle = `
-        <circle
-          cx="110" cy="110" r="${radius}"
-          fill="none"
-          stroke="${segment.color}"
-          stroke-width="20"
-          stroke-linecap="round"
-          stroke-dasharray="${dash} ${circumference - dash}"
-          stroke-dashoffset="${-offset}"
-          transform="rotate(-90 110 110)"
-        />`;
-      offset += dash;
-      return circle;
-    }).join('');
-
-    svg.innerHTML = `
-      <circle cx="110" cy="110" r="${radius}" fill="none" stroke="rgba(71,97,124,0.10)" stroke-width="20"></circle>
-      ${arcs}
-      <circle cx="110" cy="110" r="50" fill="rgba(244,248,251,0.92)"></circle>
-      <text x="110" y="96" text-anchor="middle" fill="var(--text3)" font-size="12">Total Aktivitas</text>
-      <text x="110" y="120" text-anchor="middle" fill="var(--text)" font-size="28" font-weight="700">${formatNum(totalAktivitas)}</text>
-      <text x="110" y="140" text-anchor="middle" fill="var(--text3)" font-size="10">clear + cek + duplikat</text>
-    `;
-
-    legend.innerHTML = segments.map(segment => `
-      <div class="donut-legend-item">
-        <span class="donut-swatch ${segment.swatchClass}"></span>
-        <div>
-          <strong>${formatNum(segment.value)}</strong>
-          <span>${segment.label}</span>
-        </div>
-      </div>
-    `).join('');
-  }
 
   function renderHighlights(kaders, statRes) {
     const wrap = document.getElementById('presentasi-highlight');
@@ -453,7 +403,7 @@
     ];
 
     wrap.innerHTML = items.map(item => `
-      <div class="highlight-item">
+      <div class="highlight-item fade-in-fast">
         <div class="highlight-title">${item.title}</div>
         <div class="highlight-value">${item.value}</div>
         <div class="highlight-meta">${item.meta}</div>
@@ -530,10 +480,18 @@
   let totalData       = 0;
 
   let searchTimer = null;
+  let lastSearchKey = '';
   function onSearch(q) {
-    searchQuery = q; currentPage = 1;
+    searchQuery = q.trim(); currentPage = 1;
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(loadTabel, 350);
+    const key = `${searchQuery}|${selectedKaderId}|${selectedStatusFilter}|${currentLimit}`;
+    if (key === lastSearchKey) return;
+    lastSearchKey = key;
+    const tbody = document.getElementById('tbody-pemilih');
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="loading"><span class="spinner"></span>Mencari data…</div></td></tr>`;
+    }
+    searchTimer = setTimeout(loadTabel, 260);
   }
 
   function onKaderFilterChange(kaderId) {
@@ -589,54 +547,55 @@
 
   // ── Load tabel ──────────────────────────────────────
   async function loadTabel() {
-    document.getElementById('tbody-pemilih').innerHTML =
-      `<tr><td colspan="9"><div class="loading"><span class="spinner"></span>Memuat…</div></td></tr>`;
+    const tbody = document.getElementById('tbody-pemilih');
+    if (tbody) {
+      tbody.innerHTML = createTableSkeletons(6);
+    }
 
     renderActiveFilterInfo();
 
-    const result = await PemilihAPI.getAll(searchQuery, selectedKaderId, currentPage, currentLimit, selectedStatusFilter);
-    const data   = result.data || [];
-    totalPages   = result.totalPages || 1;
-    totalData    = result.total || 0;
-    const startNo = (currentPage - 1) * currentLimit;
-
-    const tbody = document.getElementById('tbody-pemilih');
-    if (!data.length) {
-      tbody.innerHTML = `<tr><td colspan="9">
-        <div class="empty">
-          <div class="empty-icon">🔍</div>
-          <p>Tidak ada data ditemukan.</p>
-        </div></td></tr>`;
-    } else {
-      tbody.innerHTML = data.map((p, i) => {
-        const statusIcon = p.status === 'NIK_INVALID' ? '⚠️' : (p.status === 'BELUM_CUKUP_UMUR' ? '🔞' : '');
-        const statusClass = (p.status === 'NIK_INVALID' || p.status === 'BELUM_CUKUP_UMUR') ? 'row-invalid' : '';
-        const jenisKelamin = p.jenis_kelamin === 'P'
-          ? '<span class="badge badge-pink">Perempuan</span>'
-          : p.jenis_kelamin === 'L'
-            ? '<span class="badge badge-blue">Laki-laki</span>'
-            : '<span class="text-muted">-</span>';
-        return `<tr class="${statusClass}" data-pid="${p.id}">
-          <td class="table-cell-muted">${startNo+i+1}${statusIcon}</td>
-          <td class="table-cell-strong">${p.nama}</td>
-          <td><span class="nik">${p.nik || '-'}</span></td>
-          <td><span class="badge badge-blue">${p.namaKader||'-'}</span></td>
-          <td class="table-cell-small">${formatTgl(p.tanggal_lahir)}</td>
-          <td>${jenisKelamin}</td>
-          <td>${p.umur != null ? p.umur + ' thn' : '-'}</td>
-          <td class="table-cell-muted">${formatDate(p.created_at)}</td>
-          <td>
-            <div class="gap-12">
-                            <a href="/edit-pemilih?id=${p.id}" class="btn btn-outline btn-xs" aria-label="Edit data ${p.nama}">✏️</a>
-              <button class="btn btn-danger btn-xs" aria-label="Hapus data ${p.nama}" onclick="konfirmasiHapusPemilih('${p.id}','${p.nama}')">🗑️</button>
-            </div>
-          </td>
-        </tr>`;
-      }).join('');
+    try {
+      const result = await PemilihAPI.getAll(searchQuery, selectedKaderId, currentPage, currentLimit, selectedStatusFilter);
+      const data      = result.data || [];
+      totalPages      = result.totalPages || 1;
+      totalData       = result.total || 0;
+      const startNo   = (currentPage - 1) * currentLimit;
+      const tbody     = document.getElementById('tbody-pemilih');
+      if (!data.length) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">&#x1F50D;</div><p>${searchQuery ? 'Tidak ada data yang cocok dengan pencarian ini.' : 'Tidak ada data ditemukan.'}</p></div></td></tr>`;
+      } else {
+        tbody.innerHTML = data.map((p, i) => {
+          const statusIcon  = p.status === 'NIK_INVALID' ? ' &#x26A0;&#xFE0F;' : (p.status === 'BELUM_CUKUP_UMUR' ? ' &#x1F51E;' : '');
+          const statusClass = (p.status === 'NIK_INVALID' || p.status === 'BELUM_CUKUP_UMUR') ? 'row-invalid' : '';
+          const jenisKelamin = p.jenis_kelamin === 'P'
+            ? '<span class="badge badge-pink">Perempuan</span>'
+            : p.jenis_kelamin === 'L'
+              ? '<span class="badge badge-blue">Laki-laki</span>'
+              : '<span class="text-muted">-</span>';
+          return `<tr class="${statusClass}" data-pid="${p.id}">
+            <td class="table-cell-muted">${startNo+i+1}${statusIcon}</td>
+            <td class="table-cell-strong">${p.nama}</td>
+            <td><span class="nik">${p.nik || '-'}</span></td>
+            <td><span class="badge badge-blue">${p.namaKader||'-'}</span></td>
+            <td class="table-cell-small">${formatTgl(p.tanggal_lahir)}</td>
+            <td>${jenisKelamin}</td>
+            <td>${p.umur != null ? p.umur + ' thn' : '-'}</td>
+            <td class="table-cell-muted">${formatDate(p.created_at)}</td>
+            <td><div class="gap-12">
+              <a href="/edit-pemilih?id=${p.id}" class="btn btn-outline btn-xs" aria-label="Edit data ${p.nama}">&#x270F;&#xFE0F;</a>
+              <button class="btn btn-danger btn-xs" aria-label="Hapus data ${p.nama}" onclick="konfirmasiHapusPemilih('${p.id}','${p.nama}')">&#x1F5D1;&#xFE0F;</button>
+            </div></td>
+          </tr>`;
+        }).join('');
+      }
+      renderPagination();
+      tryHighlightRow();
+      handleDeepLink();
+    } catch (err) {
+      console.error('[loadTabel] Error:', err);
+      const tbody = document.getElementById('tbody-pemilih');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="9"><div class="empty"><p>Gagal memuat data: ${err.message}</p></div></td></tr>`;
     }
-    renderPagination();
-    tryHighlightRow();
-    handleDeepLink();
   }
 
   // ── Render pagination ───────────────────────────────
@@ -698,47 +657,49 @@
     } catch (_) { /* abaikan jika gagal */ }
   }
 
-  // ── Load dashboard ──────────────────────────────────
+  // Load dashboard
   async function loadSemua() {
-    const [kaders, statRes] = await Promise.all([
-      KaderAPI.getAll(),
-      fetchWithAuth('/api/pemilih/statistik').then(r => r.json())
-    ]);
-
-    // Isi dropdown filter Kader
-    const sel = document.getElementById('sel-kader');
-    if (sel) {
-      sel.innerHTML = '<option value="">Semua Kader</option>' +
-        kaders.map(k => {
-          const wilayah = `${k.dusun || '-'} · ${k.kordus || '-'}`;
-          return `<option value="${k.id}">Kader ${k.nomor} — ${k.nama} (${wilayah})</option>`;
-        }).join('');
-      sel.value = selectedKaderId;
+    try {
+      const [kaders, statRes] = await Promise.all([
+        KaderAPI.getAll(),
+        fetchWithAuth('/api/pemilih/statistik').then(r => r.json())
+      ]);
+      const safeKaders = Array.isArray(kaders) ? kaders : [];
+      window._lastStatRes = statRes; // simpan untuk donut re-render
+      const sel = document.getElementById('sel-kader');
+      if (sel) {
+        sel.innerHTML = '<option value="">Semua Kader</option>' +
+          safeKaders.map(k => {
+            const wilayah = `${k.dusun || '-'} &middot; ${k.kordus || '-'}`;
+            return `<option value="${k.id}">Kader ${k.nomor} - ${k.nama} (${wilayah})</option>`;
+          }).join('');
+        sel.value = selectedKaderId;
+      }
+      const totalClear = statRes.clear || statRes.total || 0;
+      document.getElementById('hdr-kader').textContent          = safeKaders.length;
+      document.getElementById('hdr-pemilih').textContent        = totalClear;
+      document.getElementById('hdr-bermasalah').textContent     = statRes.bermasalah || 0;
+      document.getElementById('hdr-dup').textContent            = statRes.percobaanDuplikat || 0;
+      document.getElementById('stat-total').textContent         = totalClear;
+      document.getElementById('stat-kader').textContent         = safeKaders.length;
+      const elBm = document.getElementById('stat-bermasalah');
+      if (elBm) elBm.textContent = statRes.bermasalah || 0;
+      document.getElementById('isu-bermasalah').textContent     = statRes.bermasalah || 0;
+      document.getElementById('isu-underage').textContent       = statRes.underage || 0;
+      document.getElementById('isu-dup').textContent            = statRes.percobaanDuplikat || 0;
+      document.getElementById('hero-total').textContent         = formatNum(totalClear);
+      document.getElementById('hero-kader').textContent         = formatNum(safeKaders.length);
+      document.getElementById('hero-bermasalah').textContent    = formatNum(statRes.bermasalah || 0);
+      renderOverviewChart(safeKaders);
+      renderQualityDonut(statRes, window._lastTpsData || null);
+      renderHighlights(safeKaders, statRes);
+      renderKaderBreakdown(safeKaders);
+      await resolveHighlight();
+      loadTabel();
+    } catch (err) {
+      console.error('[loadSemua] Error:', err);
+      loadTabel();
     }
-
-    const totalClear = statRes.clear || statRes.total || 0;
-    document.getElementById('hdr-kader').textContent   = kaders.length;
-    document.getElementById('hdr-pemilih').textContent  = totalClear;
-    document.getElementById('hdr-bermasalah').textContent = statRes.bermasalah || 0;
-    document.getElementById('hdr-dup').textContent      = statRes.percobaanDuplikat || 0;
-    document.getElementById('stat-total').textContent   = totalClear;
-    document.getElementById('stat-kader').textContent   = kaders.length;
-        document.getElementById('stat-bermasalah') && (document.getElementById('stat-bermasalah').textContent = statRes.bermasalah || 0);
-    document.getElementById('isu-bermasalah').textContent = statRes.bermasalah || 0;
-    document.getElementById('isu-underage').textContent   = statRes.underage || 0;
-    document.getElementById('isu-dup').textContent        = statRes.percobaanDuplikat || 0;
-    document.getElementById('hero-total').textContent   = formatNum(totalClear);
-    document.getElementById('hero-kader').textContent   = formatNum(kaders.length);
-    document.getElementById('hero-bermasalah').textContent = formatNum(statRes.bermasalah || 0);
-
-    renderOverviewChart(kaders);
-    renderQualityDonut(statRes);
-    renderHighlights(kaders, statRes);
-
-    renderKaderBreakdown(kaders);
-
-    await resolveHighlight();
-    loadTabel();
   }
 
   function handleDeepLink() {
@@ -783,7 +744,7 @@
               <div class="tps-row-bar" style="width:${pct}%;background:${barColor}"></div>
             </div>
             <div class="tps-row-pct" style="color:${barColor}">${pct}%</div>
-            <div class="tps-row-detail">${formatNum(tps.cocok)}✓ / ${formatNum(tps.total)}</div>
+            <div class="tps-row-detail">${formatNum(tps.cocok)} / ${formatNum(tps.total)}</div>
           </div>`;
       }).join('');
 
@@ -808,12 +769,29 @@
         </div>
         <div class="tps-bar-list">${tpsRows}</div>
       `;
+          // Re-render donut dengan data TPS setelah loaded
+      if (window._lastStatRes) {
+        renderQualityDonut(window._lastStatRes, window._lastTpsData);
+      }
     } catch (e) {
       document.getElementById('tps-widget-body').innerHTML = '<div class="empty"><p>Gagal memuat data TPS.</p></div>';
     }
   }
 
-  loadSemua().then(handleDeepLink);
+    // Jalankan semua fetch parallel, render donut sekali setelah keduanya selesai
+  Promise.all([
+    loadSemua(),
+    fetchWithAuth('/api/tps/statistik').then(r => r.json()).then(json => {
+      if (json && json.status === 'success' && json.data) {
+        window._lastTpsData = json.data;
+      }
+    }).catch(() => {})
+  ]).then(() => {
+    if (window._lastStatRes) {
+      renderQualityDonut(window._lastStatRes, window._lastTpsData || null);
+    }
+    handleDeepLink();
+  });
   loadTPSWidget();
 </script>
 </body>
